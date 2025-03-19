@@ -1,4 +1,4 @@
-# Contributing to ByteChain Academy
+# Contributing to NexaFx
 
 Thank you for your interest in contributing to **ByteChain Academy**! 🚀 We welcome contributions from the community and appreciate your efforts to improve the project. Please follow the guidelines below to ensure a smooth collaboration.
 
@@ -64,11 +64,11 @@ Ensure you have the following installed:
 2. Clone your fork to your local machine:
    ```sh
    git clone https://github.com/your-username/ByteChain-Academy.git
-   cd ByteChain-Academy
+   cd Nexafx-web
    ```
 3. Add the upstream repository:
    ```sh
-   git remote add upstream https://github.com/official-repo/ByteChain-Academy.git
+   git remote add upstream https://github.com/official-repo/Nexafx-web.git
    ```
 
 ### Install Dependencies
