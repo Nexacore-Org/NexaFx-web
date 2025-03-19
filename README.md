@@ -1,69 +1,99 @@
-# ByteChain Academy
+# NexaFX
 
-## Overview
-ByteChain Academy is an innovative Web3 educational platform designed for busy professionals and crypto enthusiasts. It delivers bite-sized microlearning courses on blockchain and cryptocurrency concepts, ensuring users can quickly grasp key topics in just 5-10 minutes. The platform also features an extensive historical currency database, interactive quizzes, and community-driven content governed by a DAO. 
+## Next-Generation Web3 Currency Exchange Platform
 
-## Features
-- **Microlearning Modules** – Engaging 5-10 minute lessons on Web3 topics.
-- **Interactive Quizzes & Challenges** – Reinforce learning with assessments.
-- **Visual Progress Tracking** – Personalized learning journeys.
-- **Historical Currency Database** – Covers fiat currencies and cryptocurrencies.
-- **Market Analysis** – Insights into price movements and market capitalization.
-- **Community Governance (DAO)** – Decentralized contributions and data verification.
-- **Ecosystem Integrations** – Works with Alephium, Worldcoin, and other decentralized networks.
+NexaFX is a cutting-edge currency exchange platform that bridges traditional finance with blockchain technology, offering seamless conversions between the Nigerian Naira, global currencies, and cryptocurrencies. Built on Web3 principles and integrated with the Stellar ecosystem, NexaFX delivers a secure, transparent, and cost-effective solution for all your financial exchange needs.
 
-## Installation & Setup
+
+## 🌟 Key Features
+
+- **Multi-Currency Support**: Convert between Naira, USD, EUR, GBP, Bitcoin, Ethereum, and popular stablecoins
+- **Real-Time Exchange Rates**: Access accurate, up-to-the-minute conversion rates
+- **Blockchain Security**: Enjoy enhanced protection through distributed ledger technology
+- **Cross-Border Transactions**: Send and receive funds globally without traditional banking limitations
+- **Web3 Wallet Integration**: Connect directly with MetaMask and other popular crypto wallets
+- **Smart Contract Efficiency**: Reduce costs and processing times by eliminating intermediaries
+
+## 🛠️ Technology Stack
+
+NexaFX is built on a robust technological foundation:
+
+- Web3 architecture for decentralized operations
+- Smart contracts for autonomous transaction processing
+- Stellar blockchain integration for rapid settlement
+- Advanced encryption protocols for maximum security
+- Real-time API connections to global financial exchanges
+
+## 🚀 Getting Started
+
 ### Prerequisites
-Ensure you have the following installed:
-- **Node.js** 
--  **npm**
-- **Git**
 
-### Clone the Repository
-```sh
-git clone https://github.com/YourUsername/ByteChain-Academy.git
-cd ByteChain-Academy
-```
+- A Web3-compatible browser (Chrome, Firefox, Brave)
+- MetaMask or similar Web3 wallet extension installed
+- Basic understanding of cryptocurrency transactions
 
-### Install Dependencies
- using npm:
-```sh
-npm install
-```
+### Installation
 
-### Start the Development Server
-```sh
-npm run dev
-```
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/nexafx.git
+   cd nexafx
+   ```
 
-The platform should now be running at `http://localhost:3000/`.
+2. Install dependencies:
+   ```
+   npm install
+   ```
 
-## Usage Guide
-1. **Sign up** using a decentralized identity solution.
-2. **Browse micro-courses** and select a topic of interest.
-3. **Complete lessons and quizzes** to test your understanding.
-4. **Track your progress** with the visual dashboard.
-5. **Explore the historical currency database** for insights into economic trends.
-6. **Contribute content or validate data** through the DAO governance mechanism.
+3. Configure your environment variables:
+   ```
+   cp .env.example .env
+   ```
+   Edit the `.env` file with your specific configuration details.
 
-## Technologies Used
-- **Frontend**: React, Next.js
-- **Backend**: NestJS, PostgreSQL
-- **Blockchain**: StarkNet, Alephium, Worldcoin
-- **Authentication**: Web3 Wallets & Decentralized Identity
-- **Data Storage**: IPFS, The Graph
+4. Start the development server:
+   ```
+   npm run dev
+   ```
 
-## Contribution Guidelines
-We welcome contributions from the community! Please check our [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines on how to get started.
+5. Open your browser and navigate to `http://localhost:3000`
 
-## License
-This project is licensed under the [MIT License](./LICENSE).
+## 📖 Documentation
 
-## Contact
-For inquiries, collaborations, or support, please reach out via:
-- **Email**: support@bytechain.academy
-- **Twitter**: [@ByteChainAcad](https://twitter.com/ByteChainAcad)
-- **Discord**: [Join our community](https://discord.gg/your-invite-link)
+For comprehensive documentation, please visit our [Wiki](https://github.com/yourusername/nexafx/wiki) or review the docs folder in this repository.
+
+## 🔐 Security
+
+NexaFX prioritizes the security of user funds and data:
+
+- All transactions are verified and recorded on the blockchain
+- Smart contracts undergo rigorous testing and auditing
+- Multi-signature authentication for sensitive operations
+- Regular security assessments and penetration testing
+
+## 💼 Use Cases
+
+- **Individual Users**: Convert currencies for personal use, travel, or investment
+- **Traders**: Capitalize on exchange rate fluctuations across multiple markets
+- **Businesses**: Simplify international payments and reduce transaction costs
+- **Remittance**: Send money to family and friends across borders with minimal fees
+
+## 🤝 Contributing
+
+We welcome contributions from the community! Please read our [Contributing Guidelines](https://github.com/Nexacore-Org/NexaFx-web/blob/main/Contribution.md) before submitting pull requests.
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📞 Support
+
+Having trouble? Reach out to us:
+
+- Submit an issue on GitHub
+- Join our [Discord community](https://discord.gg/nexafx)
+- Email us at support@nexafx.io
 
 ---
-ByteChain Academy – Learn Web3, One Byte at a Time 🚀
+
+**NexaFX** - Bridging Traditional Finance and DeFi for a Borderless Financial Future
