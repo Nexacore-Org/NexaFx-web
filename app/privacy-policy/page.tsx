@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function PrivacyPolicy() {
   return (
-    <div className='px-14 py-8'>
+    <div className='px-6 md:px-14 py-8'>
       <Link
         href='/'
         className='text-gray-600 hover:text-gray-800 mb-8 inline-block text-sm'
