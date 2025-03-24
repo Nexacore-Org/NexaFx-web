@@ -1,101 +1,101 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Link from "next/link"
-import { User, Mail } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { FormInput } from "../ui/form-input"
-import { PasswordInput } from "../ui/passwor-input"
+import { useState } from "react";
+import Link from "next/link";
+import { User, Mail } from "lucide-react";
+import { FormInput } from "../ui/form-input";
+import { PasswordInput } from "../ui/passwor-input";
+import { Button } from "../ui/button";
 
 export default function SignUpForm() {
-  const router = useRouter()
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
     agreeToTerms: false,
-  })
+  });
   const [errors, setErrors] = useState({
     fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
     agreeToTerms: "",
-  })
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
       [name]: type === "checkbox" ? checked : value,
-    })
-  }
+    });
+  };
 
   const validateForm = () => {
-    let valid = true
+    let valid = true;
     const newErrors = {
       fullName: "",
       email: "",
       password: "",
       confirmPassword: "",
       agreeToTerms: "",
-    }
+    };
 
     if (!formData.fullName.trim()) {
-      newErrors.fullName = "Full name is required"
-      valid = false
+      newErrors.fullName = "Full name is required";
+      valid = false;
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = "Email is required"
-      valid = false
+      newErrors.email = "Email is required";
+      valid = false;
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid"
-      valid = false
+      newErrors.email = "Email is invalid";
+      valid = false;
     }
 
     if (!formData.password) {
-      newErrors.password = "Password is required"
-      valid = false
+      newErrors.password = "Password is required";
+      valid = false;
     } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters"
-      valid = false
+      newErrors.password = "Password must be at least 8 characters";
+      valid = false;
     } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = "Password must include uppercase, lowercase, and numbers"
-      valid = false
+      newErrors.password =
+        "Password must include uppercase, lowercase, and numbers";
+      valid = false;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match"
-      valid = false
+      newErrors.confirmPassword = "Passwords do not match";
+      valid = false;
     }
 
     if (!formData.agreeToTerms) {
-      newErrors.agreeToTerms = "You must agree to the terms"
-      valid = false
+      newErrors.agreeToTerms = "You must agree to the terms";
+      valid = false;
     }
 
-    setErrors(newErrors)
-    return valid
-  }
+    setErrors(newErrors);
+    return valid;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (validateForm()) {
       try {
         // Here you would typically call an API endpoint
-        console.log("Form submitted:", formData)
+        console.log("Form submitted:", formData);
 
         // Simulate successful signup
         // router.push("/auth/verification");
       } catch (error) {
-        console.error("Signup error:", error)
+        console.error("Signup error:", error);
       }
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -155,7 +155,7 @@ export default function SignUpForm() {
           />
         </div>
         <div className="ml-3 text-sm">
-          <label htmlFor="agreeToTerms" className="text-gray-700">
+          <label htmlFor="agreeToTerms" className="text-gray-700 font-bold">
             I agree to the{" "}
             <Link href="/terms" className="text-blue-500 hover:underline">
               Terms of Service
@@ -165,26 +165,31 @@ export default function SignUpForm() {
               Privacy Policy
             </Link>
           </label>
-          {errors.agreeToTerms && <p className="mt-1 text-sm text-red-600">{errors.agreeToTerms}</p>}
+          {errors.agreeToTerms && (
+            <p className="mt-1 text-sm text-red-600">{errors.agreeToTerms}</p>
+          )}
         </div>
       </div>
 
-      <button
+      <Button
         type="submit"
-        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        size={"lg"}
+        className="w-full bg-gradient-to-r from-[#3B82F6] to-[#EAB308] hover:opacity-90 shadow-sm font-medium"
       >
         Create Account
-      </button>
+      </Button>
 
       <div className="text-center mt-4">
         <p className="text-sm text-gray-600">
           Already have an account?{" "}
-          <Link href="/auth/signin" className="text-blue-500 hover:underline font-medium">
+          <Link
+            href="/auth/sign-in"
+            className="text-blue-500 hover:underline font-medium"
+          >
             Sign in
           </Link>
         </p>
       </div>
     </form>
-  )
+  );
 }
-
