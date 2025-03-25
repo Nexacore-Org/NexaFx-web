@@ -2,7 +2,8 @@ import type React from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import LeftSideContent from "./left-side-content";
-
+import Image from "next/image";
+import Logo from "@/public/logo.png";
 interface AuthLayoutProps {
   children: React.ReactNode;
   title: string;
@@ -28,11 +29,7 @@ export default function AuthLayout({
             </Link>
 
             <div className="mb-8">
-              <div className="flex items-center mb-6">
-                <div className="text-blue-500 font-bold text-2xl mr-1">N</div>
-                <div className="text-yellow-500 font-bold text-2xl mr-1">/</div>
-                <div className="text-blue-500 font-bold text-2xl">NexaFX</div>
-              </div>
+              <Image src={Logo} alt="NexaFX" width={150} height={150} className="mb-6" />
 
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{title}</h1>
               <p className="text-gray-600">{subtitle}</p>
