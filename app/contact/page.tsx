@@ -1,6 +1,7 @@
 "use client";
 
-import { Mail, MapPin, Phone, Send } from "lucide-react";
+import { Mail, MapPin, MoveLeft, Phone, Send } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 export default function ContactPage() {
@@ -28,11 +29,15 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto bg-white px-6 py-12 text-lg">
+    <div className="max-w-6xl mx-auto bg-white px-3 lg:px-6 py-6 lg:py-12 text-lg">
+      <Link href={"/"} className="flex my-6 px-3 text-xl items-center hover:scale-105]">
+        <MoveLeft className="mr-2"/>
+        <h2>Back to home</h2>
+      </Link>
       <h1 className="text-4xl font-bold text-center mb-2">Contact Us</h1>
-      <p className="text-[#71717A] text-center mb-8">Have questions or need help? We&apos;re here to help.</p>
+      <p className="text-[#71717A] text-center mb-4 lg:mb-8">Have questions or need help? We&apos;re here to help.</p>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-6">
         {/* Left: Contact Form */}
         <div className="space-y-6">
           <div className="bg-white p-6">
@@ -93,7 +98,7 @@ export default function ContactPage() {
             
           </div>
 
-          <div className="bg-gradient-to-br from-[#d9e9ff] to-[#fdfcbd] p-6 rounded-lg shadow">
+          <div className="bg-gradient-to-br from-[#EFF6FF] to-[#FEF9C3] p-6 rounded-lg shadow">
              <h3 className="text-lg font-semibold">Office Hours</h3>
             <div className="mt-2 space-y-1">
                 <div className="flex justify-between">
@@ -228,7 +233,7 @@ export default function ContactPage() {
 
             
 
-            <button type="submit" className="w-full bg-gradient-to-r from-[#3c78f4] to-[#e8b300] text-white p-3 rounded-md hover:bg-gray-800 text-lg">
+            <button type="submit" className="w-full bg-gradient-to-r from-[#3B82F6] to-[#EAB308] text-white p-3 rounded-md hover:bg-gray-800 text-lg">
               <Send className="inline mr-2 "/> Send Message
             </button>
           </form>
