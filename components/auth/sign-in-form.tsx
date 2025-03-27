@@ -1,74 +1,37 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { FormInput } from "../ui/form-input";
-import { useState } from "react";
-import { Mail } from "lucide-react";
-import { PasswordInput } from "../ui/passwor-input";
-import { Button } from "../ui/button";
-import { Separator } from "../ui/separator";
+import { useFormik } from "formik"
+import Link from "next/link"
+import { FormInput } from "../ui/form-input"
+import { Mail } from "lucide-react"
+import { PasswordInput } from "../ui/passwor-input"
+import { Button } from "../ui/button"
+import { Separator } from "../ui/separator"
+import { signInSchema } from "@/utils/authValidationSchema"
 
 export default function SignInForm() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    rememberMe: false,
-  });
-  const [errors, setErrors] = useState({
-    email: "",
-    password: "",
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
-  };
-
-  const validateForm = () => {
-    let valid = true;
-    const newErrors = {
+  const formik = useFormik({
+    initialValues: {
       email: "",
       password: "",
-    };
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-      valid = false;
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
-      valid = false;
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-      valid = false;
-    }
-
-    setErrors(newErrors);
-    return valid;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validateForm()) {
+      rememberMe: false,
+    },
+    validationSchema: signInSchema,
+    onSubmit: async (values) => {
       try {
         // Here you would typically call an API endpoint
-        console.log("Form submitted:", formData);
-
-        // Simulate successful signup
-        // router.push("/auth/verification");
+        console.log("Form submitted:", values)
+        // Simulate successful signin
+        // router.push("/dashboard");
       } catch (error) {
-        console.error("Signin error:", error);
+        console.error("Signin error:", error)
       }
-    }
-  };
+    },
+  })
 
   return (
     <section className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={formik.handleSubmit} className="space-y-6">
         <FormInput
           id="email"
           name="email"
@@ -76,23 +39,18 @@ export default function SignInForm() {
           type="email"
           placeholder="you@example.com"
           icon={<Mail className="h-5 w-5 text-gray-400" />}
-          value={formData.email}
-          onChange={handleChange}
-          error={errors.email}
+          value={formik.values.email}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
+          error={formik.touched.email && formik.errors.email}
         />
 
         <div>
           <div className="flex justify-between items-center">
-            <label
-              htmlFor="password"
-              className="text-sm font-medium text-gray-900"
-            >
+            <label htmlFor="password" className="text-sm font-medium text-gray-900">
               Password
             </label>
-            <Link
-              href="/auth/forgot-password"
-              className="text-sm text-blue-600 hover:underline"
-            >
+            <Link href="/auth/forgot-password" className="text-sm text-blue-600 hover:underline">
               Forgot password?
             </Link>
           </div>
@@ -101,9 +59,10 @@ export default function SignInForm() {
             name="password"
             label=""
             placeholder="••••••••"
-            value={formData.password}
-            onChange={handleChange}
-            error={errors.password}
+            value={formik.values.password}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
+            error={formik.touched.password && formik.errors.password}
           />
         </div>
 
@@ -113,8 +72,8 @@ export default function SignInForm() {
               id="rememberMe"
               name="rememberMe"
               type="checkbox"
-              checked={formData.rememberMe}
-              onChange={handleChange}
+              checked={formik.values.rememberMe}
+              onChange={formik.handleChange}
               className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
           </div>
@@ -129,6 +88,7 @@ export default function SignInForm() {
           type="submit"
           size={"lg"}
           className="w-full bg-gradient-to-r from-[#3B82F6] to-[#EAB308] hover:opacity-90 shadow-sm font-medium"
+          disabled={formik.isSubmitting}
         >
           Sign In
         </Button>
@@ -136,9 +96,7 @@ export default function SignInForm() {
 
       <div className="flex items-center my-6 gap-2">
         <Separator className="flex-1 bg-gray-300" />
-        <span className="text-sm text-muted-foreground uppercase">
-          Or continue with
-        </span>
+        <span className="text-sm text-muted-foreground uppercase">Or continue with</span>
         <Separator className="flex-1 bg-gray-300" />
       </div>
 
@@ -182,17 +140,9 @@ export default function SignInForm() {
           Google
         </Button>
         <Button variant={"outline"} className="flex-1">
-          <svg
-            viewBox="0 0 266.895 266.895"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="#ffffff"
-          >
+          <svg viewBox="0 0 266.895 266.895" xmlns="http://www.w3.org/2000/svg" fill="#ffffff">
             <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
-            <g
-              id="SVGRepo_tracerCarrier"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            ></g>
+            <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
             <g id="SVGRepo_iconCarrier">
               <path
                 d="M252.164 266.895c8.134 0 14.729-6.596 14.729-14.73V14.73c0-8.137-6.596-14.73-14.729-14.73H14.73C6.593 0 0 6.594 0 14.73v237.434c0 8.135 6.593 14.73 14.73 14.73h237.434z"
@@ -211,14 +161,12 @@ export default function SignInForm() {
       <div className="text-center mt-4">
         <p className="text-sm text-gray-600">
           Don&apos;t have an account?{" "}
-          <Link
-            href="/auth/sign-up"
-            className="text-blue-500 hover:underline font-medium"
-          >
+          <Link href="/auth/sign-up" className="text-blue-500 hover:underline font-medium">
             Sign up
           </Link>
         </p>
       </div>
     </section>
-  );
+  )
 }
+
