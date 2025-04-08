@@ -7,6 +7,9 @@ import Hero from "./components/Hero";
 import HowItWorkSectiion from "./components/HowItWorkSectiion";
 import LandingPageSkeleton from "./components/LandingPageSkeleton";
 
+
+
+
 export default function Home() {
 const [loading, setLoading]=useState(true)
 
@@ -25,7 +28,7 @@ useEffect(()=>{
         <>
         <Hero />
         <WhyChooseUs />    
-        <HowItWorkSectiion />
+        <HowItWorkSectiion />       
 
         </>
 
