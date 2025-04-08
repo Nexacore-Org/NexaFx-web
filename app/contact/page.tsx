@@ -1,12 +1,22 @@
 "use client"
 
-import { useFormik } from "formik"
-import { Mail, MapPin, MoveLeft, Phone, Send } from "lucide-react"
+import { useFormik } from "formik";
+import { Mail, MapPin, MoveLeft, Phone, Send } from "lucide-react";
 import Link from "next/link"
-import { contactSchema } from "@/utils/authValidationSchema"
+import { contactSchema } from "@/utils/authValidationSchema";
+import { useState, useEffect } from "react";
+import ContactSkeleton from "../contact/ContactSkeleton";
 
 
 export default function ContactPage() {
+
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 2000) // Simulate API delay
+    return () => clearTimeout(timer)
+  }, [])
+
   const formik = useFormik({
     initialValues: {
       firstname: "",
@@ -23,6 +33,11 @@ export default function ContactPage() {
       // Here you would typically send the form data to your backend
     },
   })
+
+    // ✅ Show Skeleton Loader first, then render the actual page
+    if (isLoading) {
+      return <ContactSkeleton />
+    }
 
   return (
     <div className="max-w-6xl mx-auto bg-white px-3 lg:px-6 py-6 lg:py-12 text-lg">
@@ -234,4 +249,3 @@ export default function ContactPage() {
     </div>
   )
 }
-
