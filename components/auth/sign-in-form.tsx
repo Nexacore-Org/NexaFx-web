@@ -41,8 +41,7 @@ export default function SignInForm() {
           icon={<Mail className="h-5 w-5 text-gray-400" />}
           value={formik.values.email}
           onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          error={formik.touched.email && formik.errors.email}
+          error={formik.touched.email ? formik.errors.email : undefined}
         />
 
         <div>
@@ -61,8 +60,7 @@ export default function SignInForm() {
             placeholder="••••••••"
             value={formik.values.password}
             onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.password && formik.errors.password}
+            error={formik.touched.password && formik.errors.password ? formik.errors.password : undefined}
           />
         </div>
 

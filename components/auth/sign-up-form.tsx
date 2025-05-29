@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { useFormik } from "formik"
-import Link from "next/link"
-import { User, Mail } from "lucide-react"
-import { FormInput } from "../ui/form-input"
-import { PasswordInput } from "../ui/passwor-input"
-import { Button } from "../ui/button"
-import { signUpSchema } from "@/utils/authValidationSchema"
+import { useFormik } from "formik";
+import Link from "next/link";
+import { User, Mail } from "lucide-react";
+import { FormInput } from "../ui/form-input";
+import { PasswordInput } from "../ui/passwor-input";
+import { Button } from "../ui/button";
+import { signUpSchema } from "@/utils/authValidationSchema";
 
 export default function SignUpForm() {
   const formik = useFormik({
@@ -20,12 +20,12 @@ export default function SignUpForm() {
     validationSchema: signUpSchema,
     onSubmit: async (values) => {
       try {
-        console.log("Form submitted:", values)
+        console.log("Form submitted:", values);
       } catch (error) {
-        console.error("Signup error:", error)
+        console.error("Signup error:", error);
       }
     },
-  })
+  });
 
   return (
     <form onSubmit={formik.handleSubmit} className="space-y-6">
@@ -37,8 +37,7 @@ export default function SignUpForm() {
         icon={<User className="h-5 w-5 text-gray-400" />}
         value={formik.values.fullName}
         onChange={formik.handleChange}
-        onBlur={formik.handleBlur}
-        error={formik.touched.fullName && formik.errors.fullName}
+        error={formik.touched.fullName ? formik.errors.fullName : undefined}
       />
 
       <FormInput
@@ -50,8 +49,7 @@ export default function SignUpForm() {
         icon={<Mail className="h-5 w-5 text-gray-400" />}
         value={formik.values.email}
         onChange={formik.handleChange}
-        onBlur={formik.handleBlur}
-        error={formik.touched.email && formik.errors.email}
+        error={formik.touched.email ? formik.errors.email : undefined}
       />
 
       <PasswordInput
@@ -61,8 +59,7 @@ export default function SignUpForm() {
         placeholder="••••••••"
         value={formik.values.password}
         onChange={formik.handleChange}
-        onBlur={formik.handleBlur}
-        error={formik.touched.password && formik.errors.password}
+        error={formik.touched.password ? formik.errors.password : undefined}
         helperText="Password must be at least 8 characters with uppercase, lowercase, and numbers"
       />
 
@@ -73,8 +70,11 @@ export default function SignUpForm() {
         placeholder="••••••••"
         value={formik.values.confirmPassword}
         onChange={formik.handleChange}
-        onBlur={formik.handleBlur}
-        error={formik.touched.confirmPassword && formik.errors.confirmPassword}
+        error={
+          formik.touched.confirmPassword
+            ? formik.errors.confirmPassword
+            : undefined
+        }
       />
 
       <div className="flex items-start">
@@ -101,7 +101,9 @@ export default function SignUpForm() {
             </Link>
           </label>
           {formik.touched.agreeToTerms && formik.errors.agreeToTerms && (
-            <p className="mt-1 text-sm text-red-600">{formik.errors.agreeToTerms}</p>
+            <p className="mt-1 text-sm text-red-600">
+              {formik.errors.agreeToTerms}
+            </p>
           )}
         </div>
       </div>
@@ -118,12 +120,14 @@ export default function SignUpForm() {
       <div className="text-center mt-4">
         <p className="text-sm text-gray-600">
           Already have an account?{" "}
-          <Link href="/auth/sign-in" className="text-blue-500 hover:underline font-medium">
+          <Link
+            href="/auth/sign-in"
+            className="text-blue-500 hover:underline font-medium"
+          >
             Sign in
           </Link>
         </p>
       </div>
     </form>
-  )
+  );
 }
-
