@@ -91,8 +91,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 Having trouble? Reach out to us:
 
 - Submit an issue on GitHub
-- Join our [Discord community](https://discord.gg/nexafx)
-- Email us at support@nexafx.io
+- Telegram: [https://t.me/NexaFx](https://t.me/+WkWO3kNnA-1mYzVk)
+- Email us at [contact@nexacore.org](mailto:nexacore.org@gmail.com)
+## 📧 Contact
 
 ---
 
