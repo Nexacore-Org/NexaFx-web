@@ -31,7 +31,9 @@ export default function ExchangePreviewCard() {
               <p className="text-xl font-medium">100,000 NGN</p>
             </div>
             <div className="rounded-lg border bg-background p-3">
-              <p className="text-sm text-muted-foreground">You'll receive</p>
+              <p className="text-sm text-muted-foreground">
+                You&apos;ll receive
+              </p>
               <p className="text-xl font-medium">~65.78 USD</p>
             </div>
           </div>

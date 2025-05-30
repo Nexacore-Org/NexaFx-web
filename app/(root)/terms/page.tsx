@@ -1,13 +1,12 @@
 "use client";
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { TermsOfServiceSkeleton } from "@/components/skeletons/TermsOfServiceSkeleton";
 import { termsData } from "@/utils/Data";
 import Link from "next/link";
 
 export default function TermsOfService() {
-  const router = useRouter();
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

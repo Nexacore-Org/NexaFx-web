@@ -1,9 +1,8 @@
 "use client";
 
 import { useFormik } from "formik";
-import { Mail, MapPin, MoveLeft, Phone, Send } from "lucide-react";
+import { Mail, MapPin, Phone, Send } from "lucide-react";
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { contactSchema } from "@/utils/authValidationSchema";
 import { useState, useEffect } from "react";
 import ContactSkeleton from "@/components/skeletons/ContactSkeleton";
@@ -11,7 +10,6 @@ import Link from "next/link";
 
 export default function ContactPage() {
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2000); // Simulate API delay
