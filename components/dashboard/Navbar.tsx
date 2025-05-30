@@ -1,11 +1,16 @@
 // components/Navbar.tsx
 "use client";
 
-import { Menu, ChevronLeft } from "lucide-react";
+import { Menu, ChevronLeft, BellDot } from "lucide-react";
 import { useSidebarStore } from "@/store/sidebarStore";
 import Image from "next/image";
+import clsx from "clsx";
+import { useState } from "react";
+
+const navItems = ["Dashboard", "Convert"];
 
 export default function Navbar() {
+  const [active, setActive] = useState("Dashboard");
   const { isCollapsed, toggleCollapse, toggleMobile } = useSidebarStore();
 
   return (
@@ -38,7 +43,7 @@ export default function Navbar() {
             </a> */}
             <div
               className={`flex items-center justify-between p-2.5 ${
-                isCollapsed ? "max-w-fit" : "md:w-[265px]"
+                isCollapsed ? "lg:w-20" : "lg:w-60"
               } rounded-full bg-white`}>
               <div className="flex items-center gap-2">
                 {!isCollapsed && (
@@ -66,28 +71,54 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Right side content */}
-          <div className="flex items-center">
-            <div className="flex items-center ml-3">
-              {/* Search bar */}
-              <div className="hidden lg:block">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-3 pr-10 py-2"
-                />
+          <nav className="flex items-center justify-between w-full px-10 py-4">
+            {/* Left nav items */}
+            <div className="flex space-x-6">
+              {navItems.map((item) => (
+                <button
+                  key={item}
+                  onClick={() => setActive(item)}
+                  className={clsx(
+                    "relative font-medium text-lg",
+                    active === item ? "text-black font-bold" : "text-gray-600",
+                    "transition"
+                  )}>
+                  {item}
+                  {active === item && (
+                    <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-blue-500" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Search bar */}
+            <div className="flex-1 flex justify-center mx-10">
+              <input
+                type="text"
+                placeholder="Search..."
+                className="w-full max-w-md px-5 py-2 rounded-full bg-white text-gray-700 placeholder-gray-400 focus:outline-none"
+              />
+            </div>
+
+            {/* Right icons */}
+            <div className="flex items-center space-x-4">
+              {/* Notification/Settings Icon */}
+              <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center">
+                <BellDot className="w-5 h-5 text-black" />
+                {/* Replace with icon component if needed */}
               </div>
 
-              {/* User menu */}
-              <div className="flex items-center ml-4">
-                <button className="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">JD</span>
-                  </div>
-                </button>
+              {/* Avatar */}
+              <div className="w-9 h-9 rounded-full overflow-hidden">
+                <Image
+                  src="/user.png" // Save your avatar image here in /public
+                  alt="Avatar"
+                  width={36}
+                  height={36}
+                />
               </div>
             </div>
-          </div>
+          </nav>
         </div>
       </div>
     </nav>

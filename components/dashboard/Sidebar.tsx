@@ -1,25 +1,17 @@
 // components/Sidebar.tsx
 "use client";
 
-import {
-  Home,
-  Wallet,
-  Bell,
-  User,
-  Settings,
-  X,
-  LogOut,
-} from "lucide-react";
+import { Home, Wallet, Bell, User, ArrowDownUp, X, LogOut } from "lucide-react";
 import { useSidebarStore } from "@/store/sidebarStore";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const initialMenuItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard", active: true },
-  { icon: Wallet, label: "Wallet", href: "/wallet" },
-  { icon: Bell, label: "Notifications", href: "/notifications" },
-  { icon: User, label: "Profile", href: "/profile" },
-  { icon: Settings, label: "Settings", href: "/settings" },
+  { icon: ArrowDownUp, label: "Convert", href: "/dashboard/convert" },
+  { icon: Wallet, label: "Wallet", href: "/dashboard/wallet" },
+  { icon: Bell, label: "Notifications", href: "/dashboard/notifications" },
+  { icon: User, label: "Profile", href: "/dashboard/profile" },
 ];
 
 export default function Sidebar() {
@@ -80,15 +72,15 @@ export default function Sidebar() {
         </div>
 
         <div className="h-full px-3 pb-4 overflow-y-auto">
-          <ul className="space-y-2 font-medium">
+          <ul className="space-y-3 font-medium">
             {menuItems.map((item, index) => {
               const IconComponent = item.icon;
               return (
                 <li key={index}>
                   <button
                     onClick={() => handleMenuClick(item.href, item.label)}
-                    className={`flex items-center text-gray-900 rounded-full hover:bg-[#FFD552] group ${
-                      item.active ? "bg-[#FFD552] text-[#5E5E5E]" : ""
+                    className={`flex items-center text-[#5E5E5E] rounded-full hover:bg-[#FFD552] group ${
+                      item.active ? "bg-[#FFD552]" : "bg-white"
                     } ${
                       isCollapsed
                         ? "p-4 justify-center"
@@ -107,7 +99,7 @@ export default function Sidebar() {
             })}
 
             {/* Logout button */}
-            <li className="pt-4 mt-4 border-t border-gray-200">
+            {/* <li className="pt-4 mt-4 border-t border-gray-200">
               <a
                 href="/logout"
                 className="flex items-center p-2 text-gray-900 rounded-lg hover:bg-red-50 hover:text-red-600 group"
@@ -115,7 +107,7 @@ export default function Sidebar() {
                 <LogOut className="w-5 h-5 text-gray-500 transition duration-75 group-hover:text-red-600" />
                 {!isCollapsed && <span className="ml-3">Logout</span>}
               </a>
-            </li>
+            </li> */}
           </ul>
         </div>
       </aside>
