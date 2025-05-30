@@ -1,7 +1,7 @@
 // components/Sidebar.tsx
 "use client";
 
-import { Home, Wallet, Bell, User, ArrowDownUp, X, LogOut } from "lucide-react";
+import { Home, Wallet, Bell, User, ArrowDownUp, X } from "lucide-react";
 import { useSidebarStore } from "@/store/sidebarStore";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
