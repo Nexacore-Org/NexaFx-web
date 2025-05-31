@@ -1,9 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, ArrowUp, RefreshCw, Check, X } from "lucide-react";
-import { Transaction, TransactionFilter, TransactionType } from "@/types/transaction";
+import { Check, X, ChevronDown, ChevronUp } from "lucide-react";
+import Image from "next/image";
+import {
+  Transaction,
+  TransactionFilter,
+  TransactionType,
+} from "@/types/transaction";
 import { EmptyTransaction } from "./EmptyTransaction";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import React from "react";
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -12,59 +29,153 @@ interface TransactionListProps {
 function getTransactionIcon(type: TransactionType) {
   switch (type) {
     case "Deposit":
-      return <ArrowDown className="h-4 w-4 text-green-600" />;
+      return (
+        <Image
+          src="/deposit-icon.svg"
+          alt="Deposit"
+          width={20}
+          height={20}
+          className="w-5 h-5"
+        />
+      );
     case "Withdraw":
-      return <ArrowUp className="h-4 w-4 text-red-600" />;
+      return (
+        <Image
+          src="/withdraw-icon.svg"
+          alt="Withdraw"
+          width={20}
+          height={20}
+          className="w-5 h-5"
+        />
+      );
     case "Convert":
-      return <RefreshCw className="h-4 w-4 text-orange-600" />;
+      return (
+        <Image
+          src="/convert-icon.svg"
+          alt="Convert"
+          width={20}
+          height={20}
+          className="w-5 h-5"
+        />
+      );
     default:
-      return <ArrowDown className="h-4 w-4 text-gray-600" />;
+      return (
+        <Image
+          src="/deposit-icon.svg"
+          alt="Default"
+          width={20}
+          height={20}
+          className="w-5 h-5"
+        />
+      );
   }
 }
 
 function StatusBadge({ status }: { status: "Success" | "Failed" }) {
   if (status === "Success") {
     return (
-      <div className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
-        <Check className="h-3 w-3" />
+      <Badge
+        variant="outline"
+        className="bg-[#1BB72D]/20 text-[#009411]/90 font-bold flex items-center gap-1 rounded-full px-2 py-2 min-w-[104px] hover:bg-green-100"
+      >
+        <Check className="h-5 w-5" />
         Success
-      </div>
+      </Badge>
     );
   }
 
   return (
-    <div className="inline-flex items-center gap-1 bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm">
-      <X className="h-3 w-3" />
+    <Badge
+      variant="outline"
+      className="bg-[#C80808]/20 text-[#C80808]/90 border-red-200 font-bold flex items-center gap-1 rounded-full min-w-[104px] px-2 py-2 hover:bg-red-100"
+    >
+      <X className="h-5 w-5" />
       Failed
-    </div>
+    </Badge>
   );
 }
 
-function FilterButton({ 
-  filter, 
-  activeFilter, 
-  onClick, 
-  count 
-}: { 
-  filter: TransactionFilter; 
-  activeFilter: TransactionFilter; 
-  onClick: () => void;
-  count?: number;
-}) {
-  const isActive = filter === activeFilter;
-  
-  return (
+// Mobile Accordion Row Component for mobile view
+function MobileAccordionRow({ transaction }: { transaction: Transaction }) {
+  const [isOpen, setIsOpen] = useState(false);
 
-    <button
-      onClick={onClick}
-      className={`py-3 px-4 rounded-xl  text-sm font-medium transition-colors ${
-        isActive
-          ? "bg-white text-black/70"
-          : "text-black/60"
-      }`}
-    >
-      {filter} {count !== undefined && count > 0 && <span className="ml-1">{count}</span>}
-    </button>
+  return (
+    <>
+      <TableRow
+        className="border-b border-black/20 hover:bg-gray-50/50 cursor-pointer md:hidden"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {/* TYPE */}
+        <TableCell className="py-4 px-4 w-1/3">
+          <div className="flex items-center gap-2">
+            {getTransactionIcon(transaction.type)}
+            <span className="font-medium text-gray-900 text-sm">
+              {transaction.type}
+            </span>
+          </div>
+        </TableCell>
+
+        {/* AMOUNT */}
+        <TableCell className="py-4 px-4 w-1/3">
+          <div className="text-black/70 font-bold text-sm">
+            {transaction.amount}
+          </div>
+        </TableCell>
+
+        {/* STATUS with Chevron */}
+        <TableCell className="py-4 px-4 w-1/3">
+          <div className="flex items-center justify-between">
+            <StatusBadge status={transaction.status} />
+            {isOpen ? (
+              <ChevronUp className="h-4 w-4 text-gray-500 ml-2 flex-shrink-0" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-gray-500 ml-2 flex-shrink-0" />
+            )}
+          </div>
+        </TableCell>
+      </TableRow>
+
+      {/* Expanded Content Row */}
+      {isOpen && (
+        <TableRow className="border-b border-black/20 bg-gray-50/30 md:hidden">
+          <TableCell colSpan={3} className="py-3 px-4">
+            <div className="space-y-2 text-sm">
+              {/* Currency Details */}
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-600">Currency:</span>
+                <div className="flex items-center text-black/70 font-bold text-xs">
+                  {transaction.toCurrency ? (
+                    <div className="flex items-center gap-2">
+                      <span>{transaction.fromCurrency}</span>
+                      <span>→</span>
+                      <span>{transaction.toCurrency}</span>
+                    </div>
+                  ) : (
+                    <span>{transaction.fromCurrency}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Date */}
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-600">Date:</span>
+                <span className="text-black/70 font-medium text-xs">
+                  {transaction.date}
+                </span>
+              </div>
+
+              {/* USD Value */}
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-600">USD Value:</span>
+                <span className="text-xs text-[#787878]/60">
+                  {transaction.usdAmount}
+                </span>
+              </div>
+            </div>
+          </TableCell>
+        </TableRow>
+      )}
+    </>
   );
 }
 
@@ -81,117 +192,154 @@ export function TransactionList({ transactions }: TransactionListProps) {
   // Count transactions for each filter
   const counts = {
     All: transactions.length,
-    Deposit: transactions.filter(t => t.type === "Deposit").length,
-    Withdrawal: transactions.filter(t => t.type === "Withdraw").length,
-    Convert: transactions.filter(t => t.type === "Convert").length,
+    Deposit: transactions.filter((t) => t.type === "Deposit").length,
+    Withdrawal: transactions.filter((t) => t.type === "Withdraw").length,
+    Convert: transactions.filter((t) => t.type === "Convert").length,
   };
 
   return (
     <div className="space-y-6">
-      {/* Header with Filters */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
-        
-        <div className="flex items-center bg-[#D0D8DE80]/50   rounded-[10px] gap-2  shadow">
-          <FilterButton
-            filter="All"
-            activeFilter={activeFilter}
-            onClick={() => setActiveFilter("All")}
-            count={counts.All}
-          />
-          <FilterButton
-            filter="Deposit"
-            activeFilter={activeFilter}
-            onClick={() => setActiveFilter("Deposit")}
-          />
-          <FilterButton
-            filter="Withdrawal"
-            activeFilter={activeFilter}
-            onClick={() => setActiveFilter("Withdrawal")}
-          />
-          <FilterButton
-            filter="Convert"
-            activeFilter={activeFilter}
-            onClick={() => setActiveFilter("Convert")}
-          />
-        </div>
+
+        <Tabs
+          value={activeFilter}
+          onValueChange={(value) => setActiveFilter(value as TransactionFilter)}
+          className="w-auto"
+        >
+          <TabsList className="bg-[#D0D8DE80] h-auto">
+            <TabsTrigger
+              value="All"
+              className="data-[state=active]:bg-white data-[state=active]:text-black/70 text-black/60 px-4 py-3 text-xs rounded-xl"
+            >
+              All {counts.All > 0 && <span className="ml-1">{counts.All}</span>}
+            </TabsTrigger>
+            <TabsTrigger
+              value="Deposit"
+              className="data-[state=active]:bg-white data-[state=active]:text-black/70
+               text-black/60 px-4 py-3 text-xs rounded-xl"
+            >
+              Deposit
+            </TabsTrigger>
+            <TabsTrigger
+              value="Withdrawal"
+              className="data-[state=active]:bg-white data-[state=active]:text-black/70
+               text-black/60 px-4 py-3 text-xs rounded-xl"
+            >
+              Withdrawal
+            </TabsTrigger>
+            <TabsTrigger
+              value="Convert"
+              className="data-[state=active]:bg-white data-[state=active]:text-black/70 text-black/60 px-4 py-3 text-xs rounded-xl"
+            >
+              Convert
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Transactions Table or Empty State */}
       {filteredTransactions.length === 0 ? (
         <EmptyTransaction />
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-          {/* Table Header */}
-          <div className="border-b border-gray-100 bg-white/60">
-            <div className="grid grid-cols-5 gap-4 py-4 px-6">
-              <div className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                TYPE
-              </div>
-              <div className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                CURRENCY
-              </div>
-              <div className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                DATE
-              </div>
-              <div className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                STATUS
-              </div>
-              <div className="text-sm font-medium text-gray-500 uppercase tracking-wider text-right">
-                AMOUNT
-              </div>
-            </div>
-          </div>
+        <div className="bg-white rounded-t-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <Table>
+            <TableHeader className="bg-white/60">
+              <TableRow className="border-b border-black/20 hover:bg-transparent">
+                {/* Desktop Headers */}
+                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-6 hidden md:table-cell">
+                  TYPE
+                </TableHead>
+                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-6 hidden md:table-cell">
+                  CURRENCY
+                </TableHead>
+                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-6 hidden md:table-cell">
+                  DATE
+                </TableHead>
+                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-6 hidden md:table-cell">
+                  STATUS
+                </TableHead>
+                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-6 text-right hidden md:table-cell">
+                  AMOUNT
+                </TableHead>
 
-          {/* Table Body */}
-          <div className="divide-y divide-gray-50">
-            {filteredTransactions.map((transaction) => (
-              <div key={transaction.id} className="grid grid-cols-5 gap-4 py-4 px-6 hover:bg-gray-50/50">
-                {/* Type */}
-                <div className="flex items-center gap-3">
-                  {getTransactionIcon(transaction.type)}
-                  <span className="font-medium text-gray-900">
-                    {transaction.type}
-                  </span>
-                </div>
+                {/* Mobile Headers - 3 columns properly aligned */}
+                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-4 w-1/3 md:hidden">
+                  TYPE
+                </TableHead>
+                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-4 w-1/3 md:hidden">
+                  AMOUNT
+                </TableHead>
+                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-4 w-1/3 md:hidden">
+                  STATUS
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredTransactions.map((transaction) => (
+                <React.Fragment key={transaction.id}>
+                  {/* Desktop Row */}
+                  <TableRow
+                    key={`desktop-${transaction.id}`}
+                    className="border-b border-black/20 hover:bg-gray-50/50 hidden md:table-row"
+                  >
+                    {/* Type */}
+                    <TableCell className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        {getTransactionIcon(transaction.type)}
+                        <span className="font-medium text-gray-900">
+                          {transaction.type}
+                        </span>
+                      </div>
+                    </TableCell>
 
-                {/* Currency */}
-                <div className="flex items-center text-gray-600">
-                  {transaction.toCurrency ? (
-                    <div className="flex items-center gap-2">
-                      <span>{transaction.fromCurrency}</span>
-                      <span>→</span>
-                      <span>{transaction.toCurrency}</span>
-                    </div>
-                  ) : (
-                    <span>{transaction.fromCurrency}</span>
-                  )}
-                </div>
+                    {/* Currency */}
+                    <TableCell className="py-4 px-6">
+                      <div className="flex items-center text-black/70 font-bold text-xs">
+                        {transaction.toCurrency ? (
+                          <div className="flex items-center text-xs text-black/70 font-bold gap-2">
+                            <span>{transaction.fromCurrency}</span>
+                            <span>→</span>
+                            <span>{transaction.toCurrency}</span>
+                          </div>
+                        ) : (
+                          <span>{transaction.fromCurrency}</span>
+                        )}
+                      </div>
+                    </TableCell>
 
-                {/* Date */}
-                <div className="flex items-center text-gray-600">
-                  {transaction.date}
-                </div>
+                    {/* Date */}
+                    <TableCell className="py-4 px-6 text-black/70 font-medium text-xs">
+                      {transaction.date}
+                    </TableCell>
 
-                {/* Status */}
-                <div className="flex items-center">
-                  <StatusBadge status={transaction.status} />
-                </div>
+                    {/* Status */}
+                    <TableCell className="py-4 px-6">
+                      <StatusBadge status={transaction.status} />
+                    </TableCell>
 
-                {/* Amount */}
-                <div className="text-right">
-                  <div className="font-semibold text-gray-900">
-                    {transaction.amount}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {transaction.usdAmount}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                    {/* Amount */}
+                    <TableCell className="py-4 px-6 text-right">
+                      <div className="text-black/70 font-bold text-xs">
+                        {transaction.amount}
+                      </div>
+                      <div className="text-xs text-[#787878]/60">
+                        {transaction.usdAmount}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+
+                  {/* Mobile Accordion Row */}
+                  <MobileAccordionRow
+                    key={`mobile-${transaction.id}`}
+                    transaction={transaction}
+                  />
+                </React.Fragment>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>
   );
-} 
+}

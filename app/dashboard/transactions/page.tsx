@@ -1,5 +1,6 @@
 import { TransactionList } from "@/components/dashboard/TransactionList";
 import { Transaction } from "@/types/transaction";
+import { Card, CardContent } from "@/components/ui/card";
 
 // Dummy transaction data
 const dummyTransactions: Transaction[] = [
@@ -83,11 +84,13 @@ const dummyTransactions: Transaction[] = [
 
 export default function TransactionsPage() {
   return (
-    <div className="p-6">
-      <TransactionList transactions={dummyTransactions} />
+    <div className="container mx-auto p-6 space-y-6">
+      <Card className="border-0 shadow-none bg-transparent">
+        <CardContent className="p-0">
+          <TransactionList transactions={dummyTransactions} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
-// For testing empty state, you can replace dummyTransactions with an empty array:
-// <TransactionList transactions={[]} /> 
