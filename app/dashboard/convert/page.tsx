@@ -1,30 +1,15 @@
 "use client";
 
 import { ConversionForm } from "@/components/dashboard/conversion-form";
-import { TokenSelectorModal } from "@/components/dashboard/modals/token-selector-modal";
-import { ConfirmationModal } from "@/components/dashboard/modals/confirmation-modal";
-import { ProcessingModal } from "@/components/dashboard/modals/processing-modal";
-import { SuccessModal } from "@/components/dashboard/modals/success-modal";
 import { useConversion } from "@/hooks/useConversion";
 
 export default function DashboardPage() {
   // const [activeTab, setActiveTab] = useState("Convert")
 
-  const {
-    conversionData,
-    conversionState,
-    showTokenSelector,
-    currencies,
-    selectToken,
-    proceedConversion,
-    cancelConversion,
-    closeConversion,
-    viewWallet,
-    closeTokenSelector,
-  } = useConversion();
+  const { conversionState } = useConversion();
   console.log(conversionState === "processing");
   return (
-    <div className="min-h-screen bg-[#EBEBEB] bg-gray-50 flex">
+    <div className="min-h-screen bg-gradient-to-r from-[#EFEDED] to-[#ACB4B7] flex">
       <div className="flex-1">
         <ConversionForm />
       </div>

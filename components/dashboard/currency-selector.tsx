@@ -27,7 +27,7 @@ export function CurrencySelector({
       } ${className}`}
     >
       {currency}
-      <ChevronDown className="w-12 h-6 ml-2" />
+      <ChevronDown className="w-4 h-4 ml-2" />
     </Button>
   );
 }

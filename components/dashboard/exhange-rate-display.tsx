@@ -7,6 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import millify from "millify";
 
 interface ExchangeRateDisplayProps {
   fromCurrency: string;
@@ -24,7 +25,8 @@ export function ExchangeRateDisplay({
   return (
     <div className="flex items-center font-medium justify-between mb-6 text-sm text-gray-600">
       <span className="flex font-semibold gap-4">
-        1 {fromCurrency} ≈ {exchangeRate} {toCurrency}
+        1 {fromCurrency} ≈ {millify(Number(exchangeRate.replace(",", "")))}{" "}
+        {toCurrency}
       </span>
       <TooltipProvider>
         <Tooltip>

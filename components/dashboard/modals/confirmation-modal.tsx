@@ -11,7 +11,7 @@ import {
 import { ConversionData } from "@/types";
 import { ArrowRight, Info, X } from "lucide-react";
 import { useState } from "react";
-
+import { millify } from "millify";
 type ConfirmationModalProp = {
   data: ConversionData;
 };
@@ -22,6 +22,7 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
   >("confirm");
 
   console.log("Modal Scene", modalScene);
+  console.log("Conversion Data", data);
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -29,23 +30,30 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
           Convert
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] py-5 px-0 shadow-md">
+      <DialogContent className="sm:max-w-[425px] py-6 px-0 shadow-md">
         {modalScene === "confirm" && (
-          <>
-            <DialogHeader>
+          <div className="px-4 w-full">
+            <DialogHeader className=" flex flex-row py-3  w-full items-center justify-between">
               <DialogTitle>{"You're about to convert"}</DialogTitle>
+              <DialogClose className=" cursor-pointer ">
+                <X className="w-4 h-4" />
+              </DialogClose>
             </DialogHeader>
             <div className="space-y-6 w-full px-4 ">
               <div className="flex items-center w-full justify-between py-4 gap-4">
                 <div className="text-center flex items-center justify-center gap-2">
-                  <div className="text-2xl ">{data.fromAmount}</div>
+                  <div className="text-2xl ">
+                    {millify(Number(data.fromAmount.replace(",", "")))}
+                  </div>
                   <div className="text-lg text-black font-bold">
                     {data.fromCurrency}
                   </div>
                 </div>
                 <ArrowRight className="w-5 h-5 text-gray-400 " />
                 <div className="text-center flex items-center justify-center gap-2">
-                  <div className="text-2xl ">{data.toAmount}</div>
+                  <div className="text-2xl ">
+                    {millify(Number(data.toAmount.replace(",", "")))}
+                  </div>
                   <div className="text-lg text-black font-bold">
                     {data.toCurrency}
                   </div>
@@ -115,7 +123,7 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
                 </Button>
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {modalScene === "processing" && (
@@ -173,14 +181,17 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
                     <p>
                       {" "}
                       <span className=" font-semibold">
-                        {data.fromAmount}
+                        {millify(Number(data.fromAmount.replace(",", "")))}
                       </span>{" "}
                       {data.fromCurrency}
                     </p>
                     to{" "}
                     <p>
-                      <span className=" font-semibold"> {data.toAmount}</span>{" "}
-                      {data.toCurrency}.
+                      <span className=" font-semibold">
+                        {" "}
+                        {millify(Number(data.toAmount.replace(",", "")))}
+                      </span>{" "}
+                      {data.toCurrency}
                     </p>
                   </div>
                 </div>

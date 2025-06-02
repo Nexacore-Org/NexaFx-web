@@ -64,7 +64,7 @@ export function ConversionForm() {
                 <CurrencySelector
                   currency={conversionData.fromCurrency}
                   onClick={() => openTokenSelector("from")}
-                  className="absolute px-12 py-4 right-0 cursor-pointer rounded-lg text-lg"
+                  className="absolute w-16 h-10 right-0 cursor-pointer rounded-lg text-lg"
                 />
               </div>
             </div>
@@ -106,7 +106,7 @@ export function ConversionForm() {
                   currency={conversionData.toCurrency}
                   variant="default"
                   onClick={() => openTokenSelector("to")}
-                  className="absolute rounded-lg px-12 py-4 cursor-pointer right-0 text-lg"
+                  className="absolute rounded-lg w-16 h-10 cursor-pointer right-0 text-lg"
                 />
               </div>
             </div>
