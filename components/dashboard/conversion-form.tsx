@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { ArrowDown } from "lucide-react";
 // import type { ConversionData } from "@/types";
 import { CurrencySelector } from "./currency-selector";
@@ -8,9 +7,9 @@ import { ExchangeRateDisplay } from "./exhange-rate-display";
 import { useConversion } from "@/hooks/useConversion";
 import { TokenSelectorModal } from "./modals/token-selector-modal";
 import { ConfirmationModal } from "./modals/confirmation-modal";
-import { useState } from "react";
-import { ProcessingModal } from "./modals/processing-modal";
-import { SuccessModal } from "./modals/success-modal";
+// import { useState } from "react";
+// import { ProcessingModal } from "./modals/processing-modal";
+// import { SuccessModal } from "./modals/success-modal";
 
 // interface ConversionFormProps {
 //   data: ConversionData;
@@ -22,20 +21,16 @@ import { SuccessModal } from "./modals/success-modal";
 export function ConversionForm() {
   const {
     conversionData,
-    conversionState,
     showTokenSelector,
     currencies,
     selectToken,
-    proceedConversion,
-    cancelConversion,
-    closeConversion,
-    viewWallet,
+
     handleAmountChange,
     openTokenSelector,
     closeTokenSelector,
   } = useConversion();
 
-  const [showConfirmation, setShowConfirmation] = useState(false);
+  // const [showConfirmation, setShowConfirmation] = useState(false);
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
@@ -127,12 +122,7 @@ export function ConversionForm() {
         />
 
         {/* Convert Button */}
-        <Button
-          onClick={() => setShowConfirmation(true)}
-          className="w-full bg-yellow-400 hover:bg-yellow-500 text-black rounded-sm font-semibold h-[76px] text-xl rounded-xl"
-        >
-          Convert
-        </Button>
+        <ConfirmationModal data={conversionData} />
       </div>
 
       <TokenSelectorModal
@@ -140,25 +130,6 @@ export function ConversionForm() {
         onClose={closeTokenSelector}
         onSelect={selectToken}
         currencies={currencies}
-      />
-
-      <ConfirmationModal
-        isOpen={showConfirmation}
-        onCancel={() => setShowConfirmation(false)}
-        data={conversionData}
-        onProceed={proceedConversion}
-      />
-      <ProcessingModal
-        isOpen={conversionState === "processing"}
-        data={conversionData}
-        onCancel={cancelConversion}
-      />
-
-      <SuccessModal
-        isOpen={conversionState === "success"}
-        data={conversionData}
-        onClose={closeConversion}
-        onViewWallet={viewWallet}
       />
     </div>
   );

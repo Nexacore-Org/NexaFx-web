@@ -117,7 +117,12 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  .shadow-custom {
+    @apply shadow-[0px_1px_3px_0px_rgba(0, 0, 0, 0.02), 0px_0px_0px_1px_rgba(27, 31, 35, 0.15)];
   }
 }
