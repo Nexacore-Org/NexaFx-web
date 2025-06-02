@@ -12,12 +12,12 @@
 // }
 
 // components/Layout.tsx
-'use client';
+"use client";
 
-import { ReactNode } from 'react';
-import { useSidebarStore } from '@/store/sidebarStore';
-import Navbar from '@/components/dashboard/Navbar';
-import Sidebar from '@/components/dashboard/Sidebar';
+import { ReactNode } from "react";
+import { useSidebarStore } from "@/store/sidebarStore";
+import Navbar from "@/components/dashboard/Navbar";
+import Sidebar from "@/components/dashboard/Sidebar";
 
 interface LayoutProps {
   children: ReactNode;
@@ -35,7 +35,8 @@ export default function Layout({ children }: LayoutProps) {
       <div
         className={`p-4 transition-all duration-300 ${
           isCollapsed ? "lg:ml-16" : "lg:ml-64"
-        } pt-20`}>
+        } pt-20`}
+      >
         <div className="p-4 rounded-lg min-h-[calc(100vh-120px)]">
           {children}
         </div>
