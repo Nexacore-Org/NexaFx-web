@@ -26,7 +26,7 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="w-full bg-yellow-400 hover:bg-yellow-500 text-black rounded-sm font-semibold h-[76px] text-xl rounded-xl">
+        <Button className="w-full bg-yellow-400 hover:bg-yellow-500 text-black rounded-sm font-semibold h-[65px] text-xl rounded-lg">
           Convert
         </Button>
       </DialogTrigger>

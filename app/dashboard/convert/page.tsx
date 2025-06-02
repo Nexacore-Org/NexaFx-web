@@ -9,7 +9,7 @@ export default function DashboardPage() {
   const { conversionState } = useConversion();
   console.log(conversionState === "processing");
   return (
-    <div className="min-h-screen bg-gradient-to-r from-[#EFEDED] to-[#ACB4B7] flex">
+    <div className="min-h-screen bg-[linear-gradient(to_bottom_right,_#EFEDED,_#ACB4B7)] flex">
       <div className="flex-1">
         <ConversionForm />
       </div>

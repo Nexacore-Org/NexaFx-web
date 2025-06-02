@@ -20,8 +20,8 @@ export function ExchangeRateDisplay({
   fromCurrency,
   toCurrency,
   exchangeRate,
-  fee,
-}: ExchangeRateDisplayProps) {
+}: // fee,
+ExchangeRateDisplayProps) {
   return (
     <div className="flex items-center font-medium justify-between mb-6 text-sm text-gray-600">
       <span className="flex font-semibold gap-4">
@@ -70,7 +70,7 @@ export function ExchangeRateDisplay({
                   />
                 </svg>
               </div>
-              <span>{fee}</span>
+              <span>{0.2} USDC</span>
               <ChevronDown className="w-3 h-3" />
             </div>
           </TooltipTrigger>
