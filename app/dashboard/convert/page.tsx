@@ -1,6 +1,6 @@
 "use client";
 
-import { ConversionForm } from "@/components/dashboard/conversion-form";
+import { ConversionForm } from "@/components/dashboard/convert/conversion-form";
 import { useConversion } from "@/hooks/useConversion";
 
 export default function DashboardPage() {
