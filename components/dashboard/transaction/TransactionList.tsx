@@ -8,7 +8,7 @@ import {
   TransactionFilter,
   TransactionType,
 } from "@/types/transaction";
-import { EmptyTransaction } from "./EmptyTransaction";
+import { EmptyTransaction } from "./transaction/EmptyTransaction";
 import {
   Table,
   TableBody,

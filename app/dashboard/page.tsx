@@ -1,8 +1,8 @@
 import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BalanceCard } from "@/components/dashboard/balance-card";
-import { PortfolioCard } from "@/components/dashboard/portfolio-card";
-import { TransactionsTable } from "@/components/dashboard/transactions-table";
+import { BalanceCard } from "@/components/dashboard/home/balance-card";
+import { PortfolioCard } from "@/components/dashboard/convert/portfolio-card";
+import { TransactionsTable } from "@/components/dashboard/transaction/transactions-table";
 
 const portfolioData = [
   {
