@@ -8,7 +8,7 @@ import {
   TransactionFilter,
   TransactionType,
 } from "@/types/transaction";
-import { EmptyTransaction } from "./EmptyTransaction";
+
 import {
   Table,
   TableBody,
@@ -20,6 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from "react";
+import { EmptyTransaction } from "./EmptyTransaction";
 
 interface TransactionListProps {
   transactions: Transaction[];

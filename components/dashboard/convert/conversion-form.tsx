@@ -1,11 +1,14 @@
 "use client";
 
 // import type { ConversionData } from "@/types";
+
+import { useConversion } from "@/hooks/useConversion";
+import { ConfirmationModal } from "../modals/confirmation-modal";
 import { CurrencySelector } from "./currency-selector";
 import { ExchangeRateDisplay } from "./exhange-rate-display";
-import { useConversion } from "@/hooks/useConversion";
+import Image from "next/image";
 // import { TokenSelectorModal } from "./modals/token-selector-modal";
-import { ConfirmationModal } from "./modals/confirmation-modal";
+
 // import { useState } from "react";
 // import { ProcessingModal } from "./modals/processing-modal";
 // import { SuccessModal } from "./modals/success-modal";
@@ -55,7 +58,7 @@ export function ConversionForm() {
                       (parts.length > 1 ? "." + parts[1] : "");
                     handleAmountChange("from", formattedValue);
                   }}
-                  className="text-5xl focus:outline-none placeholder:text-gray-400 font-semibold w-full p-2 border-none p-0 bg-transparent"
+                  className="text-5xl focus:outline-none placeholder:text-gray-400 font-semibold w-full border-none p-0 bg-transparent"
                   placeholder="0"
                   type="text"
                   inputMode="decimal"
@@ -74,7 +77,7 @@ export function ConversionForm() {
           {/* Swap Icon */}
           <div className="flex justify-center absolute left-0 right-0 top-[8.5rem]  ">
             <div className="w-10 h-10 bg-gray-200 rounded-full border flex items-center justify-center">
-              <img src={"/convert-arrow.png"} />
+              <Image src={"/convert-arrow.png"} alt="arrow" width={100} height={100} />
             </div>
           </div>
 
@@ -98,7 +101,7 @@ export function ConversionForm() {
                       (parts.length > 1 ? "." + parts[1] : "");
                     handleAmountChange("to", formattedValue);
                   }}
-                  className="text-5xl focus:outline-none placeholder:text-gray-400 p-2 font-semibold border-none w-full p-0 bg-transparent"
+                  className="text-5xl focus:outline-none placeholder:text-gray-400 font-semibold border-none w-full p-0 bg-transparent"
                   placeholder="0"
                   type="text"
                   inputMode="decimal"

@@ -1,6 +1,6 @@
-import { TransactionList } from "@/components/dashboard/TransactionList";
 import { Transaction } from "@/types/transaction";
 import { Card, CardContent } from "@/components/ui/card";
+import { TransactionList } from "@/components/dashboard/transaction/TransactionList";
 
 // Dummy transaction data
 const dummyTransactions: Transaction[] = [

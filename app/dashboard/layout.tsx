@@ -16,8 +16,8 @@
 
 import { ReactNode } from "react";
 import { useSidebarStore } from "@/store/sidebarStore";
-import Navbar from "@/components/dashboard/Navbar";
-import Sidebar from "@/components/dashboard/Sidebar";
+import Navbar from "@/components/header/Navbar";
+import Sidebar from "@/components/header/Sidebar";
 
 interface LayoutProps {
   children: ReactNode;

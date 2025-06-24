@@ -7,10 +7,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "../ui/input";
+
 import { Currency } from "@/types";
-import { Button } from "../ui/button";
+
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 interface CurrencySelectorProps {
   currency: string;
   variant?: "outline" | "default";
