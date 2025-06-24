@@ -63,12 +63,12 @@ Ensure you have the following installed:
 1. **Fork the repository** on GitHub.
 2. Clone your fork to your local machine:
    ```sh
-   git clone https://github.com/your-username/ByteChain-Academy.git
+   git clone https://github.com/your-username/NexaFx-web.git
    cd Nexafx-web
    ```
 3. Add the upstream repository:
    ```sh
-   git remote add upstream https://github.com/official-repo/Nexafx-web.git
+   git remote add upstream https://github.com/Nexacore-Org/Nexafx-web.git
    ```
 
 ### Install Dependencies
