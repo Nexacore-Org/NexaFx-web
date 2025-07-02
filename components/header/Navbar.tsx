@@ -4,12 +4,12 @@
 import { Menu, ChevronLeft, BellDot } from "lucide-react";
 import { useSidebarStore } from "@/store/sidebarStore";
 import Image from "next/image";
-import clsx from "clsx";
-import { useState } from "react";
+// import clsx from "clsx";
+// import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Button } from "../ui/button";
 
-const navItems = ["Dashboard", "Convert"];
+// const navItems = ["Dashboard", "Convert"];
 
 const pageNames: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -23,7 +23,7 @@ export default function Navbar() {
   const pathname = usePathname();
 
   const currentPageName = pageNames[pathname] || "Dashboard";
-  const [active, setActive] = useState("Dashboard");
+  // const [active, setActive] = useState("Dashboard");
   const { isCollapsed, toggleCollapse, toggleMobile } = useSidebarStore();
 
   return (
