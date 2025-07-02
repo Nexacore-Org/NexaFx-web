@@ -1,5 +1,5 @@
 import { RefreshCw } from "lucide-react";
-import { Button } from "../../ui/button";
+import { Button } from "../../ui/but";
 
 export default function ExchangePreviewCard() {
   return (

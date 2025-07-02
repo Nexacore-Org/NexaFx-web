@@ -84,8 +84,8 @@ const dummyTransactions: Transaction[] = [
 
 export default function TransactionsPage() {
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <Card className="border-0 shadow-none bg-transparent">
+    <div className="container mx-auto p-0 bg-white space-y-6">
+      <Card className="border-0 shadow-none pb-0">
         <CardContent className="p-0">
           <TransactionList transactions={dummyTransactions} />
         </CardContent>

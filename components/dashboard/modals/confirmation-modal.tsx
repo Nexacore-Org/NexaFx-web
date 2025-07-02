@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/but";
 import {
   Dialog,
   DialogClose,
@@ -71,8 +71,7 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
                       height="25"
                       viewBox="0 0 25 25"
                       fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
+                      xmlns="http://www.w3.org/2000/svg">
                       <path
                         d="M15.375 18.5195H10.375"
                         stroke="black"
@@ -117,8 +116,7 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
                       setModalScene("success");
                     }, 3000);
                   }}
-                  className="flex-1 bg-yellow-400 hover:bg-yellow-500 h-10 text-md text-black"
-                >
+                  className="flex-1 bg-yellow-400 hover:bg-yellow-500 h-10 text-md text-black">
                   Proceed
                 </Button>
               </div>
@@ -144,8 +142,7 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
                       height="131"
                       viewBox="0 0 130 131"
                       fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
+                      xmlns="http://www.w3.org/2000/svg">
                       <path
                         d="M118.011 54.3726C120.481 66.4955 118.72 79.0989 113.023 90.081C107.325 101.063 98.0351 109.76 86.7014 114.721C75.3677 119.683 62.6757 120.609 50.7419 117.345C38.8081 114.081 28.3539 106.825 21.1227 96.786C13.8915 86.7472 10.3203 74.5328 11.0048 62.1797C11.6892 49.8266 16.5879 38.0815 24.8839 28.903C33.1799 19.7246 44.3718 13.6676 56.5931 11.7421C68.8144 9.8167 81.3264 12.1392 92.0426 18.3223"
                         stroke="#0765FF"
@@ -170,8 +167,7 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
                         setModalScene("confirm");
                       }, 1000);
                     }}
-                    className="absolute cursor-pointer right-4 top-4"
-                  >
+                    className="absolute cursor-pointer right-4 top-4">
                     <X className="w-4 h-4" />
                   </DialogClose>
                   <h3 className="text-lg font-semibold">
@@ -204,8 +200,7 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
                       setModalScene("confirm");
                     }, 1000);
                   }}
-                  className="flex-1 h-12  cursor-pointer  border rounded-md "
-                >
+                  className="flex-1 h-12  cursor-pointer  border rounded-md ">
                   Close
                 </DialogClose>
                 <DialogClose
@@ -214,8 +209,7 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
                       setModalScene("confirm");
                     }, 1000);
                   }}
-                  className="flex-1  h-12 cursor-pointer   rounded-md   bg-yellow-400 hover:bg-yellow-500 text-black"
-                >
+                  className="flex-1  h-12 cursor-pointer   rounded-md   bg-yellow-400 hover:bg-yellow-500 text-black">
                   View wallet
                 </DialogClose>
               </div>

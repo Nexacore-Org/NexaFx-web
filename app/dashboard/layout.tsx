@@ -27,7 +27,7 @@ export default function Layout({ children }: LayoutProps) {
   const { isCollapsed } = useSidebarStore();
 
   return (
-    <div className="bg-[linear-gradient(to_bottom_right,_#EFEDED,_#ACB4B7)] min-h-screen">
+    <div className="bg-[#F0F0F0] min-h-screen">
       <Navbar />
       <Sidebar />
 
@@ -35,8 +35,7 @@ export default function Layout({ children }: LayoutProps) {
       <div
         className={`p-4 transition-all duration-300 ${
           isCollapsed ? "lg:ml-16" : "lg:ml-64"
-        } pt-20`}
-      >
+        } pt-20`}>
         <div className="p-4 rounded-lg min-h-[calc(100vh-120px)]">
           {children}
         </div>

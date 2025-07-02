@@ -11,7 +11,7 @@ import {
 import { Currency } from "@/types";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/but";
 import { Input } from "@/components/ui/input";
 interface CurrencySelectorProps {
   currency: string;
@@ -41,8 +41,7 @@ export function CurrencySelector({
           variant === "default"
             ? "bg-blue-500 text-lg hover:bg-blue-600 text-white  rounded-full"
             : ""
-        } ${className}`}
-      >
+        } ${className}`}>
         {currency}
         <ChevronDown className="w-4 h-4" />
       </DropdownMenuTrigger>
@@ -50,16 +49,14 @@ export function CurrencySelector({
         onFocusOutside={() => {
           setOpen(false);
         }}
-        className="sm:max-w-[611px] h-[223px] px-6  py-3  overflow-hidden mt-1 -ml-64"
-      >
+        className="sm:max-w-[611px] h-[223px] px-6  py-3  overflow-hidden mt-1 -ml-64">
         <div className="w-full flex items-center justify-between">
           <div className="text-black font-semibold">Select Token</div>
           <Button
             variant={"ghost"}
             onClick={() => {
               setOpen(false);
-            }}
-          >
+            }}>
             <X />
           </Button>
         </div>
@@ -79,8 +76,7 @@ export function CurrencySelector({
                   onSelect(currency);
                   setOpen(false);
                 }}
-                className="flex bg-[#EBEBEB] cursor-pointer flex-col items-center px-3 py-1 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
-              >
+                className="flex bg-[#EBEBEB] cursor-pointer flex-col items-center px-3 py-1 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
                 <div className="w-6 h-6 bg-[#B7B7B799] rounded-md flex items-center justify-center">
                   {/* <span className="text-sm font-semibold">{currency.icon}</span> */}
                 </div>
@@ -93,8 +89,7 @@ export function CurrencySelector({
           <div className="h-[0.5px] bg-gray-500/30 w-1/2"></div>
           <Button
             className="hover:bg-transparent font-light text-xs p-0"
-            variant={"ghost"}
-          >
+            variant={"ghost"}>
             Show more
           </Button>
           <div className="h-[0.5px]  bg-gray-500/30 w-1/2"></div>
