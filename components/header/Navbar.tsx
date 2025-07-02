@@ -4,13 +4,26 @@
 import { Menu, ChevronLeft, BellDot } from "lucide-react";
 import { useSidebarStore } from "@/store/sidebarStore";
 import Image from "next/image";
-import clsx from "clsx";
-import { useState } from "react";
+// import clsx from "clsx";
+// import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { Button } from "../ui/button";
 
-const navItems = ["Dashboard", "Convert"];
+// const navItems = ["Dashboard", "Convert"];
+
+const pageNames: Record<string, string> = {
+  "/dashboard": "Dashboard",
+  "/dashboard/convert": "Convert",
+  "/dashboard/transactions": "Transactions",
+  "/dashboard/settings": "Settings",
+  "/dashboard/notifications": "Notifications",
+};
 
 export default function Navbar() {
-  const [active, setActive] = useState("Dashboard");
+  const pathname = usePathname();
+
+  const currentPageName = pageNames[pathname] || "Dashboard";
+  // const [active, setActive] = useState("Dashboard");
   const { isCollapsed, toggleCollapse, toggleMobile } = useSidebarStore();
 
   return (
@@ -73,32 +86,20 @@ export default function Navbar() {
 
           <nav className="flex items-center justify-between w-full px-10 py-4">
             {/* Left nav items */}
-            <div className="flex space-x-6">
-              {navItems.map((item) => (
-                <button
-                  key={item}
-                  onClick={() => setActive(item)}
-                  className={clsx(
-                    "relative font-medium text-lg",
-                    active === item ? "text-black font-bold" : "text-gray-600",
-                    "transition"
-                  )}>
-                  {item}
-                  {active === item && (
-                    <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-blue-500" />
-                  )}
-                </button>
-              ))}
-            </div>
+            <nav className="flex items-center gap-1">
+              <Button variant="ghost" className="h-8 px-3 text-2xl">
+                {currentPageName}
+              </Button>
+            </nav>
 
             {/* Search bar */}
-            <div className="flex-1 flex justify-center mx-10">
+            {/* <div className="flex-1 flex justify-center mx-10">
               <input
                 type="text"
                 placeholder="Search..."
                 className="w-full max-w-md px-5 py-2 rounded-full bg-white text-gray-700 placeholder-gray-400 focus:outline-none"
               />
-            </div>
+            </div> */}
 
             {/* Right icons */}
             <div className="flex items-center space-x-4">

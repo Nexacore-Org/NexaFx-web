@@ -8,8 +8,7 @@ export default function HeroCTA() {
       <Link href="/sign-up">
         <Button
           size="lg"
-          className="bg-gradient-to-r from-blue-500 to-yellow-500 text-white"
-        >
+          className="bg-gradient-to-r from-blue-500 to-yellow-500 text-white">
           Start Trading <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </Link>

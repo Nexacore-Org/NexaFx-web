@@ -76,8 +76,7 @@ export default function Dashboard() {
           </Button>
           <Button
             variant="secondary"
-            className="bg-gray-400 hover:bg-gray-500 text-white rounded-full px-6 py-2 h-auto"
-          >
+            className="bg-gray-400 hover:bg-gray-500 text-white rounded-full px-6 py-2 h-auto">
             Withdraw
             <ArrowUp className="ml-2 h-4 w-4" />
           </Button>
@@ -107,8 +106,7 @@ export default function Dashboard() {
             </h2>
             <Button
               variant="ghost"
-              className="text-gray-600 hover:text-gray-900"
-            >
+              className="text-gray-600 hover:text-gray-900">
               See All
               <ChevronRight className="ml-1 h-4 w-4" />
             </Button>

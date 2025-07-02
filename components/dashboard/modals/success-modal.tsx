@@ -25,8 +25,7 @@ export function SuccessModal({
           variant="ghost"
           size="sm"
           className="absolute right-4 top-4"
-          onClick={onClose}
-        >
+          onClick={onClose}>
           <X className="w-4 h-4" />
         </Button>
         <div className="space-y-6 text-center">
@@ -51,8 +50,7 @@ export function SuccessModal({
             </Button>
             <Button
               onClick={onViewWallet}
-              className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black"
-            >
+              className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black">
               View wallet
             </Button>
           </div>

@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, X, ChevronDown, ChevronUp } from "lucide-react";
 import Image from "next/image";
-import {
+import type {
   Transaction,
   TransactionFilter,
   TransactionType,
 } from "@/types/transaction";
-
 import {
   Table,
   TableBody,
@@ -19,12 +18,14 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import React from "react";
 import { EmptyTransaction } from "./EmptyTransaction";
+import { useTransactions } from "@/hooks/transaction/useTransaction";
 
-interface TransactionListProps {
-  transactions: Transaction[];
-}
+// interface TransactionListProps {
+//   transactions: Transaction[];
+// }
 
 function getTransactionIcon(type: TransactionType) {
   switch (type) {
@@ -76,9 +77,8 @@ function StatusBadge({ status }: { status: "Success" | "Failed" }) {
     return (
       <Badge
         variant="outline"
-        className="bg-[#1BB72D]/20 text-[#009411]/90 font-bold flex items-center gap-1 rounded-full px-2 py-2 min-w-[104px] hover:bg-green-100"
-      >
-        <Check className="h-5 w-5" />
+        className="bg-[#1BB72D]/20 text-[#009411]/90 font-bold flex items-center gap-1 rounded-full px-2 py-1.5 min-w-[106px] hover:bg-green-100">
+        <Check className="h-6 w-6" />
         Success
       </Badge>
     );
@@ -87,9 +87,8 @@ function StatusBadge({ status }: { status: "Success" | "Failed" }) {
   return (
     <Badge
       variant="outline"
-      className="bg-[#C80808]/20 text-[#C80808]/90 border-red-200 font-bold flex items-center gap-1 rounded-full min-w-[104px] px-2 py-2 hover:bg-red-100"
-    >
-      <X className="h-5 w-5" />
+      className="bg-[#C80808]/20 text-[#C80808]/90 border-red-200 font-bold flex items-center gap-1 rounded-full min-w-[106px] px-2 py-1.5 hover:bg-red-100">
+      <X className="h-6 w-6" />
       Failed
     </Badge>
   );
@@ -103,8 +102,7 @@ function MobileAccordionRow({ transaction }: { transaction: Transaction }) {
     <>
       <TableRow
         className="border-b border-black/20 hover:bg-gray-50/50 cursor-pointer md:hidden"
-        onClick={() => setIsOpen(!isOpen)}
-      >
+        onClick={() => setIsOpen(!isOpen)}>
         {/* TYPE */}
         <TableCell className="py-4 px-4 w-1/3">
           <div className="flex items-center gap-2">
@@ -179,59 +177,188 @@ function MobileAccordionRow({ transaction }: { transaction: Transaction }) {
   );
 }
 
-export function TransactionList({ transactions }: TransactionListProps) {
+// Pagination Component
+function Pagination({
+  currentPage,
+  totalPages,
+  totalItems,
+  itemsPerPage,
+  onPageChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  onPageChange: (page: number) => void;
+}) {
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+  // Generate page numbers to show
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 6;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= maxVisiblePages; i++) {
+          pages.push(i);
+        }
+      } else if (currentPage >= totalPages - 2) {
+        for (let i = totalPages - maxVisiblePages + 1; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        for (let i = currentPage - 2; i <= currentPage + 3; i++) {
+          pages.push(i);
+        }
+      }
+    }
+
+    return pages;
+  };
+
+  const pageNumbers = getPageNumbers();
+
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 py-4 bg-white border-t border-gray-100">
+      {/* Left side - Showing entries text */}
+      <div className="text-sm text-gray-600">
+        Showing {startItem} to {endItem} of {totalItems} entries
+      </div>
+
+      {/* Right side - Navigation */}
+      <div className="flex items-center gap-1">
+        {/* Previous Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+          Previous
+        </Button>
+
+        {/* Page Numbers */}
+        {pageNumbers.map((pageNum) => (
+          <Button
+            key={pageNum}
+            variant={currentPage === pageNum ? "default" : "outline"}
+            size="sm"
+            onClick={() => onPageChange(pageNum)}
+            className={
+              currentPage === pageNum
+                ? "px-3 py-2 text-sm font-medium text-white bg-orange-500 border border-orange-500 rounded-md hover:bg-orange-600"
+                : "px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            }>
+            {pageNum}
+          </Button>
+        ))}
+
+        {/* Next Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+          Next
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export function TransactionList() {
+  const { data, isLoading } = useTransactions();
   const [activeFilter, setActiveFilter] = useState<TransactionFilter>("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  // const [loading, setLoading] = useState(true);
+  // const [transactionsData, setTransactionsData] = useState<Transaction[]>([]);
+
+  // useEffect(() => {
+  //   const fetchTransactions = async () => {
+  //     try {
+  //       setLoading(true);
+  //       const data = await fetchTransactions();
+  //       setTransactionsData(data);
+  //     } catch (error) {
+  //       console.error("Error fetching transactions:", error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchTransactions();
+  // }, [fetchTransactions]);
 
   // Filter transactions based on active filter
-  const filteredTransactions = transactions.filter((transaction) => {
+  const filteredTransactions = (data ?? []).filter((transaction) => {
     if (activeFilter === "All") return true;
     if (activeFilter === "Withdrawal") return transaction.type === "Withdraw";
     return transaction.type === activeFilter;
   });
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentTransactions = filteredTransactions.slice(startIndex, endIndex);
+
+  // Reset to first page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter]);
+
   // Count transactions for each filter
   const counts = {
-    All: transactions.length,
-    Deposit: transactions.filter((t) => t.type === "Deposit").length,
-    Withdrawal: transactions.filter((t) => t.type === "Withdraw").length,
-    Convert: transactions.filter((t) => t.type === "Convert").length,
+    All: (data ?? []).length,
+    Deposit: (data ?? []).filter((t) => t.type === "Deposit").length,
+    Withdrawal: (data ?? []).filter((t) => t.type === "Withdraw").length,
+    Convert: (data ?? []).filter((t) => t.type === "Convert").length,
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between bg-white p-4">
+        {/* Search bar */}
+        <div className="flex flex-1">
+          <input
+            type="text"
+            placeholder="Search..."
+            className="w-full max-w-md px-5 py-2 rounded-lg bg-[#F5F5F5] text-gray-700 placeholder-gray-400 focus:outline-none"
+          />
+        </div>
 
         <Tabs
           value={activeFilter}
           onValueChange={(value) => setActiveFilter(value as TransactionFilter)}
-          className="w-auto"
-        >
-          <TabsList className="bg-[#D0D8DE80] h-auto">
+          className="w-auto">
+          <TabsList className="bg-white/50 border h-auto rounded-xl">
             <TabsTrigger
               value="All"
-              className="data-[state=active]:bg-white data-[state=active]:text-black/70 text-black/60 px-4 py-3 text-xs rounded-xl"
-            >
+              className="data-[state=active]:bg-[#FFD552] data-[state=active]:text-black/70 text-black/60 px-5 py-3 text-xs rounded-xl">
               All {counts.All > 0 && <span className="ml-1">{counts.All}</span>}
             </TabsTrigger>
             <TabsTrigger
               value="Deposit"
-              className="data-[state=active]:bg-white data-[state=active]:text-black/70
-               text-black/60 px-4 py-3 text-xs rounded-xl"
-            >
+              className="data-[state=active]:bg-[#FFD552] data-[state=active]:text-black/70
+               text-black/60 px-5 py-3 text-xs rounded-xl">
               Deposit
             </TabsTrigger>
             <TabsTrigger
               value="Withdrawal"
-              className="data-[state=active]:bg-white data-[state=active]:text-black/70
-               text-black/60 px-4 py-3 text-xs rounded-xl"
-            >
+              className="data-[state=active]:bg-[#FFD552] data-[state=active]:text-black/70
+               text-black/60 px-5 py-3 text-xs rounded-xl">
               Withdrawal
             </TabsTrigger>
             <TabsTrigger
               value="Convert"
-              className="data-[state=active]:bg-white data-[state=active]:text-black/70 text-black/60 px-4 py-3 text-xs rounded-xl"
-            >
+              className="data-[state=active]:bg-[#FFD552] data-[state=active]:text-black/70 text-black/60 px-5 py-3 text-xs rounded-xl">
               Convert
             </TabsTrigger>
           </TabsList>
@@ -239,107 +366,123 @@ export function TransactionList({ transactions }: TransactionListProps) {
       </div>
 
       {/* Transactions Table or Empty State */}
-      {filteredTransactions.length === 0 ? (
-        <EmptyTransaction />
-      ) : (
-        <div className="bg-white rounded-t-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <Table>
-            <TableHeader className="bg-white/60">
-              <TableRow className="border-b border-black/20 hover:bg-transparent">
-                {/* Desktop Headers */}
-                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-6 hidden md:table-cell">
-                  TYPE
-                </TableHead>
-                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-6 hidden md:table-cell">
-                  CURRENCY
-                </TableHead>
-                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-6 hidden md:table-cell">
-                  DATE
-                </TableHead>
-                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-6 hidden md:table-cell">
-                  STATUS
-                </TableHead>
-                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-6 text-right hidden md:table-cell">
-                  AMOUNT
-                </TableHead>
+      <div className="p-6 bg-[#F0F0F0]">
+        {(isLoading || !data) ? (
+          <div className="text-center py-10 text-gray-500">
+            Loading transactions...
+          </div>
+        ) : filteredTransactions.length === 0 ? (
+          <EmptyTransaction />
+        ) : (
+          <div className="bg-white rounded-t-lg shadow-sm border border-gray-100 overflow-hidden">
+            <Table>
+              <TableHeader className="bg-white/60">
+                <TableRow className="border-b border-black/20 hover:bg-transparent">
+                  {/* Desktop Headers */}
+                  <TableHead className="text-xs font-bold text-black/70 uppercase tracking-wider py-4 px-6 hidden md:table-cell">
+                    TYPE
+                  </TableHead>
+                  <TableHead className="text-xs font-bold text-black/70 uppercase tracking-wider py-4 px-6 hidden md:table-cell">
+                    CURRENCY
+                  </TableHead>
+                  <TableHead className="text-xs font-bold text-black/70 uppercase tracking-wider py-4 px-6 hidden md:table-cell">
+                    DATE
+                  </TableHead>
+                  <TableHead className="text-xs font-bold text-black/70 uppercase tracking-wider py-4 px-6 hidden md:table-cell">
+                    STATUS
+                  </TableHead>
+                  <TableHead className="text-xs font-bold text-black/70 uppercase tracking-wider py-4 px-6 text-right hidden md:table-cell">
+                    AMOUNT
+                  </TableHead>
 
-                {/* Mobile Headers - 3 columns properly aligned */}
-                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-4 w-1/3 md:hidden">
-                  TYPE
-                </TableHead>
-                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-4 w-1/3 md:hidden">
-                  AMOUNT
-                </TableHead>
-                <TableHead className="text-sm font-bold text-black/50 uppercase tracking-wider py-4 px-4 w-1/3 md:hidden">
-                  STATUS
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTransactions.map((transaction) => (
-                <React.Fragment key={transaction.id}>
-                  {/* Desktop Row */}
-                  <TableRow
-                    key={`desktop-${transaction.id}`}
-                    className="border-b border-black/20 hover:bg-gray-50/50 hidden md:table-row"
-                  >
-                    {/* Type */}
-                    <TableCell className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        {getTransactionIcon(transaction.type)}
-                        <span className="font-medium text-gray-900">
-                          {transaction.type}
-                        </span>
-                      </div>
-                    </TableCell>
+                  {/* Mobile Headers - 3 columns properly aligned */}
+                  <TableHead className="text-xs font-bold text-black/70 uppercase tracking-wider py-4 px-4 w-1/3 md:hidden">
+                    TYPE
+                  </TableHead>
+                  <TableHead className="text-xs font-bold text-black/70 uppercase tracking-wider py-4 px-4 w-1/3 md:hidden">
+                    AMOUNT
+                  </TableHead>
+                  <TableHead className="text-xs font-bold text-black/70 uppercase tracking-wider py-4 px-4 w-1/3 md:hidden">
+                    STATUS
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentTransactions.map((transaction) => (
+                  <React.Fragment key={transaction.id}>
+                    {/* Desktop Row */}
+                    <TableRow
+                      key={`desktop-${transaction.id}`}
+                      className="border-b border-black/20 hover:bg-gray-50/50 hidden md:table-row">
+                      {/* Type */}
+                      <TableCell className="py-4 px-6">
+                        <div className="flex items-center gap-3">
+                          {getTransactionIcon(transaction.type)}
+                          <span className="font-medium text-gray-900">
+                            {transaction.type}
+                          </span>
+                        </div>
+                      </TableCell>
 
-                    {/* Currency */}
-                    <TableCell className="py-4 px-6">
-                      <div className="flex items-center text-black/70 font-bold text-xs">
-                        {transaction.toCurrency ? (
-                          <div className="flex items-center text-xs text-black/70 font-bold gap-2">
+                      {/* Currency */}
+                      <TableCell className="py-4 px-6">
+                        <div className="flex items-center text-black/70 font-bold text-xs">
+                          {transaction.toCurrency ? (
+                            <div className="flex items-center text-xs text-black/70 font-bold gap-2">
+                              <span>{transaction.fromCurrency}</span>
+                              <span>→</span>
+                              <span>{transaction.toCurrency}</span>
+                            </div>
+                          ) : (
                             <span>{transaction.fromCurrency}</span>
-                            <span>→</span>
-                            <span>{transaction.toCurrency}</span>
-                          </div>
-                        ) : (
-                          <span>{transaction.fromCurrency}</span>
-                        )}
-                      </div>
-                    </TableCell>
+                          )}
+                        </div>
+                      </TableCell>
 
-                    {/* Date */}
-                    <TableCell className="py-4 px-6 text-black/70 font-medium text-xs">
-                      {transaction.date}
-                    </TableCell>
+                      {/* Date */}
+                      <TableCell className="py-4 px-6 text-black/70 font-medium text-xs">
+                        {transaction.date}
+                      </TableCell>
 
-                    {/* Status */}
-                    <TableCell className="py-4 px-6">
-                      <StatusBadge status={transaction.status} />
-                    </TableCell>
+                      {/* Status */}
+                      <TableCell className="py-4 px-6">
+                        <StatusBadge status={transaction.status} />
+                      </TableCell>
 
-                    {/* Amount */}
-                    <TableCell className="py-4 px-6 text-right">
-                      <div className="text-black/70 font-bold text-xs">
-                        {transaction.amount}
-                      </div>
-                      <div className="text-xs text-[#787878]/60">
-                        {transaction.usdAmount}
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                      {/* Amount */}
+                      <TableCell className="py-4 px-6 text-right">
+                        <div className="text-black/70 font-bold text-xs">
+                          {transaction.amount}
+                        </div>
+                        <div className="text-xs text-[#787878]/60">
+                          {transaction.usdAmount}
+                        </div>
+                      </TableCell>
+                    </TableRow>
 
-                  {/* Mobile Accordion Row */}
-                  <MobileAccordionRow
-                    key={`mobile-${transaction.id}`}
-                    transaction={transaction}
-                  />
-                </React.Fragment>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+                    {/* Mobile Accordion Row */}
+                    <MobileAccordionRow
+                      key={`mobile-${transaction.id}`}
+                      transaction={transaction}
+                    />
+                  </React.Fragment>
+                ))}
+              </TableBody>
+            </Table>
+
+            {/* Pagination */}
+            {filteredTransactions.length > itemsPerPage && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredTransactions.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

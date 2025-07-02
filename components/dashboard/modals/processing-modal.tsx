@@ -30,8 +30,7 @@ export function ProcessingModal({
             variant="ghost"
             size="sm"
             className="absolute right-4 top-4"
-            onClick={onCancel}
-          >
+            onClick={onCancel}>
             <X className="w-4 h-4" />
           </Button>
         </DialogHeader>
@@ -69,8 +68,7 @@ export function ProcessingModal({
             </Button>
             <Button
               disabled
-              className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black"
-            >
+              className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black">
               Proceed
             </Button>
           </div>

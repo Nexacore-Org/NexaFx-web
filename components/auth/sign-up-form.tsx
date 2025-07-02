@@ -112,8 +112,7 @@ export default function SignUpForm() {
         type="submit"
         size={"lg"}
         className="w-full bg-gradient-to-r from-[#3B82F6] to-[#EAB308] hover:opacity-90 shadow-sm font-medium"
-        disabled={formik.isSubmitting}
-      >
+        disabled={formik.isSubmitting}>
         Create Account
       </Button>
 
@@ -122,8 +121,7 @@ export default function SignUpForm() {
           Already have an account?{" "}
           <Link
             href="/auth/sign-in"
-            className="text-blue-500 hover:underline font-medium"
-          >
+            className="text-blue-500 hover:underline font-medium">
             Sign in
           </Link>
         </p>
