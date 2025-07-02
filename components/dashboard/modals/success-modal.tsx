@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/but";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Check, X } from "lucide-react";
 import type { ConversionData } from "@/types";

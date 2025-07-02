@@ -7,7 +7,7 @@ import Image from "next/image";
 import clsx from "clsx";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Button } from "../ui/but";
+import { Button } from "../ui/button";
 
 const navItems = ["Dashboard", "Convert"];
 

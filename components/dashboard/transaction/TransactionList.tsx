@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import { useState, useEffect } from "react";
 import { Check, X, ChevronDown, ChevronUp } from "lucide-react";
 import Image from "next/image";
 import type {
@@ -19,10 +18,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/but";
-import { fetchTransactions } from "@/lib/api/transactions";
+import { Button } from "@/components/ui/button";
 import React from "react";
 import { EmptyTransaction } from "./EmptyTransaction";
+import { useTransactions } from "@/hooks/transaction/useTransaction";
 
 // interface TransactionListProps {
 //   transactions: Transaction[];
@@ -275,29 +274,30 @@ function Pagination({
 }
 
 export function TransactionList() {
+  const { data, isLoading } = useTransactions();
   const [activeFilter, setActiveFilter] = useState<TransactionFilter>("All");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-  const [loading, setLoading] = useState(true);
-  const [transactionsData, setTransactionsData] = useState<Transaction[]>([]);
+  // const [loading, setLoading] = useState(true);
+  // const [transactionsData, setTransactionsData] = useState<Transaction[]>([]);
 
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchTransactions();
-        setTransactionsData(data);
-      } catch (error) {
-        console.error("Error fetching transactions:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTransactions();
-  }, [fetchTransactions]);
+  // useEffect(() => {
+  //   const fetchTransactions = async () => {
+  //     try {
+  //       setLoading(true);
+  //       const data = await fetchTransactions();
+  //       setTransactionsData(data);
+  //     } catch (error) {
+  //       console.error("Error fetching transactions:", error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchTransactions();
+  // }, [fetchTransactions]);
 
   // Filter transactions based on active filter
-  const filteredTransactions = transactionsData.filter((transaction) => {
+  const filteredTransactions = (data ?? []).filter((transaction) => {
     if (activeFilter === "All") return true;
     if (activeFilter === "Withdrawal") return transaction.type === "Withdraw";
     return transaction.type === activeFilter;
@@ -316,10 +316,10 @@ export function TransactionList() {
 
   // Count transactions for each filter
   const counts = {
-    All: transactionsData.length,
-    Deposit: transactionsData.filter((t) => t.type === "Deposit").length,
-    Withdrawal: transactionsData.filter((t) => t.type === "Withdraw").length,
-    Convert: transactionsData.filter((t) => t.type === "Convert").length,
+    All: (data ?? []).length,
+    Deposit: (data ?? []).filter((t) => t.type === "Deposit").length,
+    Withdrawal: (data ?? []).filter((t) => t.type === "Withdraw").length,
+    Convert: (data ?? []).filter((t) => t.type === "Convert").length,
   };
 
   return (
@@ -367,7 +367,7 @@ export function TransactionList() {
 
       {/* Transactions Table or Empty State */}
       <div className="p-6 bg-[#F0F0F0]">
-        {loading ? (
+        {(isLoading || !data) ? (
           <div className="text-center py-10 text-gray-500">
             Loading transactions...
           </div>

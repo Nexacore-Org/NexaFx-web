@@ -11,7 +11,7 @@ import {
 import { Currency } from "@/types";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/but";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 interface CurrencySelectorProps {
   currency: string;

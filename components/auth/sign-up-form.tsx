@@ -5,7 +5,7 @@ import Link from "next/link";
 import { User, Mail } from "lucide-react";
 import { FormInput } from "../ui/form-input";
 import { PasswordInput } from "../ui/passwor-input";
-import { Button } from "../ui/but";
+import { Button } from "../ui/button";
 import { signUpSchema } from "@/utils/authValidationSchema";
 
 export default function SignUpForm() {

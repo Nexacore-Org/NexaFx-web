@@ -5,7 +5,7 @@ import Link from "next/link";
 import { FormInput } from "../ui/form-input";
 import { Mail } from "lucide-react";
 import { PasswordInput } from "../ui/passwor-input";
-import { Button } from "../ui/but";
+import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
 import { signInSchema } from "@/utils/authValidationSchema";
 

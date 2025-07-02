@@ -4,7 +4,7 @@ import { Transaction } from "@/types/transaction";
 
 // Hook to get all transactions
 export const useTransactions = () => {
-  return useQuery({
+  return useQuery<Transaction[]>({
     queryKey: ["transactions"],
     queryFn: transactionService.getAllTransactions,
   });
