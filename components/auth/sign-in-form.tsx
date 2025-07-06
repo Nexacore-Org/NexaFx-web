@@ -8,8 +8,10 @@ import { PasswordInput } from "../ui/passwor-input";
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
 import { signInSchema } from "@/utils/authValidationSchema";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 export default function SignInForm() {
+  const { login } = useAuth();
   const formik = useFormik({
     initialValues: {
       email: "",
@@ -18,8 +20,13 @@ export default function SignInForm() {
     },
     validationSchema: signInSchema,
     onSubmit: async (values) => {
+      const formData = {
+        identifier: values.email,
+        password: values.password,
+      };
       try {
         // Here you would typically call an API endpoint
+        await login(formData)
         console.log("Form submitted:", values);
         // Simulate successful signin
         // router.push("/dashboard");
