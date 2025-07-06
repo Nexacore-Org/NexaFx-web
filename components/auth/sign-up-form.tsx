@@ -7,14 +7,14 @@ import { FormInput } from "../ui/form-input";
 import { PasswordInput } from "../ui/passwor-input";
 import { Button } from "../ui/button";
 import { signUpSchema } from "@/utils/authValidationSchema";
-import { useState } from "react";
+// import { useState } from "react";
 // import { useAuth } from "@/hooks/auth/useAuth";
 
 export default function SignUpForm() {
   // const { signup } = useAuth();
 
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  // const [error, setError] = useState<string | null>(null);
+  // const [isLoading, setIsLoading] = useState(false);
   const formik = useFormik({
     initialValues: {
       fullName: "",
@@ -25,13 +25,13 @@ export default function SignUpForm() {
     },
     validationSchema: signUpSchema,
     onSubmit: async (values) => {
+      console.log(values);
       // const formData = {
       //   email: values.email,
       //   password: values.password,
       // }
-      e.preventDefault();
-      setError(null);
-      setIsLoading(true);
+      // setError(null);
+      // setIsLoading(true);
 
       try {
         // await signup(formData);
@@ -40,7 +40,7 @@ export default function SignUpForm() {
         console.log("Signup error:", err);
         // setError(err.message || "An error occurred during signup.");
       } finally {
-        setIsLoading(false);
+        // setIsLoading(false);
       }
     },
   });

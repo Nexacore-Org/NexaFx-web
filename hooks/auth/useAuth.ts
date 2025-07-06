@@ -1,7 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { userService } from "@/services/api";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
 
 // Define types for auth state
 export interface AuthTokens {
@@ -70,7 +69,6 @@ const setStoredAuth = (tokens: AuthTokens | null, user: AuthUser | null) => {
 
 export function useAuth() {
   const queryClient = useQueryClient();
-  const router = useRouter();
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Initialize auth state from localStorage
@@ -89,16 +87,11 @@ export function useAuth() {
     setIsInitialized(true);
   }, [queryClient]);
 
-  // Get current auth state
-  const { data: authState } = useQuery<AuthState>({
-    queryKey: ["auth"],
-    initialData: {
-      isAuthenticated: false,
-      tokens: getStoredTokens(),
-      user: getStoredUser(),
-    },
-    enabled: isInitialized,
-  });
+  const authState = queryClient.getQueryData<AuthState>(["auth"]) || {
+    isAuthenticated: false,
+    tokens: null,
+    user: null,
+  };
 
   // Create User mutation
   const createUserMutation = useMutation<LoginResponse, Error, any>({
@@ -135,7 +128,6 @@ export function useAuth() {
 
       // Store in localStorage
       setStoredAuth(data.tokens, data.user || getStoredUser());
-      router.push("/dashboard");
     },
   });
 
@@ -154,9 +146,9 @@ export function useAuth() {
   };
 
   return {
-    isAuthenticated: authState?.isAuthenticated || false,
-    user: authState?.user || null,
-    tokens: authState?.tokens || null,
+    isAuthenticated: authState.isAuthenticated,
+    user: authState.user,
+    tokens: authState.tokens,
     login: loginMutation.mutateAsync,
     signup: createUserMutation.mutateAsync,
     logout,
