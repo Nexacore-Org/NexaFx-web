@@ -31,7 +31,7 @@ export function CryptoRateCard({ crypto }: CryptoRateCardProps) {
 
   return (
     <div className="flex px-2 md:px-5 h-28 py-4 min-w-[168px] md:min-w-[250px] flex-col justify-between items-start rounded-lg border-[0.027rem] border-border-crypto-card bg-bg-glass-medium shadow-[4px_4px_12px_0px_rgba(0,0,0,0.10)] backdrop-blur-[7.5px]">
-      <div className="md:flex flex gap-4 justify-center md:justify-between flex-row-reverse items-start w-full">
+      <div className="md:flex-row flex gap-4 justify-center md:justify-between flex-row-reverse items-start w-full">
         <div className="flex flex-col gap-2">
           <div className="text-text-crypto-symbol text-[0.875rem] font-semibold leading-[100%] tracking-[0.28px]">
             {crypto.symbol}

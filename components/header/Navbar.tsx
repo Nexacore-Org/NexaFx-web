@@ -1,7 +1,7 @@
 // components/Navbar.tsx
 "use client";
 
-import { Menu, BellDot } from "lucide-react";
+import { Menu, BellDot, ChevronLeft } from "lucide-react";
 import { useSidebarStore } from "@/store/sidebarStore";
 import Image from "next/image";
 // import clsx from "clsx";
@@ -23,14 +23,14 @@ export default function Navbar() {
   const pathname = usePathname();
 
   const currentPageName = pageNames[pathname] || "Dashboard";
-  const { toggleMobile, isCollapsed } = useSidebarStore();
+  const { toggleMobile, isCollapsed, isMobileOpen } = useSidebarStore();
 
   return (
     <nav
-      className={`flex fixed z-50 top-0 px-4 py-6 justify-between items-center self-stretch backdrop-blur-2xl transition-all duration-300 left-0 right-0 
+      className={`flex fixed z-40 top-0 px-4 py-6 justify-between items-center self-stretch backdrop-blur-2xl transition-all duration-300 left-0 right-0 
         bg-[linear-gradient(240deg,rgba(160,195,253,0.40)_-1.74%,rgba(255,231,156,0.40)_99.3%)] 
         md:bg-white md:bg-none
-        ${isCollapsed ? "lg:left-20" : "lg:left-64"}`}
+        ${isCollapsed ? "lg:left-20" : "lg:left-68"}`}
     >
       {/* Left section */}
       <div className="flex items-center gap-2">
@@ -39,7 +39,11 @@ export default function Navbar() {
           onClick={toggleMobile}
           className="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg lg:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
         >
-          <Menu className="w-6 h-6" />
+          {isMobileOpen ? (
+            <ChevronLeft className="w-6 h-6" />
+          ) : (
+            <Menu className="w-6 h-6" />
+          )}
         </button>
 
         {/* Page name */}

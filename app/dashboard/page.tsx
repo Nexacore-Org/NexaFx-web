@@ -20,7 +20,7 @@ import {
   currencyValues,
   cryptoRates,
 } from "@/components/dashboard/home";
-  
+
 const transactionData = [
   {
     id: 1,
@@ -56,10 +56,10 @@ const transactionData = [
 
 export default function DashboardContent() {
   const [balanceVisible, setBalanceVisible] = useState(true);
-  const [selectedCurrency, setSelectedCurrency] = useState("USD");
+  const [selectedCurrency, setSelectedCurrency] = useState("ETH");
 
   return (
-    <div className="md:px-5 px-0 w-full md:pt-[0.625rem]">
+    <div className="px-0 md:px-4 lg:px-0 w-full md:py-[2.25rem]">
       <div className="w-full relative h-auto md:px-7 md:mt-20">
         <div className="rounded-xl z-0 hidden md:block bg-[linear-gradient(240deg,rgba(160,195,253,0.80)_-1.74%,rgba(255,231,156,0.80)_99.3%)] absolute -top-20  inset-x-0 h-74 w-full p-6 mb-6">
           <h2 className="text-text-primary font-semibold text-2xl leading-[140%] tracking-[0.48px]">
@@ -101,7 +101,7 @@ export default function DashboardContent() {
               </div>
             </div>
 
-            <div className=" flex items-baseline">
+            <div className=" flex items-baseline min-h-10">
               <span className="text-text-naira text-[1.423rem] font-semibold leading-[100%] tracking-[-0.228px] opacity-90">
                 {balanceVisible ? "₦" : "₦"}
               </span>
@@ -131,12 +131,15 @@ export default function DashboardContent() {
                     variant="ghost"
                     className="flex p-[0.625rem] justify-start w-fit items-center gap-[0.5rem] rounded-lg bg-bg-dropdown hover:bg-bg-dropdown-hover"
                   >
-                    <div
-                      className={`w-4 h-4 ${
+                    <img
+                      src={
                         currencyOptions.find((c) => c.code === selectedCurrency)
-                          ?.color
-                      } rounded-full`}
-                    ></div>
+                          ?.icon
+                      }
+                      alt={selectedCurrency}
+                      width={16}
+                      height={16}
+                    />
                     <span className="text-sm text-gray-600">
                       {selectedCurrency}
                     </span>

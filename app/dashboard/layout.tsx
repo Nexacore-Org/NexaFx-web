@@ -27,13 +27,13 @@ export default function Layout({ children }: LayoutProps) {
   const { isCollapsed } = useSidebarStore();
 
   return (
-    <div className="bg-bg-sidebar min-h-screen">
+    <div className="bg-bg-sidebar min-h-screen ">
       <Sidebar />
 
       {/* Main content */}
       <div
-        className={`transition-all duration-300 ${
-          isCollapsed ? "lg:ml-20" : "lg:ml-64"
+        className={`transition-all duration-300  md:pr-4 ${
+          isCollapsed ? "lg:ml-20" : "lg:ml-68"
         }`}
       >
         <Navbar />

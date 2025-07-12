@@ -8,11 +8,9 @@ export interface MobileAction {
 }
 
 export const currencyOptions: CurrencyOption[] = [
-  { code: "USD", name: "US Dollar", color: "bg-blue-500" },
-  { code: "EUR", name: "Euro", color: "bg-blue-600" },
-  { code: "GBP", name: "British Pound", color: "bg-red-500" },
-  { code: "BTC", name: "Bitcoin", color: "bg-orange-500" },
-  { code: "ETH", name: "Ethereum", color: "bg-purple-500" },
+  // { code: "USD", name: "US Dollar", icon: "/usd.svg" },
+  { code: "BTC", name: "Bitcoin", icon: "/bnb.svg" },
+  { code: "ETH", name: "Ethereum", icon: "/eth.svg" },
 ];
 
 export const mobileActions: MobileAction[] = [
@@ -22,9 +20,6 @@ export const mobileActions: MobileAction[] = [
 ];
 
 export const currencyValues: Record<string, string> = {
-  USD: "$1,160.52",
-  EUR: "€1,045.30",
-  GBP: "£920.15",
   BTC: "₿0.012",
   ETH: "Ξ0.45",
 };

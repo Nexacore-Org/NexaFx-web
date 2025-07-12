@@ -4,7 +4,7 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 export interface CurrencyOption {
   code: string;
   name: string;
-  color: string;
+  icon: string; // image path for the currency icon
 }
 
 interface CurrencyDropdownItemProps {
@@ -19,7 +19,7 @@ export function CurrencyDropdownItem({
   return (
     <DropdownMenuItem onClick={onClick}>
       <div className="flex items-center space-x-2">
-        <div className={`w-3 h-3 rounded-full ${currency.color}`}></div>
+        <img src={currency.icon} alt={currency.code} width={16} height={16} />
         <span>
           {currency.code} - {currency.name}
         </span>
