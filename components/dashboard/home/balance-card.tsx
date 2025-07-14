@@ -1,38 +1,27 @@
-import { Info, ChevronDown } from "lucide-react";
+import React from "react";
 
-export function BalanceCard() {
+interface BalanceCardProps {
+  title: string;
+  value: string;
+  children?: React.ReactNode;
+}
+
+export function BalanceCard({ title, value, children }: BalanceCardProps) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-500 via-slate-300 to-yellow-400 p-8 text-white">
-      <div className="relative z-10">
-        <div className="mb-6 flex items-center gap-2">
-          <span className="text-white/80">Total Balance</span>
-          <Info className="h-4 w-4 text-white/60" />
-        </div>
-
-        <div className="mb-8">
-          <h1 className="text-4xl lg:text-5xl font-bold">N325,980.65</h1>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-white/[6%] flex gap-2 rounded-lg p-2">
-            <div className="bg-white/40 h-full w-px" />
-            <div className="flex flex-col">
-              <div className="text-white/80 text-sm mb-1">NGN</div>
-              <div className="text-2xl font-semibold">N325,980.65</div>
+    <div className="rounded-[0.392rem] bg-bg-glass-light backdrop-blur-[5.885px] md:bg-bg-balance-card-desktop md:bg-none md:backdrop-blur-[7px] md:rounded-xl p-2">
+      <div className="flex flex-col justify-between gap-2 h-full p-0 lg:p-2.5">
+        {children ? (
+          children
+        ) : (
+          <>
+            <div className="text-black text-[1.3125rem] font-normal leading-[100%] tracking-[0.84px]">
+              {title}
             </div>
-          </div>
-
-          <div className="bg-white/[6%] flex gap-2 rounded-lg p-2">
-            <div className="bg-white/40 h-full w-px" />
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1 text-white/80 text-sm mb-1">
-                <span>USD</span>
-                <ChevronDown className="h-3 w-3" />
-              </div>
-              <div className="text-2xl font-semibold">$1,160.52</div>
+            <div className="text-black text-[1.5rem] font-semibold leading-[140%]">
+              {value}
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

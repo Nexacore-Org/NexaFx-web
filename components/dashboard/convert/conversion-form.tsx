@@ -40,7 +40,7 @@ export function ConversionForm() {
         <div className="flex flex-col gap-4 relative ">
           {/* From Section */}
           <div className="">
-            <div className="bg-white rounded-xl p-4 border border-gray-200">
+            <div className="bg-bg-conversion-form rounded-xl p-4 border border-gray-200">
               <label className="text-md text-gray-600 font-medium mb-2 block">
                 From
               </label>
@@ -77,7 +77,12 @@ export function ConversionForm() {
           {/* Swap Icon */}
           <div className="flex justify-center absolute left-0 right-0 top-[8.5rem]  ">
             <div className="w-10 h-10 bg-gray-200 rounded-full border flex items-center justify-center">
-              <Image src={"/convert-arrow.png"} alt="arrow" width={100} height={100} />
+              <Image
+                src={"/convert-arrow.png"}
+                alt="arrow"
+                width={100}
+                height={100}
+              />
             </div>
           </div>
 

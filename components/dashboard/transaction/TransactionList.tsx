@@ -77,7 +77,8 @@ function StatusBadge({ status }: { status: "Success" | "Failed" }) {
     return (
       <Badge
         variant="outline"
-        className="bg-[#1BB72D]/20 text-[#009411]/90 font-bold flex items-center gap-1 rounded-full px-2 py-1.5 min-w-[106px] hover:bg-green-100">
+        className="bg-success-bg text-success-text font-bold flex items-center gap-1 rounded-full px-2 py-1.5 min-w-[106px] hover:bg-green-100"
+      >
         <Check className="h-6 w-6" />
         Success
       </Badge>
@@ -87,7 +88,8 @@ function StatusBadge({ status }: { status: "Success" | "Failed" }) {
   return (
     <Badge
       variant="outline"
-      className="bg-[#C80808]/20 text-[#C80808]/90 border-red-200 font-bold flex items-center gap-1 rounded-full min-w-[106px] px-2 py-1.5 hover:bg-red-100">
+      className="bg-error-bg text-error-text border-red-200 font-bold flex items-center gap-1 rounded-full min-w-[106px] px-2 py-1.5 hover:bg-red-100"
+    >
       <X className="h-6 w-6" />
       Failed
     </Badge>
@@ -102,7 +104,8 @@ function MobileAccordionRow({ transaction }: { transaction: Transaction }) {
     <>
       <TableRow
         className="border-b border-black/20 hover:bg-gray-50/50 cursor-pointer md:hidden"
-        onClick={() => setIsOpen(!isOpen)}>
+        onClick={() => setIsOpen(!isOpen)}
+      >
         {/* TYPE */}
         <TableCell className="py-4 px-4 w-1/3">
           <div className="flex items-center gap-2">
@@ -165,7 +168,7 @@ function MobileAccordionRow({ transaction }: { transaction: Transaction }) {
               {/* USD Value */}
               <div className="flex justify-between items-center">
                 <span className="font-medium text-gray-600">USD Value:</span>
-                <span className="text-xs text-[#787878]/60">
+                <span className="text-xs text-text-muted opacity-60">
                   {transaction.usdAmount}
                 </span>
               </div>
@@ -239,7 +242,8 @@ function Pagination({
           size="sm"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+          className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           Previous
         </Button>
 
@@ -254,7 +258,8 @@ function Pagination({
               currentPage === pageNum
                 ? "px-3 py-2 text-sm font-medium text-white bg-orange-500 border border-orange-500 rounded-md hover:bg-orange-600"
                 : "px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            }>
+            }
+          >
             {pageNum}
           </Button>
         ))}
@@ -265,7 +270,8 @@ function Pagination({
           size="sm"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+          className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           Next
         </Button>
       </div>
@@ -330,35 +336,40 @@ export function TransactionList() {
           <input
             type="text"
             placeholder="Search..."
-            className="w-full max-w-md px-5 py-2 rounded-lg bg-[#F5F5F5] text-gray-700 placeholder-gray-400 focus:outline-none"
+            className="w-full max-w-md px-5 py-2 rounded-lg bg-bg-icon-container text-gray-700 placeholder-gray-400 focus:outline-none"
           />
         </div>
 
         <Tabs
           value={activeFilter}
           onValueChange={(value) => setActiveFilter(value as TransactionFilter)}
-          className="w-auto">
+          className="w-auto"
+        >
           <TabsList className="bg-white/50 border h-auto rounded-xl">
             <TabsTrigger
               value="All"
-              className="data-[state=active]:bg-[#FFD552] data-[state=active]:text-black/70 text-black/60 px-5 py-3 text-xs rounded-xl">
+              className="data-[state=active]:bg-brand-primary data-[state=active]:text-black/70 text-black/60 px-5 py-3 text-xs rounded-xl"
+            >
               All {counts.All > 0 && <span className="ml-1">{counts.All}</span>}
             </TabsTrigger>
             <TabsTrigger
               value="Deposit"
-              className="data-[state=active]:bg-[#FFD552] data-[state=active]:text-black/70
-               text-black/60 px-5 py-3 text-xs rounded-xl">
+              className="data-[state=active]:bg-brand-primary data-[state=active]:text-black/70
+               text-black/60 px-5 py-3 text-xs rounded-xl"
+            >
               Deposit
             </TabsTrigger>
             <TabsTrigger
               value="Withdrawal"
-              className="data-[state=active]:bg-[#FFD552] data-[state=active]:text-black/70
-               text-black/60 px-5 py-3 text-xs rounded-xl">
+              className="data-[state=active]:bg-brand-primary data-[state=active]:text-black/70
+               text-black/60 px-5 py-3 text-xs rounded-xl"
+            >
               Withdrawal
             </TabsTrigger>
             <TabsTrigger
               value="Convert"
-              className="data-[state=active]:bg-[#FFD552] data-[state=active]:text-black/70 text-black/60 px-5 py-3 text-xs rounded-xl">
+              className="data-[state=active]:bg-brand-primary data-[state=active]:text-black/70 text-black/60 px-5 py-3 text-xs rounded-xl"
+            >
               Convert
             </TabsTrigger>
           </TabsList>
@@ -367,7 +378,7 @@ export function TransactionList() {
 
       {/* Transactions Table or Empty State */}
       <div className="p-6 bg-[#F0F0F0]">
-        {(isLoading || !data) ? (
+        {isLoading || !data ? (
           <div className="text-center py-10 text-gray-500">
             Loading transactions...
           </div>
@@ -413,7 +424,8 @@ export function TransactionList() {
                     {/* Desktop Row */}
                     <TableRow
                       key={`desktop-${transaction.id}`}
-                      className="border-b border-black/20 hover:bg-gray-50/50 hidden md:table-row">
+                      className="border-b border-black/20 hover:bg-gray-50/50 hidden md:table-row"
+                    >
                       {/* Type */}
                       <TableCell className="py-4 px-6">
                         <div className="flex items-center gap-3">
@@ -454,7 +466,7 @@ export function TransactionList() {
                         <div className="text-black/70 font-bold text-xs">
                           {transaction.amount}
                         </div>
-                        <div className="text-xs text-[#787878]/60">
+                        <div className="text-xs text-text-muted opacity-60">
                           {transaction.usdAmount}
                         </div>
                       </TableCell>
