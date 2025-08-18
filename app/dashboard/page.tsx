@@ -20,6 +20,11 @@ import {
   currencyValues,
   cryptoRates,
 } from "@/components/dashboard/home";
+import { useRouter } from "next/navigation";
+import WithdrawOptionsMobileScreen from "@/components/dashboard/withdrawal/withdraw-options-mobile-screen";
+import WithdrawalModal from "@/components/dashboard/modals/withdrawal-modal";
+import { useWithdrawalStore } from "@/store/withdrawalStore";
+import WithdrawalSuccessModal from "@/components/dashboard/modals/withdraw-success-modal";
 
 const transactionData = [
   {
@@ -57,6 +62,13 @@ const transactionData = [
 export default function DashboardContent() {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [selectedCurrency, setSelectedCurrency] = useState("ETH");
+  const {
+    isMobileWithdrawOptionsOpen,
+    isWithdrawModalOpen,
+    isSuccessModalOpen,
+    openMobileWithdrawOptions,
+  } = useWithdrawalStore();
+  const router = useRouter();
 
   return (
     <div className="px-0 md:px-4 lg:px-0 w-full md:py-[2.25rem]">
@@ -119,7 +131,12 @@ export default function DashboardContent() {
 
           <div className="md:flex space-x-4 hidden w-full">
             <ActionButton icon={Download} label="Deposit" variant="primary" />
-            <ActionButton icon={Upload} label="Withdraw" variant="secondary" />
+            <ActionButton
+              icon={Upload}
+              label="Withdraw"
+              variant="secondary"
+              onClick={() => router.push("/dashboard/withdrawal")}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4 w-full">
@@ -166,7 +183,13 @@ export default function DashboardContent() {
 
       <div className="md:hidden px-2 md:px-0 grid grid-cols-3 gap-4 mt-8">
         {mobileActions.map((action, index) => (
-          <MobileActionButton key={index} {...action} />
+          <MobileActionButton
+            key={index}
+            onClick={() =>
+              action.label === "Withdrawal" && openMobileWithdrawOptions()
+            }
+            {...action}
+          />
         ))}
       </div>
 
@@ -192,6 +215,9 @@ export default function DashboardContent() {
         </div>
         <TransactionsTable transactions={transactionData} />
       </div>
+      {isMobileWithdrawOptionsOpen && <WithdrawOptionsMobileScreen />}
+      {isWithdrawModalOpen && <WithdrawalModal />}
+      {isSuccessModalOpen && <WithdrawalSuccessModal />}
     </div>
   );
 }
