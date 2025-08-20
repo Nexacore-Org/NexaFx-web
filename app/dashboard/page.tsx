@@ -25,6 +25,7 @@ import WithdrawOptionsMobileScreen from "@/components/dashboard/withdrawal/withd
 import WithdrawalModal from "@/components/dashboard/modals/withdrawal-modal";
 import { useWithdrawalStore } from "@/store/withdrawalStore";
 import WithdrawalSuccessModal from "@/components/dashboard/modals/withdraw-success-modal";
+import Image from "next/image";
 
 const transactionData = [
   {
@@ -148,10 +149,10 @@ export default function DashboardContent() {
                     variant="ghost"
                     className="flex p-[0.625rem] justify-start w-fit items-center gap-[0.5rem] rounded-lg bg-bg-dropdown hover:bg-bg-dropdown-hover"
                   >
-                    <img
+                    <Image
                       src={
                         currencyOptions.find((c) => c.code === selectedCurrency)
-                          ?.icon
+                          ?.icon || ""
                       }
                       alt={selectedCurrency}
                       width={16}

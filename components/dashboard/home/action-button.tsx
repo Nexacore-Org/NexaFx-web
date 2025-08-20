@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 
 interface ActionButtonProps {
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   label: string;
   variant?: "primary" | "secondary";
   onClick?: () => void;

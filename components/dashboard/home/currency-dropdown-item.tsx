@@ -1,5 +1,6 @@
 import React from "react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import Image from "next/image";
 
 export interface CurrencyOption {
   code: string;
@@ -19,7 +20,7 @@ export function CurrencyDropdownItem({
   return (
     <DropdownMenuItem onClick={onClick}>
       <div className="flex items-center space-x-2">
-        <img src={currency.icon} alt={currency.code} width={16} height={16} />
+        <Image src={currency.icon} alt={currency.code} width={16} height={16} />
         <span>
           {currency.code} - {currency.name}
         </span>
