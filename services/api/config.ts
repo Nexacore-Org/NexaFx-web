@@ -25,7 +25,6 @@ export const API_ENDPOINTS = {
     REFRESH: "/auth/refresh",
   },
 
-
   // Transactions endpoints
   TRANSACTIONS: {
     ALL: "/transactions",
@@ -33,5 +32,13 @@ export const API_ENDPOINTS = {
     DELETE: (id: string) => `/transactions/${id}`,
     GET: (id: string) => `/transactions/${id}`,
     UPDATE: (id: string) => `/transactions/${id}`,
+  },
+
+  // Notification endpoints
+  NOTIFICATIONS: {
+    CREATE: "/notifications",
+    GET: (userId: string) => `/notifications/unread/${userId}`,
+    MARK_READ: (notifId: string) => `/notifications/mark-read/${notifId}`,
+    MARK_ALL_READ: (userId: string) => `/notifications/mark-all-read/${userId}`,
   },
 };
