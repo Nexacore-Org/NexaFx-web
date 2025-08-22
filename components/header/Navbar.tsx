@@ -8,6 +8,8 @@ import Image from "next/image";
 // import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Button } from "../ui/button";
+import { useEffect, useRef, useState } from "react";
+import NotificationDropdown from "../notifications/NotificationDropdown";
 
 // const navItems = ["Dashboard", "Convert"];
 
@@ -20,10 +22,25 @@ const pageNames: Record<string, string> = {
 };
 
 export default function Navbar() {
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-
   const currentPageName = pageNames[pathname] || "Dashboard";
   const { toggleMobile, isCollapsed, isMobileOpen } = useSidebarStore();
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        notifRef.current &&
+        !notifRef.current.contains(event.target as Node)
+      ) {
+        setNotifOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <nav
@@ -57,8 +74,16 @@ export default function Navbar() {
       {/* Right section */}
       <div className="flex items-center space-x-4">
         {/* Notification/Settings Icon */}
-        <div className="md:w-9 md:h-9 w-7 h-7 bg-gray-50 rounded-full flex items-center justify-center">
-          <BellDot className="w-5 h-5 text-black" />
+        <div className="relative" ref={notifRef}>
+          <button
+            aria-label="Notifications"
+            onClick={() => setNotifOpen((prev) => !prev)}
+            className="md:w-9 md:h-9 w-7 h-7 bg-gray-50 rounded-full flex items-center justify-center"
+          >
+            <BellDot className="w-5 h-5 text-black" />
+          </button>
+
+          {notifOpen && <NotificationDropdown setIsOpen={setNotifOpen} />}
         </div>
 
         {/* Avatar */}
