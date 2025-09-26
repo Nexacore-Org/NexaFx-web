@@ -41,4 +41,13 @@ export const API_ENDPOINTS = {
     MARK_READ: (notifId: string) => `/notifications/mark-read/${notifId}`,
     MARK_ALL_READ: (userId: string) => `/notifications/mark-all-read/${userId}`,
   },
+
+  // Admin endpoints
+  ADMIN: {
+    OVERVIEW: "/admin/stats/overview",
+    TOP_CURRENCIES: "/admin/stats/top-currencies",
+    USERS: "/admin/stats/users",
+    TRANSACTIONS: "/admin/transactions",
+    REVENUE: "/admin/revenue",
+  },
 };

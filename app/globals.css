@@ -47,7 +47,7 @@
   --color-brand-primary: var(--brand-primary);
   --color-brand-primary-hover: var(--brand-primary-hover);
   --color-brand-secondary: var(--brand-secondary);
-  --color-brand-secondary-hover: var(--brand-secondary-hover);
+  --color-brand-secondary-hover: var(--brand-secondary-hover);  
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
@@ -76,6 +76,7 @@
   --color-bg-selector-icon: var(--bg-selector-icon);
   --color-bg-contact-blue: var(--bg-contact-blue);
   --color-bg-contact-yellow: var(--bg-contact-yellow);
+  --color-bg-contact-orange: var(--bg-contact-orange);
   --color-border-crypto-card: var(--border-crypto-card);
   --color-border-glass: var(--border-glass);
   --color-success-bg: var(--success-bg);
@@ -84,6 +85,8 @@
   --color-error-text: var(--error-text);
   --color-contact-icon-blue: var(--contact-icon-blue);
   --color-contact-icon-yellow: var(--contact-icon-yellow);
+  --color-admin-gradient-blue: var(--admin-gradient-blue);
+  --color-admin-gradient-yellow: var(--admin-gradient-yellow);
 }
 
 :root {
@@ -125,7 +128,7 @@
   --brand-primary: #ffd552;
   --brand-primary-hover: #e6c04a;
   --brand-secondary: #e9eaee;
-  --brand-secondary-hover: #d3d4d8;
+  --brand-secondary-hover: #d3d4d8;  
 
   /* Text Colors */
   --text-primary: #262626;
@@ -157,7 +160,8 @@
   --bg-dropdown-hover: rgba(224, 224, 224, 0.7);
   --bg-selector-icon: rgba(183, 183, 183, 0.6);
   --bg-contact-blue: #d9e9ff;
-  --bg-contact-yellow: #fdfcbd;
+  --bg-contact-yellow: #fdfcbd; 
+  --bg-contact-orange: #E58600; 
 
   /* Border Colors */
   --border-crypto-card: rgba(121, 121, 121, 0.4);
@@ -172,6 +176,10 @@
   /* Contact Page Colors */
   --contact-icon-blue: #3c78f4;
   --contact-icon-yellow: #e8b300;
+
+  /* Mobile Admin Gradient Colors */
+  --admin-gradient-blue: #A0C3FD;
+  --admin-gradient-yellow: #FFE79C;
 }
 
 .dark {
