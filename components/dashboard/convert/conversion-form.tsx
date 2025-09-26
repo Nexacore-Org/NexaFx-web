@@ -6,7 +6,7 @@ import { useConversion } from "@/hooks/useConversion";
 import { ConfirmationModal } from "../modals/confirmation-modal";
 import { CurrencySelector } from "./currency-selector";
 import { ExchangeRateDisplay } from "./exhange-rate-display";
-import Image from "next/image";
+import { ArrowDown } from "lucide-react";
 // import { TokenSelectorModal } from "./modals/token-selector-modal";
 
 // import { useState } from "react";
@@ -26,7 +26,6 @@ export function ConversionForm() {
     // showTokenSelector,
     currencies,
     selectToken,
-
     handleAmountChange,
     openTokenSelector,
     // closeTokenSelector,
@@ -35,15 +34,13 @@ export function ConversionForm() {
   // const [showConfirmation, setShowConfirmation] = useState(false);
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
+    <div className="p-4 md:p-8 max-w-2xl mx-auto">
       <div className="bg-gradient-to-r from-[#FFE79C]/30 to-[#A0C3FD]/30 w-full max-w-[900px] rounded-2xl p-5 relative">
         <div className="flex flex-col gap-4 relative ">
           {/* From Section */}
           <div className="">
-            <div className="bg-bg-conversion-form rounded-xl p-4 border border-gray-200">
-              <label className="text-md text-gray-600 font-medium mb-2 block">
-                From
-              </label>
+            <div className="bg-[#FDFDFD] rounded-xl p-4">
+              <label className="text-md font-medium mb-2 block">From</label>
               <div className="flex h-[80px] relative items-center justify-between">
                 <input
                   value={conversionData.fromAmount}
@@ -58,7 +55,7 @@ export function ConversionForm() {
                       (parts.length > 1 ? "." + parts[1] : "");
                     handleAmountChange("from", formattedValue);
                   }}
-                  className="text-5xl focus:outline-none placeholder:text-gray-400 font-semibold w-full border-none p-0 bg-transparent"
+                  className="text-xl md:text-5xl focus:outline-none placeholder:text-gray-400 font-semibold w-full border-none p-0 bg-transparent"
                   placeholder="0"
                   type="text"
                   inputMode="decimal"
@@ -76,23 +73,18 @@ export function ConversionForm() {
 
           {/* Swap Icon */}
           <div className="flex justify-center absolute left-0 right-0 top-[8.5rem]  ">
-            <div className="w-10 h-10 bg-gray-200 rounded-full border flex items-center justify-center">
-              <Image
-                src={"/convert-arrow.png"}
-                alt="arrow"
-                width={100}
-                height={100}
-              />
+            <div className="w-10 h-10 bg-blue-600 rounded-full border flex items-center justify-center">
+              <ArrowDown className="text-white" />
             </div>
           </div>
 
           {/* To Section */}
           <div className="mb-6 ">
-            <div className="bg-[#EFEDED] rounded-xl p-4 border border-gray-200">
-              <label className="text-md font-medium text-gray-600 mb-2 block">
+            <div className="bg-[#E5E5E5] rounded-xl p-4 border border-gray-200">
+              <label className="text-md font-medium mb-2 block">
                 You will receive
               </label>
-              <div className="flex relative h-[80px]  items-center justify-between">
+              <div className="flex relative h-[80px] items-center justify-between">
                 <input
                   value={conversionData.toAmount}
                   onChange={(e) => {
@@ -106,8 +98,8 @@ export function ConversionForm() {
                       (parts.length > 1 ? "." + parts[1] : "");
                     handleAmountChange("to", formattedValue);
                   }}
-                  className="text-5xl focus:outline-none placeholder:text-gray-400 font-semibold border-none w-full p-0 bg-transparent"
-                  placeholder="0"
+                  className="text-xl md:text-5xl focus:outline-none placeholder:text-gray-400 font-semibold border-none w-full p-0 bg-transparent"
+                  placeholder="-"
                   type="text"
                   inputMode="decimal"
                 />

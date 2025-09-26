@@ -6,10 +6,17 @@ import type { ConversionState, ConversionData, Currency } from "@/types/index";
 export const currencies: Currency[] = [
   { code: "NGN", name: "Nigerian Naira", icon: "₦", price: 1 },
   { code: "USDC", name: "USD Coin", icon: "$", price: 1600 },
-  { code: "BTC", name: "Bitcoin", icon: "₿", price: 65000000 },
-  { code: "XRP", name: "Ripple", icon: "X", price: 800 },
+  { code: "USDT", name: "Tether", icon: "₮", price: 1600 },
+  { code: "BNB", name: "Binance Coin", icon: "BNB", price: 800 },
   { code: "ETH", name: "Ethereum", icon: "Ξ", price: 3200000 },
 ];
+
+export const currencyImages: Record<string, string> = {
+  USDC: "/usdc.svg",
+  USDT: "/usdt.svg",
+  BNB: "/bnb.svg",
+  ETH: "/eth.svg",
+};
 // type CurrencyCode = "USD" | "EUR" | "GBP" | "JPY" | "NGN" | "BTC" | "ETH";
 // type PriceMap = Record<CurrencyCode, Record<CurrencyCode, number>>;
 
@@ -99,13 +106,14 @@ export function useConversion() {
   const [showTokenSelector, setShowTokenSelector] = useState(false);
   const [selectorType, setSelectorType] = useState<"from" | "to">("from");
 
+  console.log(selectorType);
   // Static prices in USD
   const TOKEN_PRICES = {
     NGN: 0.00065, // 1 NGN = $0.00065
     USDC: 1, // 1 USDC = $1
-    BTC: 65000, // 1 BTC = $65,000
+    USDT: 1, // 1 USDT = $1
+    BNB: 800, // 1 BNB = $800
     ETH: 3500, // 1 ETH = $3,500
-    XRP: 0.5, // 1 XRP = $0.5
   };
 
   const handleAmountChange = useCallback(
@@ -139,11 +147,11 @@ export function useConversion() {
         setConversionData((prev) => ({
           ...prev,
           fromAmount: convertedAmount.toLocaleString(undefined, {
-            maximumFractionDigits: 6,
+            maximumFractionDigits: 2,
             minimumFractionDigits: 0,
           }),
           toAmount: value, // Keep the formatted input value
-          exchangeRate: (fromPrice / toPrice).toFixed(8),
+          exchangeRate: (fromPrice / toPrice).toFixed(2),
         }));
       }
     },
@@ -172,11 +180,11 @@ export function useConversion() {
           toAmount: ((fromAmount * fromPrice) / toPrice).toLocaleString(
             undefined,
             {
-              maximumFractionDigits: 6,
+              maximumFractionDigits: 2,
               minimumFractionDigits: 0,
             }
           ),
-          exchangeRate: (fromPrice / toPrice).toFixed(6),
+          exchangeRate: (fromPrice / toPrice).toFixed(2),
         };
       });
     },
@@ -233,6 +241,7 @@ export function useConversion() {
   console.log(conversionState);
 
   return {
+    selectorType,
     conversionData,
     conversionState,
     showTokenSelector,

@@ -12,6 +12,7 @@ import { ConversionData } from "@/types";
 import { ArrowRight, Info, X } from "lucide-react";
 import { useState } from "react";
 import { millify } from "millify";
+import Image from "next/image";
 type ConfirmationModalProp = {
   data: ConversionData;
 };
@@ -20,22 +21,31 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
   const [modalScene, setModalScene] = useState<
     "confirm" | "processing" | "success"
   >("confirm");
+  const isValid =
+    data.fromAmount !== "0" &&
+    data.fromAmount !== "" &&
+    data.toAmount !== "0" &&
+    data.toAmount !== "" &&
+    data.fromCurrency !== data.toCurrency;
 
   console.log("Modal Scene", modalScene);
   console.log("Conversion Data", data);
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="w-full bg-yellow-400 hover:bg-yellow-500 text-black rounded-sm font-semibold h-[65px] text-xl rounded-lg">
+        <Button
+          className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold h-[65px] text-xl rounded-lg"
+          disabled={!isValid}
+        >
           Convert
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] py-6 px-0 shadow-md">
+      <DialogContent className="sm:max-w-[425px] py-6 px-0 shadow-md bg-[#F8F9FB]">
         {modalScene === "confirm" && (
           <div className="px-4 w-full">
             <DialogHeader className=" flex flex-row py-3  w-full items-center justify-between">
               <DialogTitle>{"You're about to convert"}</DialogTitle>
-              <DialogClose className=" cursor-pointer ">
+              <DialogClose className=" cursor-pointer md:hidden">
                 <X className="w-4 h-4" />
               </DialogClose>
             </DialogHeader>
@@ -61,7 +71,9 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
               </div>
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <span>Fees</span>
+                  <span className="text-gray-500 font-medium">
+                    Transaction Fee:
+                  </span>
                   <Info className="w-4 h-4 text-gray-400" />
                 </div>
                 <div className="flex items-center gap-2">
@@ -71,7 +83,8 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
                       height="25"
                       viewBox="0 0 25 25"
                       fill="none"
-                      xmlns="http://www.w3.org/2000/svg">
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
                       <path
                         d="M15.375 18.5195H10.375"
                         stroke="black"
@@ -106,7 +119,7 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
                 </div>
               </div>
               <div className="flex gap-3">
-                <DialogClose className="flex-1 bg-transparent border h-10 text-md">
+                <DialogClose className="flex-1 bg-transparent border h-10 text-md max-sm:hidden">
                   Cancel
                 </DialogClose>
                 <Button
@@ -116,7 +129,8 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
                       setModalScene("success");
                     }, 3000);
                   }}
-                  className="flex-1 bg-yellow-400 hover:bg-yellow-500 h-10 text-md text-black">
+                  className="flex-1 bg-yellow-400 hover:bg-yellow-500 h-10 text-md text-black"
+                >
                   Proceed
                 </Button>
               </div>
@@ -134,31 +148,14 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
         {modalScene === "success" && (
           <div className="flex flex-col w-full items-center justify-center  space-y-4">
             <div className="space-y-6 w-full px-6 text-center">
-              <div className="flex flex-col w-full py-8 rounded-lg shadow-[0px_1px_3px_0px_rgba(0,0,0,0.02),0px_0px_0px_1px_rgba(27,31,35,0.15)] relative  items-center justify-center">
+              <div className="flex flex-col w-full py-8 rounded-lg bg-gradient-to-br from-[#FFE79C]/70 from-20% to-[#A0C3FD]/70 to-80% relative  items-center justify-center">
                 <div className="flex justify-center items-center  rounded-lg ">
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center">
-                    <svg
-                      width="130"
-                      height="131"
-                      viewBox="0 0 130 131"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M118.011 54.3726C120.481 66.4955 118.72 79.0989 113.023 90.081C107.325 101.063 98.0351 109.76 86.7014 114.721C75.3677 119.683 62.6757 120.609 50.7419 117.345C38.8081 114.081 28.3539 106.825 21.1227 96.786C13.8915 86.7472 10.3203 74.5328 11.0048 62.1797C11.6892 49.8266 16.5879 38.0815 24.8839 28.903C33.1799 19.7246 44.3718 13.6676 56.5931 11.7421C68.8144 9.8167 81.3264 12.1392 92.0426 18.3223"
-                        stroke="#0765FF"
-                        stroke-width="10.8178"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <path
-                        d="M48.7734 59.7822L65.0001 76.0089L119.089 21.9199"
-                        stroke="#0765FF"
-                        stroke-width="10.8178"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                  </div>
+                  <Image
+                    src="/green-tick.svg"
+                    alt="Success"
+                    width={50}
+                    height={50}
+                  />
                 </div>
                 <div className="mx-auto w-full flex flex-col text-sm items-center justify-center">
                   <DialogClose
@@ -167,7 +164,8 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
                         setModalScene("confirm");
                       }, 1000);
                     }}
-                    className="absolute cursor-pointer right-4 top-4">
+                    className="absolute cursor-pointer right-4 top-4 md:hidden"
+                  >
                     <X className="w-4 h-4" />
                   </DialogClose>
                   <h3 className="text-lg font-semibold">
@@ -200,8 +198,9 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
                       setModalScene("confirm");
                     }, 1000);
                   }}
-                  className="flex-1 h-12  cursor-pointer  border rounded-md ">
-                  Close
+                  className="flex-1  h-12 cursor-pointer   rounded-md   bg-yellow-400 hover:bg-yellow-500 text-black"
+                >
+                  View wallet
                 </DialogClose>
                 <DialogClose
                   onClick={() => {
@@ -209,8 +208,9 @@ export function ConfirmationModal(Props: ConfirmationModalProp) {
                       setModalScene("confirm");
                     }, 1000);
                   }}
-                  className="flex-1  h-12 cursor-pointer   rounded-md   bg-yellow-400 hover:bg-yellow-500 text-black">
-                  View wallet
+                  className="flex-1 h-12  cursor-pointer  border rounded-md max-sm:hidden"
+                >
+                  Close
                 </DialogClose>
               </div>
             </div>
