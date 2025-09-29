@@ -49,5 +49,6 @@ export const API_ENDPOINTS = {
     USERS: "/admin/stats/users",
     TRANSACTIONS: "/admin/transactions",
     REVENUE: "/admin/revenue",
+    ANNOUNCEMENTS: "/admin/announcements",
   },
 };
