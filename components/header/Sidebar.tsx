@@ -8,6 +8,7 @@ import {
   ArrowDownUp,
   ChevronLeft,
   Copy,
+  Settings,
 } from "lucide-react";
 import { useSidebarStore } from "@/store/sidebarStore";
 import { useEffect, useState } from "react";
@@ -18,7 +19,8 @@ const initialMenuItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard", active: true },
   { icon: ArrowDownUp, label: "Convert", href: "/dashboard/convert" },
   { icon: Wallet, label: "Transaction", href: "/dashboard/transactions" },
-  { icon: User, label: "Profile", href: "/dashboard/profile" },
+  // { icon: User, label: "Profile", href: "/dashboard/profile" },
+  { icon: Settings, label: "Setting", href: "/dashboard/settings" },
 ];
 
 export default function Sidebar() {
@@ -33,7 +35,7 @@ export default function Sidebar() {
       prev.map((item) => ({
         ...item,
         active: item.label === label,
-      }))
+      }))   
     );
     router.push(href);
   };
