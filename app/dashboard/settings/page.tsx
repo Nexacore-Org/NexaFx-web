@@ -17,7 +17,7 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState("profile");
 
   return (
-    <div className="max-w-[1086px] p-6">
+    <div className="max-w-[1086px] md:p-6 p-2 pt-6 md:pt-auto">
       {/* Tabs */}
       <div className="overflow-x-auto whitespace-nowrap scrollbar-hide">
         <div className="flex space-x-6 border-b text-xs md:text-base border-gray-200 mb-6">
