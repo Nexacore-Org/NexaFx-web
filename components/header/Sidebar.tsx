@@ -1,51 +1,41 @@
-// components/Sidebar.tsx
 "use client";
 
 import {
   Home,
   Wallet,
-  User,
   ArrowDownUp,
   ChevronLeft,
   Copy,
   Settings,
 } from "lucide-react";
 import { useSidebarStore } from "@/store/sidebarStore";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 
-const initialMenuItems = [
-  { icon: Home, label: "Dashboard", href: "/dashboard", active: true },
+const menuItems = [
+  { icon: Home, label: "Dashboard", href: "/dashboard" },
   { icon: ArrowDownUp, label: "Convert", href: "/dashboard/convert" },
   { icon: Wallet, label: "Transaction", href: "/dashboard/transactions" },
-  // { icon: User, label: "Profile", href: "/dashboard/profile" },
   { icon: Settings, label: "Setting", href: "/dashboard/settings" },
 ];
 
 export default function Sidebar() {
+  const pathname = usePathname();
+  const router = useRouter();
   const { isCollapsed, isMobileOpen, closeMobile, toggleCollapse } =
     useSidebarStore();
 
-  const [menuItems, setMenuItems] = useState(initialMenuItems);
-  const router = useRouter();
-
-  const handleMenuClick = (href: string, label: string) => {
-    setMenuItems((prev) =>
-      prev.map((item) => ({
-        ...item,
-        active: item.label === label,
-      }))   
-    );
+  const handleMenuClick = (href: string) => {
     router.push(href);
   };
+
   // Close mobile sidebar when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const sidebar = document.getElementById("sidebar");
       const target = event.target as Node;
 
-      // Also close on click of a menu item on mobile
       const menuButton = (event.target as HTMLElement).closest("button");
       if (
         isMobileOpen &&
@@ -111,9 +101,7 @@ export default function Sidebar() {
             >
               <div className="flex items-center gap-2">
                 {!isCollapsed && (
-                  <div className="">
-                    <Image src="/logo.png" alt="Logo" width={124} height={42} />
-                  </div>
+                  <Image src="/logo.png" alt="Logo" width={124} height={42} />
                 )}
               </div>
               <button
@@ -121,20 +109,19 @@ export default function Sidebar() {
                 className="hidden lg:flex p-2 rounded-full hover:bg-gray-100"
               >
                 {isCollapsed ? (
-                  <div className="">
-                    <Image
-                      src="/logo-mini.svg"
-                      alt="Logo"
-                      width={20}
-                      height={20}
-                    />
-                  </div>
+                  <Image
+                    src="/logo-mini.svg"
+                    alt="Logo"
+                    width={20}
+                    height={20}
+                  />
                 ) : (
                   <ChevronLeft className="w-5 h-5 text-gray-500" />
                 )}
               </button>
             </div>
           </div>
+
           {/* User Profile Section - Mobile */}
           <div className="lg:hidden p-4 rounded-lg bg-[linear-gradient(240deg,rgba(160,195,253,0.40)_-1.74%,rgba(255,231,156,0.40)_99.3%)] mb-4">
             <div className="flex items-center gap-4">
@@ -166,15 +153,21 @@ export default function Sidebar() {
             </div>
           </div>
 
+          {/* Menu */}
           <ul className="space-y-3 font-medium">
             {menuItems.map((item, index) => {
               const IconComponent = item.icon;
+              const isActive =
+                item.href === "/dashboard"
+                  ? pathname === "/dashboard" // Only exact match for dashboard
+                  : pathname.startsWith(item.href); // Prefix match for others
+
               return (
                 <li key={index}>
                   <button
-                    onClick={() => handleMenuClick(item.href, item.label)}
+                    onClick={() => handleMenuClick(item.href)}
                     className={`flex items-center text-text-tertiary rounded-full group ${
-                      item.active
+                      isActive
                         ? "bg-brand-primary text-black"
                         : "bg-transparent hover:bg-brand-primary/20"
                     } transition-all duration-300 ${
@@ -186,7 +179,7 @@ export default function Sidebar() {
                   >
                     <IconComponent
                       className={`w-5 h-5 text-text-tertiary transition duration-75 group-hover:text-black ${
-                        item.active ? "text-black" : ""
+                        isActive ? "text-black" : ""
                       }`}
                     />
                     {!isCollapsed && <span className="ml-3">{item.label}</span>}
@@ -194,17 +187,6 @@ export default function Sidebar() {
                 </li>
               );
             })}
-
-            {/* Logout button */}
-            {/* <li className="pt-4 mt-4 border-t border-gray-200">
-              <a
-                href="/logout"
-                className="flex items-center p-2 text-gray-900 rounded-lg hover:bg-red-50 hover:text-red-600 group"
-                title={isCollapsed ? "Logout" : ""}>
-                <LogOut className="w-5 h-5 text-gray-500 transition duration-75 group-hover:text-red-600" />
-                {!isCollapsed && <span className="ml-3">Logout</span>}
-              </a>
-            </li> */}
           </ul>
         </div>
       </aside>

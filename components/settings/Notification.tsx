@@ -31,11 +31,12 @@ export default function NotificationTab() {
           >
             <div>
               <h3 className="font-medium">{item.label}</h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-xs md:text-sm text-gray-500">
                 {/* TODO: Add API integration later */}
                 Placeholder description for {item.label}
               </p>
             </div>
+
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -46,7 +47,7 @@ export default function NotificationTab() {
               <span
                 className={`w-11 h-6 flex items-center rounded-full p-1 ${
                   settings[item.key as keyof typeof settings]
-                    ? "bg-yellow-500"
+                    ? "bg-gradient-to-r from-[#FFA200] to-[#3B82F6]"
                     : "bg-gray-300"
                 }`}
               >
@@ -72,7 +73,7 @@ export default function NotificationTab() {
       </div>
 
       {/* Mobile Sticky Footer (only visible on xs screens) */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white p-4 border-t">
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 text-sm font-semibold p-3">
         <button className="bg-yellow-500 px-6 py-3 rounded w-full">
           Save Changes
         </button>

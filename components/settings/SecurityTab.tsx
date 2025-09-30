@@ -90,7 +90,7 @@ export default function SecurityTab() {
       </div>
 
       {/* Mobile Sticky Footer (only visible on xs screens) */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white p-4 border-t">
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 text-sm font-semibold p-3">
         <button className="bg-yellow-500 px-6 py-3 rounded w-full">
           Save Changes
         </button>
