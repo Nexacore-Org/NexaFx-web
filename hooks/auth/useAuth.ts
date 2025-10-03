@@ -1,5 +1,5 @@
+import { userService } from "@/services/api/userService";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { userService } from "@/services/api";
 import { useState, useEffect } from "react";
 
 // Define types for auth state
