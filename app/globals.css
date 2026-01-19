@@ -1,6 +1,5 @@
 @import "tailwindcss";
-
-@plugin "tailwindcss-animate";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -42,51 +41,9 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-
-  /* Custom App Colors */
-  --color-brand-primary: var(--brand-primary);
-  --color-brand-primary-hover: var(--brand-primary-hover);
-  --color-brand-secondary: var(--brand-secondary);
-  --color-brand-secondary-hover: var(--brand-secondary-hover);  
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-tertiary: var(--text-tertiary);
-  --color-text-crypto-symbol: var(--text-crypto-symbol);
-  --color-text-crypto-name: var(--text-crypto-name);
-  --color-text-crypto-price: var(--text-crypto-price);
-  --color-text-success: var(--text-success);
-  --color-text-error: var(--text-error);
-  --color-text-muted: var(--text-muted);
-  --color-text-contact: var(--text-contact);
-  --color-text-link: var(--text-link);
-  --color-text-naira: var(--text-naira);
-  --color-text-see-all: var(--text-see-all);
-  --color-bg-main-desktop: var(--bg-main-desktop);
-  --color-bg-balance-card-desktop: var(--bg-balance-card-desktop);
-  --color-bg-sidebar: var(--bg-sidebar);
-  --color-bg-icon-container: var(--bg-icon-container);
-  --color-bg-input: var(--bg-input);
-  --color-bg-selector: var(--bg-selector);
-  --color-bg-conversion-form: var(--bg-conversion-form);
-  --color-bg-transactions-header: var(--bg-transactions-header);
-  --color-bg-glass-light: var(--bg-glass-light);
-  --color-bg-glass-medium: var(--bg-glass-medium);
-  --color-bg-dropdown: var(--bg-dropdown);
-  --color-bg-dropdown-hover: var(--bg-dropdown-hover);
-  --color-bg-selector-icon: var(--bg-selector-icon);
-  --color-bg-contact-blue: var(--bg-contact-blue);
-  --color-bg-contact-yellow: var(--bg-contact-yellow);
-  --color-bg-contact-orange: var(--bg-contact-orange);
-  --color-border-crypto-card: var(--border-crypto-card);
-  --color-border-glass: var(--border-glass);
-  --color-success-bg: var(--success-bg);
-  --color-success-text: var(--success-text);
-  --color-error-bg: var(--error-bg);
-  --color-error-text: var(--error-text);
-  --color-contact-icon-blue: var(--contact-icon-blue);
-  --color-contact-icon-yellow: var(--contact-icon-yellow);
-  --color-admin-gradient-blue: var(--admin-gradient-blue);
-  --color-admin-gradient-yellow: var(--admin-gradient-yellow);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
 }
 
 :root {
@@ -122,64 +79,6 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-
-  /* Custom App Colors */
-  /* Brand Colors */
-  --brand-primary: #ffd552;
-  --brand-primary-hover: #e6c04a;
-  --brand-secondary: #e9eaee;
-  --brand-secondary-hover: #d3d4d8;  
-
-  /* Text Colors */
-  --text-primary: #262626;
-  --text-secondary: #011028;
-  --text-tertiary: #5e5e5e;
-  --text-crypto-symbol: #070707;
-  --text-crypto-name: #adabb6;
-  --text-crypto-price: #000816;
-  --text-success: #009411;
-  --text-error: #c80808;
-  --text-muted: #787878;
-  --text-contact: #71717a;
-  --text-link: #3c78f4;
-  --text-naira: rgba(54, 54, 54, 0.7);
-  --text-see-all: rgba(48, 48, 48, 0.8);
-
-  /* Background Colors */
-  --bg-main-desktop: #fbfbfb;
-  --bg-balance-card-desktop: #eff0f5;
-  --bg-sidebar: #f5f5f5;
-  --bg-icon-container: #f5f5f5;
-  --bg-input: #e5e5e5;
-  --bg-selector: #ebebeb;
-  --bg-conversion-form: #efeded;
-  --bg-transactions-header: rgba(206, 206, 206, 0.15);
-  --bg-glass-light: rgba(255, 255, 255, 0.3);
-  --bg-glass-medium: rgba(255, 255, 255, 0.6);
-  --bg-dropdown: rgba(224, 224, 224, 0.6);
-  --bg-dropdown-hover: rgba(224, 224, 224, 0.7);
-  --bg-selector-icon: rgba(183, 183, 183, 0.6);
-  --bg-contact-blue: #d9e9ff;
-  --bg-contact-yellow: #fdfcbd; 
-  --bg-contact-orange: #E58600; 
-
-  /* Border Colors */
-  --border-crypto-card: rgba(121, 121, 121, 0.4);
-  --border-glass: rgba(255, 255, 255, 0.3);
-
-  /* Success/Error States */
-  --success-bg: rgba(27, 183, 45, 0.2);
-  --success-text: rgba(0, 148, 17, 0.9);
-  --error-bg: rgba(200, 8, 8, 0.2);
-  --error-text: rgba(200, 8, 8, 0.9);
-
-  /* Contact Page Colors */
-  --contact-icon-blue: #3c78f4;
-  --contact-icon-yellow: #e8b300;
-
-  /* Mobile Admin Gradient Colors */
-  --admin-gradient-blue: #A0C3FD;
-  --admin-gradient-yellow: #FFE79C;
 }
 
 .dark {
@@ -220,7 +119,6 @@
   * {
     @apply border-border outline-ring/50;
   }
-
   body {
     @apply bg-background text-foreground;
   }
