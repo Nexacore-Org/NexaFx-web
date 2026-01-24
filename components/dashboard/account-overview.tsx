@@ -10,7 +10,7 @@ export function AccountOverview() {
     return (
         <section className="account-overview rounded-b-xl md:rounded-b-none md:ml-4">
             {/* Main balance card */}
-            <div className="relative space-y-5 md:space-y-10 overflow-hidden p-4">
+            <div className="relative space-y-5 md:space-y-10 overflow-hidden p-3 md:p-4">
                 <Topbar />
 
                 <div className="flex items-center justify-between">

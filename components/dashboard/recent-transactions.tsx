@@ -13,12 +13,12 @@ const transactions = [
 export function RecentTransactions() {
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between px-2">
-                <h3 className="text-lg font-bold text-foreground">Recent Transactions</h3>
-                <button className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">See All</button>
+            <div className="flex items-center justify-between px-3 md:px-0">
+                <h3 className="text-sm md:text-lg font-bold text-foreground">Recent Transactions</h3>
+                <button className="text-xs md:text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">See All</button>
             </div>
 
-            <div className="rounded-sm bg-card border border-border shadow-sm overflow-hidden p-2 md:p-0">
+            <div className="rounded-xl md:rounded-sm bg-card md:border md:border-border md:shadow-sm overflow-hidden p-2 md:p-0">
                 {/* Desktop view */}
                 <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left">

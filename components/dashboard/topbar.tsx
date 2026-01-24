@@ -3,13 +3,11 @@
 import { useEffect, useState } from "react";
 import { Bell, Menu, User, Moon, Sun } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useSidebarStore } from "@/hooks/use-sidebar-store";
 
-interface TopbarProps {
-    onMenuClick?: () => void;
-}
-
-export function Topbar({ onMenuClick }: TopbarProps) {
+export function Topbar() {
     const pathname = usePathname();
+    const open = useSidebarStore((state) => state.open);
     const [isDarkMode, setIsDarkMode] = useState(false);
 
     useEffect(() => {
@@ -36,7 +34,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         <header className="flex items-center justify-between">
             <div className="flex items-center gap-4">
                 <button
-                    onClick={onMenuClick}
+                    onClick={open}
                     className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
                 >
                     <Menu className="h-6 w-6" />
@@ -65,4 +63,3 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         </header>
     );
 }
-

@@ -16,7 +16,7 @@ export function MarketOverview() {
     return (
         <div className="exchange-rates flex items-center overflow-x-auto gap-3">
             {marketData.map((item, index) => (
-                <div key={index} className="min-w-[168px] md:min-w-[251px] rounded-sm border-[0.43px] border-[#79797966] bg-card p-5 hover:border-primary/50 transition-colors shadow-[4px-4px-12px-0px-#0000001A]">
+                <div key={index} className="min-w-[251px] rounded-sm border-[0.43px] border-[#79797966] bg-card p-5 hover:border-primary/50 transition-colors shadow-[4px-4px-12px-0px-#0000001A]">
                     <div className="flex items-center justify-between mb-4">
                         <p className="text-xs font-medium text-muted-foreground">{item.pair}</p>
                         <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs">
@@ -28,7 +28,7 @@ export function MarketOverview() {
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-4 w-full">
                         <p className="text-lg font-bold tracking-tight">{item.rate}</p>
                         <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${item.up ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"
                             }`}>

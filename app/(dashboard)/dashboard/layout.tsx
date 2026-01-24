@@ -5,12 +5,14 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
 import { cn } from "@/lib/utils";
 
+import { useSidebarStore } from "@/hooks/use-sidebar-store";
+
 export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const { isOpen, close } = useSidebarStore();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     return (
@@ -27,21 +29,19 @@ export default function DashboardLayout({
             </aside>
 
             {/* Sidebar - Mobile Drawer Overlay */}
-            {isSidebarOpen && (
+            {isOpen && (
                 <div
-                    className="fixed inset-0 z-40 bg-black/50 md:hidden"
-                    onClick={() => setIsSidebarOpen(false)}
+                    className="fixed inset-0 z-40 bg-black/50 md:hidden animate-in fade-in duration-300"
+                    onClick={close}
                 />
             )}
 
             {/* Sidebar - Mobile Drawer */}
             <aside className={cn(
-                "fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out md:hidden bg-sidebar",
-                isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+                "fixed inset-y-0 left-0 z-50 w-[280px] transform transition-transform duration-300 ease-in-out md:hidden bg-white dark:bg-black",
+                isOpen ? "translate-x-0" : "-translate-x-full"
             )}>
-                <Sidebar
-                    onMobileClose={() => setIsSidebarOpen(false)}
-                />
+                <Sidebar />
             </aside>
 
             <div className="flex flex-1 flex-col overflow-hidden">
@@ -52,5 +52,6 @@ export default function DashboardLayout({
         </div>
     );
 }
+
 
 

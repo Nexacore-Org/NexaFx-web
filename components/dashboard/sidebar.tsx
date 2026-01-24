@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Settings, LogOut, Home, ArrowUpDown, Mail, CircleUserRound, ChevronLeft, ChevronRight } from "lucide-react";
+import { LogOut, Home, ArrowUpDown, Mail, CircleUserRound, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSidebarStore } from "@/hooks/use-sidebar-store";
 
 const menuItems = [
     { icon: Home, label: "Dashboard", href: "/dashboard" },
@@ -15,11 +16,11 @@ const menuItems = [
 interface SidebarProps {
     isCollapsed?: boolean;
     onToggleCollapse?: () => void;
-    onMobileClose?: () => void;
 }
 
-export function Sidebar({ isCollapsed, onToggleCollapse, onMobileClose }: SidebarProps) {
+export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
     const pathname = usePathname();
+    const close = useSidebarStore((state) => state.close);
 
     return (
         <div className={cn(
@@ -59,7 +60,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse, onMobileClose }: Sideba
                     <Link
                         key={item.href}
                         href={item.href}
-                        onClick={onMobileClose}
+                        onClick={close}
                         className={cn(
                             "flex items-center gap-3 rounded-full py-3 text-sm font-medium transition-all",
                             isCollapsed ? "justify-center px-0" : "px-4",
