@@ -8,7 +8,7 @@ const truncateAddress = (addr: string) =>
 
 export function AccountOverview() {
     return (
-        <section className="account-overview md:ml-4">
+        <section className="account-overview rounded-b-xl md:rounded-b-none md:ml-4">
             {/* Main balance card */}
             <div className="relative space-y-5 md:space-y-10 overflow-hidden p-4">
                 <Topbar />
@@ -52,8 +52,8 @@ export function AccountOverview() {
 
                     <div className="rounded-sm w-full md:w-1/2 bg-white/30 md:bg-card p-2.5 md:p-4  md:border-[0.43px] border-[#79797966] shadow-[4px-4px-12px-0px-#0000001A]">
                         <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2 bg-[#E0E0E099] px-4 py-2 rounded-sm">
-                                <img src="/icons/usdc.svg" alt="" className="w-8 h-8" />
+                            <div className="flex items-center gap-2 bg-[#E0E0E099] p-2 rounded-md">
+                                <img src="/icons/usdc.svg" alt="" className="w-6 h-6" />
                                 <p className="text-xs font-medium text-muted-foreground">USD</p>
                                 <ChevronDown className="size-5 text-black" />
                             </div>
