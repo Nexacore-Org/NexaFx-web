@@ -2,11 +2,14 @@
 
 import { ChevronDown, Download, Upload, Copy } from "lucide-react";
 import { Topbar } from "./topbar";
+import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 
 const truncateAddress = (addr: string) =>
     `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
 export function AccountOverview() {
+    const openWithdrawal = useWithdrawalStore((state) => state.open);
+
     return (
         <section className="account-overview rounded-b-xl md:rounded-b-none md:ml-4">
             {/* Main balance card */}
@@ -36,7 +39,10 @@ export function AccountOverview() {
                         <Download className="size-5" />
                         Deposit
                     </button>
-                    <button className="flex items-center gap-2 rounded-sm bg-[#E9EAEE] px-8 py-2.5 text-sm font-semibold text-black hover:bg-white/60 transition-all active:scale-95 border border-white/90">
+                    <button
+                        onClick={openWithdrawal}
+                        className="flex items-center gap-2 rounded-sm bg-[#E9EAEE] px-8 py-2.5 text-sm font-semibold text-black hover:bg-white/60 transition-all active:scale-95 border border-white/90"
+                    >
                         <Upload className="size-5" />
                         Withdraw
                     </button>
