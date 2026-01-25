@@ -1,6 +1,7 @@
 "use client";
 
-import { Search, SlidersHorizontal } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Search, ListFilter } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TransactionFiltersProps {
@@ -20,10 +21,26 @@ export function TransactionFilters({
     onFilterChange,
     totalCount,
 }: TransactionFiltersProps) {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
     return (
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4">
-            {/* Search Input - Desktop full width, mobile full width */}
-            <div className="relative w-full md:w-80">
+        <div className="flex flex-row items-center justify-between gap-2 md:gap-4 py-4">
+            {/* Search Input - Desktop w-80, mobile flex-1 */}
+            <div className="relative flex-1 md:w-80 md:flex-none">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                     type="text"
@@ -35,10 +52,10 @@ export function TransactionFilters({
             </div>
 
             {/* Filters Section */}
-            <div className="flex items-center w-full md:w-auto">
+            <div className="flex items-center shrink-0 md:w-auto">
                 {/* Desktop: Bordered Tabs Container */}
-                <div className="hidden md:flex items-center border-[0.25px]  border-[#7B7B7B] rounded-[10px] overflow-hidden bg-white shadow-sm">
-                    {filters.map((filter, index) => (
+                <div className="hidden md:flex items-center border-[0.25px] border-[#7B7B7B] rounded-[10px] overflow-hidden bg-white shadow-sm">
+                    {filters.map((filter) => (
                         <button
                             key={filter}
                             onClick={() => onFilterChange(filter)}
@@ -64,43 +81,49 @@ export function TransactionFilters({
                     ))}
                 </div>
 
-                {/* Mobile: Individual Bordered Tabs + Filter Button */}
-                <div className="md:hidden flex items-center gap-2 w-full overflow-x-auto pb-2 no-scrollbar">
-                    {/* Tabs */}
-                    <div className="flex items-center gap-1">
-                        {filters.map((filter) => (
-                            <button
-                                key={filter}
-                                onClick={() => onFilterChange(filter)}
-                                className={cn(
-                                    "relative px-4 py-2 text-sm font-medium rounded-md border transition-colors whitespace-nowrap shrink-0",
-                                    activeFilter === filter || (filter === "All" && activeFilter === "All")
-                                        ? "border-primary bg-primary text-primary-foreground"
-                                        : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
-                                )}
-                            >
-                                {filter}
-                                {filter === "All" && (
-                                    <span className={cn(
-                                        "ml-1 px-1.5 py-0.5 text-xs rounded",
-                                        activeFilter === "All"
-                                            ? "bg-primary-foreground/20 text-primary-foreground"
-                                            : "bg-muted text-muted-foreground"
-                                    )}>
-                                        {totalCount}
-                                    </span>
-                                )}
-                            </button>
-                        ))}
+                {/* Mobile: Filter Display + Dropdown Trigger */}
+                <div className="md:hidden flex items-center gap-2">
+                    {/* Active Filter Pill */}
+                    <div className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-[10px] text-sm font-medium shadow-sm whitespace-nowrap">
+                        <span>{activeFilter}</span>
+                        <span className="opacity-80 text-xs">{totalCount}</span>
                     </div>
-                    
-                    {/* Mobile Filter Button */}
-                    <button 
-                        className="ml-auto p-2 text-muted-foreground hover:text-foreground border border-border rounded-md shrink-0"
-                        aria-label="Filter options"
-                    >
-                       <SlidersHorizontal className="h-4 w-4" />
-                    </button>
+
+                    {/* Filter Dropdown */}
+                    <div className="relative" ref={dropdownRef}>
+                        <button 
+                            onClick={() => setIsOpen(!isOpen)}
+                            className="p-2 bg-card text-foreground hover:bg-muted transition-colors  "
+                            aria-label="Filter options"
+                        >
+                           <ListFilter className="h-5 w-5" />
+                        </button>
+
+                        {isOpen && (
+                            <div className="absolute right-0 top-full mt-2 w-40 bg-card border border-border rounded-md shadow-lg z-50 overflow-hidden">
+                                <div className="py-1">
+                                    {filters.map((filter) => (
+                                        <button
+                                            key={filter}
+                                            onClick={() => {
+                                                onFilterChange(filter);
+                                                setIsOpen(false);
+                                            }}
+                                            className={cn(
+                                                "w-full text-left px-4 py-2 text-sm transition-colors hover:bg-muted",
+                                                activeFilter === filter ? "bg-primary/10 text-primary font-medium" : "text-foreground"
+                                            )}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span>{filter}</span>
+                                                {filter === "All" && <span className="text-xs text-muted-foreground">{totalCount}</span>}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
