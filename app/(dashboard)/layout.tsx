@@ -38,14 +38,17 @@ export default function DashboardLayout({
 
             {/* Sidebar - Mobile Drawer */}
             <aside className={cn(
-                "fixed inset-y-0 left-0 z-50 w-[280px] transform transition-transform duration-300 ease-in-out md:hidden bg-white dark:bg-black",
+                "fixed inset-y-0 left-0 z-50 w-70 transform transition-transform duration-300 ease-in-out md:hidden bg-white dark:bg-black",
                 isOpen ? "translate-x-0" : "-translate-x-full"
             )}>
                 <Sidebar />
             </aside>
 
             <div className="flex flex-1 flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto md:py-4">
+                <div className="p-4 md:px-8">
+                    <Topbar />
+                </div>
+                <main className="flex-1 overflow-y-auto px-4 md:px-8 pb-4">
                     {children}
                 </main>
             </div>
