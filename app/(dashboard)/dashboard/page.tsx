@@ -1,8 +1,4 @@
 "use client";
-<<<<<<< HEAD
-=======
-
->>>>>>> f0276136c698a017ea80db9cb59fdb7dd465a3ab
 import { AccountOverview } from "@/components/dashboard/account-overview";
 import DepositMethods from "@/components/dashboard/deposit";
 import { MarketOverview } from "@/components/dashboard/market-overview";
@@ -12,9 +8,7 @@ import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import { ArrowUpDown, Download, Upload } from "lucide-react";
 import { useState } from "react";
 
-
 export default function DashboardPage() {
-<<<<<<< HEAD
   const [openDeposit, setOpenDeposit] = useState(false);
   const toggleDeposit = () => {
     setOpenDeposit(!openDeposit);
@@ -23,81 +17,71 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-5 md:gap-10">
       <AccountOverview openDeposit={openDeposit} />
-=======
-    const openWithdrawal = useWithdrawalStore((state) => state.open);
+      {/* const openWithdrawal = useWithdrawalStore((state) => state.open); */}
 
-    return (
+      {/* return (
         <div className="flex flex-col gap-5 md:gap-10">
-            <AccountOverview />
+            <AccountOverview /> */}
 
-            <div className="md:px-4 space-y-4">
-                <div className="grid grid-cols-3 gap-4 px-6 pb-6 md:p-0">
-                    <div className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966] cursor-pointer hover:bg-muted/50 transition-colors">
-                        <Download />
-                        <p className="text-sm md:text-base font-medium">
-                            Deposit
-                        </p>
-                    </div>
-                    <div
-                        onClick={openWithdrawal}
-                        className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966] cursor-pointer hover:bg-muted/50 transition-colors"
-                    >
-                        <Upload />
-                        <p className="text-sm md:text-base font-medium">
-                            Withdraw
-                        </p>
-                    </div>
-                    <div className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966] cursor-pointer hover:bg-muted/50 transition-colors">
-                        <ArrowUpDown />
-                        <p className="text-sm md:text-base font-medium">
-                            Convert
-                        </p>
-                    </div>
-                </div>
->>>>>>> f0276136c698a017ea80db9cb59fdb7dd465a3ab
-
-      {openDeposit ? (
-        <DepositMethods toggleDeposit={toggleDeposit} />
-      ) : (
-        <div className="md:px-4 space-y-4">
-          <div className="grid grid-cols-3 gap-4 px-6 pb-6 md:p-0">
-            <div
-              className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966]"
-              onClick={toggleDeposit}
-            >
-              <Download />
-              <p className="text-sm md:text-base font-medium">Deposit</p>
-            </div>
-            <div className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966]">
-              <Upload />
-              <p className="text-sm md:text-base font-medium">Withdraw</p>
-            </div>
-            <div className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966]">
-              <ArrowUpDown />
-              <p className="text-sm md:text-base font-medium">Convert</p>
-            </div>
+      <div className="md:px-4 space-y-4">
+        <div className="grid grid-cols-3 gap-4 px-6 pb-6 md:p-0">
+          <div className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966] cursor-pointer hover:bg-muted/50 transition-colors">
+            <Download />
+            <p className="text-sm md:text-base font-medium">Deposit</p>
           </div>
-
-<<<<<<< HEAD
-          <div className="space-y-4 px-3 md:px-0">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm md:text-lg font-semibold">
-                Exchange Rates
-              </h3>
-              <p className="text-xs md:text-sm text-muted-foreground">
-                Live updates
-              </p>
-            </div>
-            <MarketOverview />
+          <div
+            // onClick={openWithdrawal}
+            className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966] cursor-pointer hover:bg-muted/50 transition-colors"
+          >
+            <Upload />
+            <p className="text-sm md:text-base font-medium">Withdraw</p>
           </div>
+          <div className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966] cursor-pointer hover:bg-muted/50 transition-colors">
+            <ArrowUpDown />
+            <p className="text-sm md:text-base font-medium">Convert</p>
+          </div>
+        </div>
 
-          <RecentTransactions />
-=======
+        {openDeposit ? (
+          <DepositMethods toggleDeposit={toggleDeposit} />
+        ) : (
+          <div className="md:px-4 space-y-4">
+            <div className="grid grid-cols-3 gap-4 px-6 pb-6 md:p-0">
+              <div
+                className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966]"
+                onClick={toggleDeposit}
+              >
+                <Download />
+                <p className="text-sm md:text-base font-medium">Deposit</p>
+              </div>
+              <div className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966]">
+                <Upload />
+                <p className="text-sm md:text-base font-medium">Withdraw</p>
+              </div>
+              <div className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966]">
+                <ArrowUpDown />
+                <p className="text-sm md:text-base font-medium">Convert</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 px-3 md:px-0">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm md:text-lg font-semibold">
+                  Exchange Rates
+                </h3>
+                <p className="text-xs md:text-sm text-muted-foreground">
+                  Live updates
+                </p>
+              </div>
+              <MarketOverview />
+            </div>
+
+            <RecentTransactions />
             {/* Withdrawal Modal */}
             <WithdrawalModal />
->>>>>>> f0276136c698a017ea80db9cb59fdb7dd465a3ab
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
