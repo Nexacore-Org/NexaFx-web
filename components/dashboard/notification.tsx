@@ -16,8 +16,8 @@ export const DepositNotification: React.FC<NotificationProps> = ({
   onClose,
 }) => {
   return (
-    <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-start gap-3 mb-4 animate-slideDown">
-      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+    <div className="bg-[#EDFFE6] border border-[#00941166] rounded-lg p-3 flex items-start gap-3 mb-4 animate-slideDown">
+      <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
         <Download className="w-5 h-5 text-green-600" />
       </div>
 

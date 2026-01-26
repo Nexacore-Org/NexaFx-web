@@ -9,6 +9,7 @@ import {
   X,
   Copy,
   Share2,
+  ChevronRight,
 } from "lucide-react";
 import { DepositNotification } from "./notification";
 
@@ -57,7 +58,7 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
       {" "}
       <div className="">
         <div className="bg-white rounded-xl p-6 shadow-sm">
-          {showNotification && (
+          {!showNotification && (
             <DepositNotification
               message="Your deposit of"
               amount="₦50,000"
@@ -76,8 +77,8 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
 
           {/* Wallet Address */}
           <div className="mb-4 bg-[#EFEFEF] rounded-xl p-3 md:p-5">
-            <label className="text-sm md:text-[18px] text-gray-500 mb-2 block">
-              Wallet Address
+            <label className="text-sm md:text-[18px] flex items-center text-gray-500 mb-2 ">
+              Wallet Address <ChevronRight size={20} />
             </label>
             <div className="flex items-center gap-2 p-2 md:p-3 ">
               <span className="text-sm md:text-[18px] font-semibold text-[#242424] break-all flex-1">

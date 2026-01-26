@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import InstantModalDeposit from "./InstantDepositModal";
 import { MobileNotificationBanner } from "./notification";
+import Image from "next/image";
 
 interface DepositMethod {
   id: string;
@@ -34,7 +35,14 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
       description:
         "Send crypto directly to your NexaFX wallet address. Just copy your address and make the transfer.",
       fee: "0%",
-      icon: <Wallet className="w-5 h-5" />,
+      icon: (
+        <Image
+          src={`/icons/instant_deposit.svg`}
+          alt={"dsdsds"}
+          width={20}
+          height={20}
+        />
+      ),
     },
     {
       id: "exchange",
@@ -65,7 +73,19 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 flex-1">
-          <div className="mt-0.5">{method.icon}</div>
+          <div className="mt-0.5">
+            {/* {typeof method.icon === "string" ? (
+              <Image
+                src={`/icons/${method.icon}`}
+                alt={method.title}
+                width={20}
+                height={20}
+              />
+            ) : (
+              method.icon
+            )} */}
+            {method.icon}
+          </div>
           <div className="flex-1">
             <h3 className="font-medium text-gray-900 mb-1 text-sm md:text-base">
               {method.title}
