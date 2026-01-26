@@ -178,7 +178,7 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
               )}
 
               <div
-                className="bg-white w-full rounded-2xl max-h-[90vh] overflow-auto"
+                className="bg-white w-full mt-8 rounded-2xl max-h-[90vh] overflow-auto"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Modal Header */}

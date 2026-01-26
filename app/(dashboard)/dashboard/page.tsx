@@ -3,10 +3,9 @@ import { AccountOverview } from "@/components/dashboard/account-overview";
 import DepositMethods from "@/components/dashboard/deposit";
 import { MarketOverview } from "@/components/dashboard/market-overview";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
-import { WithdrawalModal } from "@/components/dashboard/withdrawal/WithdrawalModal";
-import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import { ArrowUpDown, Download, Upload } from "lucide-react";
 import { useState } from "react";
+
 
 export default function DashboardPage() {
   const [openDeposit, setOpenDeposit] = useState(false);
@@ -16,35 +15,11 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-5 md:gap-10">
-      <AccountOverview openDeposit={openDeposit} />
-      {/* const openWithdrawal = useWithdrawalStore((state) => state.open); */}
-
-      {/* return (
-        <div className="flex flex-col gap-5 md:gap-10">
-            <AccountOverview /> */}
-
-      <div className="md:px-4 space-y-4">
-        <div className="grid grid-cols-3 gap-4 px-6 pb-6 md:p-0">
-          <div className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966] cursor-pointer hover:bg-muted/50 transition-colors">
-            <Download />
-            <p className="text-sm md:text-base font-medium">Deposit</p>
-          </div>
-          <div
-            // onClick={openWithdrawal}
-            className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966] cursor-pointer hover:bg-muted/50 transition-colors"
-          >
-            <Upload />
-            <p className="text-sm md:text-base font-medium">Withdraw</p>
-          </div>
-          <div className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966] cursor-pointer hover:bg-muted/50 transition-colors">
-            <ArrowUpDown />
-            <p className="text-sm md:text-base font-medium">Convert</p>
-          </div>
-        </div>
-
-        {openDeposit ? (
-          <DepositMethods toggleDeposit={toggleDeposit} />
-        ) : (
+      {openDeposit ? (
+        <DepositMethods toggleDeposit={toggleDeposit} />
+      ) : (
+        <>
+            <AccountOverview openDeposit={openDeposit} />
           <div className="md:px-4 space-y-4">
             <div className="grid grid-cols-3 gap-4 px-6 pb-6 md:p-0">
               <div
@@ -77,11 +52,9 @@ export default function DashboardPage() {
             </div>
 
             <RecentTransactions />
-            {/* Withdrawal Modal */}
-            <WithdrawalModal />
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }

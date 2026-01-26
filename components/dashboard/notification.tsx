@@ -59,7 +59,7 @@ export const MobileNotificationBanner: React.FC<NotificationProps> = ({
   onClose,
 }) => {
   return (
-    <div className="bg-white space-x-2 absolute top-0 w-full rounded-sm border-b border-gray-200 p-3 flex items-center gap-3 animate-slideDown">
+    <div className="bg-white space-x-2 absolute top-1 left-1 right-1  w-full rounded-sm border-b border-gray-200 p-3 flex items-center gap-3 animate-slideDown">
       <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
         <Download className="w-4 h-4 text-green-600" />
       </div>
