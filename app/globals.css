@@ -149,3 +149,36 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
+
+.button-verify {
+  background: linear-gradient(240.3deg, #a0c3fd -1.74%, #ffe79c 99.3%);
+  padding: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button-verify span {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.select-gradient {
+  background: linear-gradient(240.3deg, #a0c3fd -1.74%, #ffe79c 99.3%);
+  border-radius: 8px;
+  padding: 1px;
+}
+
+.select-gradient button {
+  background: white;
+  border-color: transparent !important;
+  border-radius: 8px;
+}
+
+.gradient-blue-yellow {
+  background: linear-gradient(240.3deg, #a0c3fd -1.74%, #ffe79c 99.3%);
+}
