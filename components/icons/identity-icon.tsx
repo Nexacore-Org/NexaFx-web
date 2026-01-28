@@ -1,0 +1,39 @@
+export const IdentityIcon = (props: React.ComponentPropsWithoutRef<"svg">) => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" {...props}>
+    <path
+      d="M12 7.5H13.5"
+      stroke="#E58600"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M12 10.5H13.5"
+      stroke="#E58600"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M4.62695 11.2494C4.78156 10.8099 5.06878 10.4293 5.44897 10.16C5.82916 9.89072 6.28356 9.74609 6.74945 9.74609C7.21535 9.74609 7.66975 9.89072 8.04994 10.16C8.43013 10.4293 8.71735 10.8099 8.87195 11.2494"
+      stroke="#E58600"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M6.75 9.75C7.57843 9.75 8.25 9.07843 8.25 8.25C8.25 7.42157 7.57843 6.75 6.75 6.75C5.92157 6.75 5.25 7.42157 5.25 8.25C5.25 9.07843 5.92157 9.75 6.75 9.75Z"
+      stroke={props.color || "#321D00"}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M15 3.75H3C2.17157 3.75 1.5 4.42157 1.5 5.25V12.75C1.5 13.5784 2.17157 14.25 3 14.25H15C15.8284 14.25 16.5 13.5784 16.5 12.75V5.25C16.5 4.42157 15.8284 3.75 15 3.75Z"
+      stroke={props.color || "#321D00"}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
