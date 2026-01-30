@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/user/Desktop/Projects/NexaFx-web log --oneline -20)",
+      "Bash(npm run build:*)"
+    ]
+  }
+}
