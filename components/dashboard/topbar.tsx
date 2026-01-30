@@ -3,18 +3,36 @@
 import { useEffect, useState } from "react";
 import { Bell, Menu, User, Moon, Sun } from "lucide-react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { useSidebarStore } from "@/hooks/use-sidebar-store";
+import { useNotificationsStore } from "@/hooks/use-notifications-store";
+import { NotificationsPanel } from "@/components/notifications";
+import { mockNotifications } from "@/lib/mock-notifications";
 
 export function Topbar() {
     const pathname = usePathname();
-    const open = useSidebarStore((state) => state.open);
+    const openSidebar = useSidebarStore((state) => state.open);
     const [isDarkMode, setIsDarkMode] = useState(false);
+
+    const {
+        notifications,
+        setNotifications,
+        unreadCount,
+        toggle: toggleNotifications,
+    } = useNotificationsStore();
 
     useEffect(() => {
         // Check initial theme
         const isDark = document.documentElement.classList.contains("dark");
         setIsDarkMode(isDark);
     }, []);
+
+    useEffect(() => {
+        // Initialize notifications with mock data
+        if (notifications.length === 0) {
+            setNotifications(mockNotifications);
+        }
+    }, [notifications.length, setNotifications]);
 
     const toggleTheme = () => {
         const newMode = !isDarkMode;
@@ -34,7 +52,7 @@ export function Topbar() {
         <header className="flex items-center justify-between">
             <div className="flex items-center gap-4">
                 <button
-                    onClick={open}
+                    onClick={openSidebar}
                     className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
                 >
                     <Menu className="h-6 w-6" />
@@ -51,10 +69,34 @@ export function Topbar() {
                     {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                 </button>
 
-                <button className="relative p-2 hover:bg-muted rounded-full transition-colors text-foreground">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border-2 border-background" />
-                </button>
+                <div className="relative">
+                    {/* Mobile: Link to notifications page */}
+                    <Link
+                        href="/notifications"
+                        className="md:hidden relative p-2 hover:bg-muted rounded-full transition-colors text-foreground block"
+                    >
+                        <Bell className="h-5 w-5" />
+                        {unreadCount > 0 && (
+                            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border-2 border-background" />
+                        )}
+                    </Link>
+
+                    {/* Desktop: Toggle notifications panel */}
+                    <button
+                        onClick={toggleNotifications}
+                        className="hidden md:block relative p-2 hover:bg-muted rounded-full transition-colors text-foreground"
+                    >
+                        <Bell className="h-5 w-5" />
+                        {unreadCount > 0 && (
+                            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border-2 border-background" />
+                        )}
+                    </button>
+
+                    {/* Desktop notifications panel */}
+                    <div className="hidden md:block">
+                        <NotificationsPanel />
+                    </div>
+                </div>
 
                 <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
                     <User className="h-6 w-6 text-muted-foreground" />
