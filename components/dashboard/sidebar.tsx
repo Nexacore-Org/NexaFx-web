@@ -3,9 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LogOut,
   Home,
-  ArrowUpDown,
   Mail,
   CircleUserRound,
   ChevronLeft,
@@ -13,12 +11,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/hooks/use-sidebar-store";
+import Image from "next/image";
 
 const menuItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
-  { icon: ArrowUpDown, label: "Convert", href: "/convert" },
+  // { icon: ArrowUpDown, label: "Convert", href: "/convert" },
   { icon: Mail, label: "Transactions", href: "/transactions" },
-  { icon: CircleUserRound, label: "Settings", href: "/profile" },
+  { icon: CircleUserRound, label: "Settings", href: "/settings" },
 ];
 
 interface SidebarProps {
@@ -45,7 +44,14 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
           )}
         >
           {!isCollapsed && (
-            <img src="/icons/logo.svg" alt="Logo" className="h-8" />
+            <Image
+              src="/icons/logo.svg"
+              alt="Logo"
+              className="h-8"
+              width={100}
+              height={100}
+              priority
+            />
           )}
 
           {onToggleCollapse && (

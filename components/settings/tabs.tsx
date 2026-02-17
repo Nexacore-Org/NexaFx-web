@@ -5,6 +5,10 @@ import { AccountIcon, SecurityIcon, IdentityIcon } from "../icons";
 import { AccountInfo } from "./account-info";
 import { Security } from "./security";
 import { Notification } from "./notification";
+import { ProfileOverview } from "../profile/profile-overview";
+import { PersonalInfo } from "../profile/personal-info";
+import { VerificationBanner } from "../profile/verification-banner";
+import { FAQSection } from "../profile/faq-section";
 
 export function TabsSettings() {
   const [isActiveTap, setIsActiveTap] = useState<undefined | string>();
@@ -56,7 +60,26 @@ export function TabsSettings() {
       <TabsContent value="notification">
         <Notification />
       </TabsContent>
-      <TabsContent value="identity">nothing</TabsContent>
+      <TabsContent value="identity">
+        {" "}
+        {/* Identity Verification Header */}
+        <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
+          {/* Left Column: Profile Card */}
+          <div className="h-full">
+            <ProfileOverview />
+          </div>
+
+          {/* Right Column: Content Stack */}
+          <div className="space-y-6">
+            <PersonalInfo />
+            <VerificationBanner />
+          </div>
+        </div>
+        {/* Full Width FAQ Section */}
+        <div className="w-full">
+          <FAQSection />
+        </div>
+      </TabsContent>
     </Tabs>
   );
 }
