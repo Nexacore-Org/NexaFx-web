@@ -2,16 +2,22 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { verifySignupOtp, resendSignupOtp } from "@/lib/api/auth";
 
 export default function VerifyOtpPage() {
   const router = useRouter();
   const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
+  const [resendMessage, setResendMessage] = useState("");
+  const [isResending, setIsResending] = useState(false);
+  const [email, setEmail] = useState("");
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    // Focus first input on mount
     inputRefs.current[0]?.focus();
+    const stored = sessionStorage.getItem("signup_email");
+    if (stored) setEmail(stored);
   }, []);
 
   const handleChange = (element: HTMLInputElement, index: number) => {
@@ -41,11 +47,31 @@ export default function VerifyOtpPage() {
     if (otp.some((digit) => digit === "")) return;
 
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    setApiError("");
+    try {
+      await verifySignupOtp({ email, otp: otp.join("") });
       router.push("/signup/success");
-    }, 1500);
+    } catch (err) {
+      setApiError(
+        err instanceof Error ? err.message : "Invalid or expired OTP",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setIsResending(true);
+    setApiError("");
+    setResendMessage("");
+    try {
+      await resendSignupOtp({ email });
+      setResendMessage("Code resent successfully");
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Failed to resend code");
+    } finally {
+      setIsResending(false);
+    }
   };
 
   const isOtpComplete = otp.every((digit) => digit !== "");
@@ -80,6 +106,13 @@ export default function VerifyOtpPage() {
           ))}
         </div>
 
+        {apiError && (
+          <p className="text-xs text-red-500 text-center">{apiError}</p>
+        )}
+        {resendMessage && (
+          <p className="text-xs text-green-600 text-center">{resendMessage}</p>
+        )}
+
         <button
           type="submit"
           disabled={isLoading || !isOtpComplete}
@@ -98,9 +131,11 @@ export default function VerifyOtpPage() {
         <div className="text-center">
           <button
             type="button"
-            className="text-sm font-medium text-zinc-500 hover:text-orange-500 transition-colors"
+            onClick={handleResend}
+            disabled={isResending}
+            className="text-sm font-medium text-zinc-500 hover:text-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Didn't receive code? Resend
+            {isResending ? "Resending..." : "Didn't receive code? Resend"}
           </button>
         </div>
       </form>
