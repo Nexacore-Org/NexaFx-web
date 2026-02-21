@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
+import { signUp } from "@/lib/api/auth";
 
 export default function CreateAccountPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
 
   const [formData, setFormData] = useState({
     email: "",
@@ -45,11 +47,20 @@ export default function CreateAccountPage() {
     if (!validate()) return;
 
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    setApiError("");
+    try {
+      await signUp({
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+      });
+      sessionStorage.setItem("signup_email", formData.email);
       router.push("/signup/verify");
-    }, 1500);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -175,6 +186,9 @@ export default function CreateAccountPage() {
           </label>
         </div>
 
+        {apiError && (
+          <p className="text-xs text-red-500 text-center">{apiError}</p>
+        )}
         <button
           type="submit"
           disabled={isLoading || !formData.acceptTerms}
