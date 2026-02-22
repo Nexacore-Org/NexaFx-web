@@ -1,42 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import { ChevronDown, ChevronLeft, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getCurrencies, type Currency } from "@/lib/api/currencies";
 
-const currencies = [
-    { id: 'USDC', name: 'USD Coin', icon: '/icons/usdc.svg', balance: '1,160.52' },
-    { id: 'ETH', name: 'Ethereum', icon: '/icons/eth.svg', balance: '0.05' },
-    { id: 'BNB', name: 'BNB', icon: '/icons/bnb.svg', balance: '0.00' },
-];
+interface CurrencyOption {
+    id: string;
+    name: string;
+    icon: string;
+    balance: string;
+}
+
+function toCurrencyOption(c: Currency): CurrencyOption {
+    return {
+        id: c.code,
+        name: c.name,
+        icon: `/icons/${c.code.toLowerCase()}.svg`,
+        balance: "0.00",
+    };
+}
 
 export function WithdrawalForm() {
     const { currency, amount, walletAddress, setStep, setFormData } = useWithdrawalStore();
 
+    const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
+    const [isLoadingCurrencies, setIsLoadingCurrencies] = useState(true);
+    const [currencyError, setCurrencyError] = useState<string | null>(null);
     const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
     const [errors, setErrors] = useState<{ address?: string; amount?: string }>({});
+
+    useEffect(() => {
+        getCurrencies()
+            .then((data) => {
+                setCurrencies(data.map(toCurrencyOption));
+            })
+            .catch(() => {
+                setCurrencyError("Unable to load currencies. Please try again.");
+            })
+            .finally(() => setIsLoadingCurrencies(false));
+    }, []);
 
     const selectedCurrency = currencies.find(c => c.id === currency) || currencies[0];
 
     const validateForm = () => {
         const newErrors: { address?: string; amount?: string } = {};
 
-        // Validate wallet address
         if (!walletAddress.trim()) {
             newErrors.address = "Wallet address is required";
         } else if (walletAddress.trim().length < 10) {
             newErrors.address = "Please enter a valid wallet address";
         }
 
-        // Validate amount
         if (!amount.trim()) {
             newErrors.amount = "Amount is required";
         } else {
             const numAmount = parseFloat(amount);
             if (isNaN(numAmount) || numAmount <= 0) {
                 newErrors.amount = "Amount must be greater than 0";
-            } else if (numAmount > parseFloat(selectedCurrency.balance.replace(',', ''))) {
+            } else if (numAmount > parseFloat(selectedCurrency.balance.replace(",", ""))) {
                 newErrors.amount = "Insufficient balance";
             }
         }
@@ -47,12 +70,12 @@ export function WithdrawalForm() {
 
     const handleSubmit = () => {
         if (validateForm()) {
-            setStep('review');
+            setStep("review");
         }
     };
 
     const handleMaxClick = () => {
-        setFormData({ amount: selectedCurrency.balance.replace(',', '') });
+        setFormData({ amount: selectedCurrency.balance.replace(",", "") });
     };
 
     return (
@@ -60,7 +83,7 @@ export function WithdrawalForm() {
             {/* Header */}
             <div className="flex items-center gap-3 pt-4">
                 <button
-                    onClick={() => setStep('select')}
+                    onClick={() => setStep("select")}
                     className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors"
                 >
                     <ChevronLeft className="size-5 text-muted-foreground" />
@@ -108,33 +131,64 @@ export function WithdrawalForm() {
                         Currency
                     </label>
                     <div className="relative">
+                        {currencyError ? (
+                            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-destructive/10 border border-destructive">
+                                <div className="flex items-center gap-2 text-destructive">
+                                    <AlertCircle className="size-4 shrink-0" />
+                                    <span className="text-sm">{currencyError}</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setCurrencyError(null);
+                                        setIsLoadingCurrencies(true);
+                                        getCurrencies()
+                                            .then((data) => setCurrencies(data.map(toCurrencyOption)))
+                                            .catch(() => setCurrencyError("Unable to load currencies. Please try again."))
+                                            .finally(() => setIsLoadingCurrencies(false));
+                                    }}
+                                    className="text-xs font-semibold text-destructive underline underline-offset-2 hover:opacity-70 transition-opacity shrink-0"
+                                >
+                                    Retry
+                                </button>
+                            </div>
+                        ) : (
                         <button
                             type="button"
+                            disabled={isLoadingCurrencies}
                             onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
                             className={cn(
                                 "w-full flex items-center justify-between px-4 py-3 rounded-xl",
                                 "bg-muted/50 border border-border",
-                                "hover:bg-muted transition-colors"
+                                "hover:bg-muted transition-colors",
+                                isLoadingCurrencies && "opacity-60 cursor-wait"
                             )}
                         >
-                            <div className="flex items-center gap-3">
-                                <img
-                                    src={selectedCurrency.icon}
-                                    alt={selectedCurrency.name}
-                                    className="w-6 h-6 rounded-full"
-                                />
-                                <span className="font-medium text-foreground">
-                                    {selectedCurrency.id}
+                            {isLoadingCurrencies ? (
+                                <span className="text-sm text-muted-foreground animate-pulse">
+                                    Loading currencies…
                                 </span>
-                            </div>
+                            ) : selectedCurrency ? (
+                                <div className="flex items-center gap-3">
+                                    <img
+                                        src={selectedCurrency.icon}
+                                        alt={selectedCurrency.name}
+                                        className="w-6 h-6 rounded-full"
+                                    />
+                                    <span className="font-medium text-foreground">
+                                        {selectedCurrency.id}
+                                    </span>
+                                </div>
+                            ) : null}
                             <ChevronDown className={cn(
                                 "size-5 text-muted-foreground transition-transform",
                                 showCurrencyDropdown && "rotate-180"
                             )} />
                         </button>
+                        )}
 
                         {/* Dropdown */}
-                        {showCurrencyDropdown && (
+                        {showCurrencyDropdown && !isLoadingCurrencies && !currencyError && (
                             <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10">
                                 {currencies.map((curr) => (
                                     <button
@@ -178,7 +232,7 @@ export function WithdrawalForm() {
                             Amount
                         </label>
                         <span className="text-xs text-muted-foreground">
-                            Balance: {selectedCurrency.balance} {selectedCurrency.id}
+                            Balance: {selectedCurrency?.balance ?? "—"} {selectedCurrency?.id ?? ""}
                         </span>
                     </div>
                     <div className="relative">
@@ -188,8 +242,7 @@ export function WithdrawalForm() {
                             placeholder="0.00"
                             value={amount}
                             onChange={(e) => {
-                                // Allow only numbers and decimal point
-                                const value = e.target.value.replace(/[^0-9.]/g, '');
+                                const value = e.target.value.replace(/[^0-9.]/g, "");
                                 setFormData({ amount: value });
                                 if (errors.amount) setErrors(prev => ({ ...prev, amount: undefined }));
                             }}
@@ -232,7 +285,7 @@ export function WithdrawalForm() {
                     Withdraw
                 </button>
                 <button
-                    onClick={() => setStep('select')}
+                    onClick={() => setStep("select")}
                     className="w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                     Cancel

@@ -3,18 +3,22 @@ import { AccountOverview } from "@/components/dashboard/account-overview";
 import DepositMethods from "@/components/dashboard/deposit";
 import { MarketOverview } from "@/components/dashboard/market-overview";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
+import { WithdrawalModal } from "@/components/dashboard/withdrawal/WithdrawalModal";
+import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import { ArrowUpDown, Download, Upload } from "lucide-react";
 import { useState } from "react";
 
 
 export default function DashboardPage() {
   const [openDeposit, setOpenDeposit] = useState(false);
+  const openWithdrawal = useWithdrawalStore((state) => state.open);
   const toggleDeposit = () => {
     setOpenDeposit(!openDeposit);
   };
 
   return (
     <div className="flex flex-col gap-5 md:gap-10">
+      <WithdrawalModal />
       {openDeposit ? (
         <DepositMethods toggleDeposit={toggleDeposit} />
       ) : (
@@ -29,7 +33,10 @@ export default function DashboardPage() {
                 <Download />
                 <p className="text-sm md:text-base font-medium">Deposit</p>
               </div>
-              <div className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966]">
+              <div
+                className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966] cursor-pointer"
+                onClick={openWithdrawal}
+              >
                 <Upload />
                 <p className="text-sm md:text-base font-medium">Withdraw</p>
               </div>

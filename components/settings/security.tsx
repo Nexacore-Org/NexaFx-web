@@ -1,6 +1,31 @@
+"use client";
+
+import { useState } from "react";
 import { Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { deleteProfile } from "@/lib/api/users";
 
 export function Security() {
+  const router = useRouter();
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteProfile();
+      localStorage.clear();
+      router.push("/sign-in");
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete account"
+      );
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div>
       <div className=" rounded-2xl border-[#8C8C8C] border-[0.25px] bg-white dark:bg-black/5">
@@ -44,6 +69,7 @@ export function Security() {
               </span>
             </button>
           </div>
+
           <div className="flex justify-between items-center gap-6 px-5">
             <div className="max-w-124 .25">
               <h4 className="text-[#000000CC] font-semibold text-[15px] sm:text-lg dark:text-white">
@@ -59,6 +85,7 @@ export function Security() {
               <Trash2 className="size-4" /> Log out
             </button>
           </div>
+
           <div className="flex justify-between items-center gap-6 px-5">
             <div className="max-w-124.25">
               <h4 className="text-[#000000CC] font-semibold text-[15px] sm:text-lg dark:text-white">
@@ -70,7 +97,10 @@ export function Security() {
                 dignissim consectetur orci.
               </p>
             </div>
-            <button className="flex shrink-0 text-sm w-23.5 justify-center items-center gap-1.5 cursor-pointer bg-[#E90004] h-8 text-white font-semibold rounded-[8px]">
+            <button
+              onClick={() => setShowConfirm(true)}
+              className="flex shrink-0 text-sm w-23.5 justify-center items-center gap-1.5 cursor-pointer bg-[#E90004] h-8 text-white font-semibold rounded-[8px]"
+            >
               <Trash2 className="size-4 text-white" />
               Delete
             </button>
@@ -86,6 +116,48 @@ export function Security() {
           Cancel
         </button>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showConfirm && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/50"
+            onClick={() => !isDeleting && setShowConfirm(false)}
+          />
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-card rounded-xl shadow-xl p-6 w-full max-w-sm space-y-4">
+              <h3 className="text-base font-semibold text-center text-foreground">
+                Are you sure?
+              </h3>
+              <p className="text-sm text-muted-foreground text-center">
+                This action cannot be undone. Your account and all associated
+                data will be permanently deleted.
+              </p>
+              {deleteError && (
+                <p className="text-xs text-destructive text-center">
+                  {deleteError}
+                </p>
+              )}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowConfirm(false)}
+                  disabled={isDeleting}
+                  className="flex-1 py-2.5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting}
+                  className="flex-1 py-2.5 rounded-lg bg-[#E90004] text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-60"
+                >
+                  {isDeleting ? "Deleting..." : "Delete Account"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
