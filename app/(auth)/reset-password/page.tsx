@@ -147,26 +147,30 @@ export default function ResetPasswordPage() {
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="flex gap-2.5 justify-between">
-                            {otp.map((digit, index) => (
-                                <input
-                                    key={index}
-                                    ref={(el) => {
-                                        inputRefs.current[index] = el;
-                                    }}
-                                    type="text"
-                                    inputMode="numeric"
-                                    maxLength={1}
-                                    value={digit}
-                                    onChange={(e) =>
-                                        handleChange(index, e.target.value)
-                                    }
-                                    onKeyDown={(e) => handleKeyDown(index, e)}
-                                    onPaste={handlePaste}
-                                    className="w-12 h-12 text-center text-xl font-semibold bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all"
-                                    disabled={isLoading}
-                                />
-                            ))}
+                        <div className="">
+                            <div className="flex gap-2.5 justify-between">
+                                {otp.map((digit, index) => (
+                                    <input
+                                        key={index}
+                                        ref={(el) => {
+                                            inputRefs.current[index] = el;
+                                        }}
+                                        type="text"
+                                        inputMode="numeric"
+                                        maxLength={1}
+                                        value={digit}
+                                        onChange={(e) =>
+                                            handleChange(index, e.target.value)
+                                        }
+                                        onKeyDown={(e) =>
+                                            handleKeyDown(index, e)
+                                        }
+                                        onPaste={handlePaste}
+                                        className="w-12 h-12 text-center text-xl font-semibold bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all"
+                                        disabled={isLoading}
+                                    />
+                                ))}
+                            </div>
                             {errors.otp && (
                                 <p className="mt-1.5 ml-1 text-xs text-red-500">
                                     {errors.otp}
@@ -302,26 +306,30 @@ export default function ResetPasswordPage() {
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="flex gap-1 justify-between">
-                            {otp.map((digit, index) => (
-                                <input
-                                    key={index}
-                                    ref={(el) => {
-                                        inputRefs.current[index] = el;
-                                    }}
-                                    type="text"
-                                    inputMode="numeric"
-                                    maxLength={1}
-                                    value={digit}
-                                    onChange={(e) =>
-                                        handleChange(index, e.target.value)
-                                    }
-                                    onKeyDown={(e) => handleKeyDown(index, e)}
-                                    onPaste={handlePaste}
-                                    className="w-10 h-11 text-center text-lg font-semibold bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all"
-                                    disabled={isLoading}
-                                />
-                            ))}
+                        <div>
+                            <div className="flex gap-1 justify-between">
+                                {otp.map((digit, index) => (
+                                    <input
+                                        key={index}
+                                        ref={(el) => {
+                                            inputRefs.current[index] = el;
+                                        }}
+                                        type="text"
+                                        inputMode="numeric"
+                                        maxLength={1}
+                                        value={digit}
+                                        onChange={(e) =>
+                                            handleChange(index, e.target.value)
+                                        }
+                                        onKeyDown={(e) =>
+                                            handleKeyDown(index, e)
+                                        }
+                                        onPaste={handlePaste}
+                                        className="w-10 h-11 text-center text-lg font-semibold bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all"
+                                        disabled={isLoading}
+                                    />
+                                ))}
+                            </div>
                             {errors.otp && (
                                 <p className="mt-1.5 ml-1 text-xs text-red-500">
                                     {errors.otp}
