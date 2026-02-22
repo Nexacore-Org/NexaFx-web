@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useSidebarStore } from "@/hooks/use-sidebar-store";
 import { useNotificationsStore } from "@/hooks/use-notifications-store";
 import { NotificationsPanel } from "@/components/notifications";
-import { mockNotifications } from "@/lib/mock-notifications";
 
 export function Topbar() {
   const pathname = usePathname();
@@ -22,18 +21,14 @@ export function Topbar() {
   });
 
   const {
-    notifications,
-    setNotifications,
     unreadCount,
+    fetchUnreadCount,
     toggle: toggleNotifications,
   } = useNotificationsStore();
 
   useEffect(() => {
-    // Initialize notifications with mock data
-    if (notifications.length === 0) {
-      setNotifications(mockNotifications);
-    }
-  }, [notifications.length, setNotifications]);
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
 
   const toggleTheme = () => {
     const newMode = !isDarkMode;
