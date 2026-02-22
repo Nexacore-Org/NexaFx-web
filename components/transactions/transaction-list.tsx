@@ -2,7 +2,7 @@
 
 import { ArrowDownLeft, ArrowUpRight, Check, RefreshCw, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Transaction } from "@/lib/mock-data";
+import { Transaction } from "@/lib/api/transactions";
 
 interface TransactionListProps {
     transactions: Transaction[];
