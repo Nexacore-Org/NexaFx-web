@@ -20,10 +20,10 @@ export function TransactionList({ transactions, onSelectTransaction }: Transacti
                 >
                     <div className="flex items-center gap-4">
                         <div className={cn(
-                            "flex items-center justify-center h-12 w-12 rounded-xl border",
-                            tx.type === "Convert" ? "bg-orange-500/10 border-orange-200 text-orange-500" :
-                            tx.type === "Deposit" ? "bg-green-500/10 border-green-200 text-green-500" :
-                            "bg-red-500/10 border-red-200 text-red-500"
+                            "flex items-center justify-center h-12 w-12 rounded-xl",
+                            tx.type === "Convert" ? "bg-orange-500/10 text-orange-500" :
+                            tx.type === "Deposit" ? "bg-green-500/10 text-green-500" :
+                            "bg-red-500/10 text-red-500"
                         )}>
                             {tx.type === "Convert" ? <RefreshCw className="h-6 w-6" /> : 
                              tx.type === "Deposit" ? <ArrowDownLeft className="h-6 w-6" /> : 
