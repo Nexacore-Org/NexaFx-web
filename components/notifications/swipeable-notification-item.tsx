@@ -12,7 +12,7 @@ interface SwipeableNotificationItemProps {
   onDelete?: () => void;
 }
 
-const SWIPE_THRESHOLD = 100;
+const SWIPE_THRESHOLD = 80;
 
 export function SwipeableNotificationItem({
   notification,
@@ -84,7 +84,7 @@ export function SwipeableNotificationItem({
           transition: isDragging.current ? "none" : "transform 0.2s ease-out",
         }}
         className={cn(
-          "relative bg-card",
+          "relative bg-card touch-pan-y",
           isDeleting && "opacity-0 transition-opacity duration-200"
         )}
       >
