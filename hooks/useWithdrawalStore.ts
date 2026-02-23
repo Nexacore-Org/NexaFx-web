@@ -22,13 +22,14 @@ interface WithdrawalState {
     // Transaction result
     transactionId: string | null;
     transactionStatus: TransactionStatus;
+    errorMessage: string | null;
 
     // Actions
     open: () => void;
     close: () => void;
     setStep: (step: WithdrawalStep) => void;
     setFormData: (data: Partial<WithdrawalFormData>) => void;
-    setTransactionResult: (id: string, status: TransactionStatus) => void;
+    setTransactionResult: (id: string | null, status: TransactionStatus, error?: string) => void;
     reset: () => void;
 }
 
@@ -40,6 +41,7 @@ const initialState = {
     walletAddress: '',
     transactionId: null,
     transactionStatus: null as TransactionStatus,
+    errorMessage: null as string | null,
 };
 
 export const useWithdrawalStore = create<WithdrawalState>((set) => ({
@@ -56,9 +58,10 @@ export const useWithdrawalStore = create<WithdrawalState>((set) => ({
         ...data,
     })),
 
-    setTransactionResult: (id, status) => set({
+    setTransactionResult: (id, status, error) => set({
         transactionId: id,
         transactionStatus: status,
+        errorMessage: error ?? null,
     }),
 
     reset: () => set(initialState),
