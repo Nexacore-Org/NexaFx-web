@@ -18,13 +18,15 @@ export default function AdminLayout({
   return (
     <AdminGuard>
       <div className="flex h-screen bg-gray-50 overflow-hidden">
-        {/* Sidebar */}
-        <AdminSidebar />
+        {/* Sidebar - Hidden on mobile */}
+        <div className="hidden lg:block">
+          <AdminSidebar />
+        </div>
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Topbar */}
-          <header className="h-16 bg-white border-b border-gray-200 px-8 flex items-center justify-between shrink-0">
+          {/* Topbar - Hidden on mobile */}
+          <header className="hidden lg:flex h-16 bg-white border-b border-gray-200 px-8 items-center justify-between shrink-0">
             <h1 className="text-xl font-semibold text-gray-900">
               {capitalisedTitle}
             </h1>
@@ -50,7 +52,7 @@ export default function AdminLayout({
           </header>
 
           {/* Page Content */}
-          <main className="flex-1 overflow-y-auto p-8">{children}</main>
+          <main className="flex-1 overflow-y-auto p-4 lg:p-8">{children}</main>
         </div>
       </div>
     </AdminGuard>
