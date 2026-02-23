@@ -77,13 +77,13 @@ export function NotificationItem({
     <button
       onClick={onClick}
       className={cn(
-        "w-full text-left p-4 flex items-start gap-3 transition-colors hover:bg-muted/50",
+        "w-full text-left px-4 py-5 min-h-16 flex items-start gap-3 transition-colors hover:bg-muted/50",
         !isRead && "bg-primary/5"
       )}
     >
       <div
         className={cn(
-          "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
+          "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
           getIconBackgroundColor(type)
         )}
       >
@@ -101,7 +101,7 @@ export function NotificationItem({
       </div>
 
       {!isRead && (
-        <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-2" />
+        <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-2" />
       )}
     </button>
   );

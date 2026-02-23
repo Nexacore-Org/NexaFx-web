@@ -5,7 +5,12 @@ import { Wallet, CreditCard, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function WithdrawalMethodSelect() {
-    const { setStep } = useWithdrawalStore();
+    const { setStep, close, reset } = useWithdrawalStore();
+
+    const handleCancel = () => {
+        close();
+        setTimeout(() => reset(), 300);
+    };
 
     return (
         <div className="p-6 space-y-6">
@@ -77,6 +82,13 @@ export function WithdrawalMethodSelect() {
                     <span className="font-medium text-foreground">0% fee</span> for crypto withdrawals to external wallets
                 </p>
             </div>
+
+            <button
+                onClick={handleCancel}
+                className="w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+                Cancel
+            </button>
         </div>
     );
 }

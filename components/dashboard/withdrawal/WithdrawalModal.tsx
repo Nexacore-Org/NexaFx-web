@@ -10,16 +10,19 @@ import { X } from "lucide-react";
 
 export function WithdrawalModal() {
     const { isOpen, step, close, reset } = useWithdrawalStore();
+    const isProcessing = step === 'processing';
 
     if (!isOpen) return null;
 
     const handleClose = () => {
+        if (isProcessing) return;
         close();
         // Reset after animation
         setTimeout(() => reset(), 300);
     };
 
     const handleBackdropClick = (e: React.MouseEvent) => {
+        if (isProcessing) return;
         if (e.target === e.currentTarget) {
             handleClose();
         }
@@ -63,7 +66,9 @@ export function WithdrawalModal() {
                     {/* Close button */}
                     <button
                         onClick={handleClose}
-                        className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted transition-colors z-10"
+                        disabled={isProcessing}
+                        className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted transition-colors z-10 disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Close withdrawal modal"
                     >
                         <X className="size-5 text-muted-foreground" />
                     </button>
@@ -81,7 +86,9 @@ export function WithdrawalModal() {
                 {/* Close button */}
                 <button
                     onClick={handleClose}
-                    className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted transition-colors z-10"
+                    disabled={isProcessing}
+                    className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted transition-colors z-10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Close withdrawal modal"
                 >
                     <X className="size-5 text-muted-foreground" />
                 </button>

@@ -100,6 +100,7 @@
   --border: #27272A;
   --input: #27272A;
   --ring: #FFD552;
+  --overview-gradient: linear-gradient(240.3deg, #A0C3FD -1.74%, #FFE79C 99.3%);
 
   --sidebar: #0A0A0A;
   --sidebar-foreground: #A1A1AA;
@@ -125,8 +126,8 @@
   display: none !important;
 }
 
-.account-overview {
-  background: linear-gradient(240.3deg, #A0C3FD -1.74%, #FFE79C 99.3%);
+.account-overview-bg {
+  background: var(--overview-gradient);
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

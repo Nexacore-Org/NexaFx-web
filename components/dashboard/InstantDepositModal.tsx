@@ -57,7 +57,14 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
     <>
       {" "}
       <div className="">
-        <div className="bg-white rounded-xl p-6 shadow-sm">
+        <div className="bg-card text-card-foreground rounded-xl p-6 shadow-sm border border-border/50 relative">
+          <button
+            onClick={onClose}
+            className="absolute right-1 top-1 p-1.5 rounded-md hover:bg-muted transition-colors"
+            aria-label="Close deposit modal"
+          >
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
           {!showNotification && (
             <DepositNotification
               message="Your deposit of"
@@ -72,23 +79,24 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
 
           {/* QR Code */}
           <div className=" p-6 rounded-lg mb-3 md:mb-6 flex items-center justify-center">
-            <div className="w-38 h-38 md:w-58 md:h-58 bg-gray-100 p-4 rounded-lg"></div>
+            <div className="w-38 h-38 md:w-58 md:h-58 bg-muted p-4 rounded-lg"></div>
           </div>
 
           {/* Wallet Address */}
-          <div className="mb-4 bg-[#EFEFEF] rounded-xl p-3 md:p-5">
-            <label className="text-sm md:text-[18px] flex items-center text-gray-500 mb-2 ">
+          <div className="mb-4 bg-muted rounded-xl p-3 md:p-5 border border-border/50">
+            <label className="text-sm md:text-[18px] flex items-center text-muted-foreground mb-2 ">
               Wallet Address <ChevronRight size={20} />
             </label>
             <div className="flex items-center gap-2 p-2 md:p-3 ">
-              <span className="text-sm md:text-[18px] font-semibold text-[#242424] break-all flex-1">
+              <span className="text-sm md:text-[18px] font-semibold text-foreground break-all flex-1">
                 {walletAddress}
               </span>
               <button
                 onClick={handleCopyAddress}
-                className="p-1 hover:bg-gray-200 rounded"
+                className="p-1 hover:bg-background rounded"
+                aria-label="Copy wallet address"
               >
-                <Copy className="w-4 h-4 text-gray-600" />
+                <Copy className="w-4 h-4 text-muted-foreground" />
               </button>
             </div>
           </div>
@@ -97,15 +105,15 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
           <div className="flex gap-3  md:flex-row flex-col">
             <button
               onClick={handleCopyAddress}
-              className="flex-1 py-3 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium rounded-lg transition-colors md:text-sm"
+              className="flex-1 py-3 bg-yellow-400 hover:bg-yellow-500 text-black font-medium rounded-lg transition-colors md:text-sm"
             >
               {copied ? "Copied!" : "Copy Address"}
             </button>
             <button
               onClick={onClose}
-              className="flex-1 py-3 border-2 border-gray-300 hover:bg-gray-50 text-gray-900 font-medium rounded-lg transition-colors"
+              className="flex-1 py-3 border-2 border-border hover:bg-muted text-foreground font-medium rounded-lg transition-colors"
             >
-              Close
+              Cancel
             </button>
           </div>
         </div>

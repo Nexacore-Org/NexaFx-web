@@ -64,18 +64,18 @@ export default function CreateAccountPage() {
   };
 
   return (
-    <div className="w-full max-w-lg bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 sm:p-12 animate-in fade-in zoom-in duration-500">
+    <div className="w-full max-w-lg bg-card text-card-foreground rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 sm:p-12 animate-in fade-in zoom-in duration-500 border border-border/50">
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-bold text-zinc-900 mb-2">
+        <h1 className="text-4xl font-bold text-foreground mb-2">
           Create an account
         </h1>
-        <p className="text-zinc-500">Let&#39;s get started...</p>
+        <p className="text-muted-foreground">Let&#39;s get started...</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <input
-            className={`w-full h-14 px-6 rounded-xl border ${errors.email ? "border-red-500 focus:ring-red-100" : "border-zinc-200 focus:ring-blue-100"} outline-none focus:border-blue-500 transition-all text-zinc-900 placeholder:text-zinc-400`}
+            className={`w-full h-14 px-6 rounded-xl border bg-background ${errors.email ? "border-red-500 focus:ring-red-100" : "border-zinc-200 dark:border-border focus:ring-blue-100"} outline-none focus:border-blue-500 transition-all text-foreground placeholder:text-muted-foreground`}
             type="email"
             placeholder="Email address"
             value={formData.email}
@@ -90,7 +90,7 @@ export default function CreateAccountPage() {
 
         <div>
           <input
-            className={`w-full h-14 px-6 rounded-xl border ${errors.phone ? "border-red-500 focus:ring-red-100" : "border-zinc-200 focus:ring-blue-100"} outline-none focus:border-blue-500 transition-all text-zinc-900 placeholder:text-zinc-400`}
+            className={`w-full h-14 px-6 rounded-xl border bg-background ${errors.phone ? "border-red-500 focus:ring-red-100" : "border-zinc-200 dark:border-border focus:ring-blue-100"} outline-none focus:border-blue-500 transition-all text-foreground placeholder:text-muted-foreground`}
             type="tel"
             placeholder="Phone Number"
             value={formData.phone}
@@ -105,7 +105,7 @@ export default function CreateAccountPage() {
 
         <div className="relative">
           <input
-            className={`w-full h-14 px-6 rounded-xl border ${errors.password ? "border-red-500 focus:ring-red-100" : "border-zinc-200 focus:ring-blue-100"} outline-none focus:border-blue-500 transition-all text-zinc-900 placeholder:text-zinc-400 pr-14`}
+            className={`w-full h-14 px-6 rounded-xl border bg-background ${errors.password ? "border-red-500 focus:ring-red-100" : "border-zinc-200 dark:border-border focus:ring-blue-100"} outline-none focus:border-blue-500 transition-all text-foreground placeholder:text-muted-foreground pr-14`}
             type={showPassword ? "text" : "password"}
             placeholder="Password"
             value={formData.password}
@@ -116,7 +116,7 @@ export default function CreateAccountPage() {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-4 text-zinc-400 hover:text-zinc-600 transition-colors"
+            className="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
           >
             {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
           </button>
@@ -129,7 +129,7 @@ export default function CreateAccountPage() {
 
         <div className="relative">
           <input
-            className={`w-full h-14 px-6 rounded-xl border ${errors.confirmPassword ? "border-red-500 focus:ring-red-100" : "border-zinc-200 focus:ring-blue-100"} outline-none focus:border-blue-500 transition-all text-zinc-900 placeholder:text-zinc-400 pr-14`}
+            className={`w-full h-14 px-6 rounded-xl border bg-background ${errors.confirmPassword ? "border-red-500 focus:ring-red-100" : "border-zinc-200 dark:border-border focus:ring-blue-100"} outline-none focus:border-blue-500 transition-all text-foreground placeholder:text-muted-foreground pr-14`}
             type={showConfirmPassword ? "text" : "password"}
             placeholder="Confirm Password"
             value={formData.confirmPassword}
@@ -140,7 +140,7 @@ export default function CreateAccountPage() {
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-4 top-4 text-zinc-400 hover:text-zinc-600 transition-colors"
+            className="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
           >
             {showConfirmPassword ? <EyeOff size={22} /> : <Eye size={22} />}
           </button>
@@ -160,7 +160,7 @@ export default function CreateAccountPage() {
               onChange={(e) =>
                 setFormData({ ...formData, acceptTerms: e.target.checked })
               }
-              className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-zinc-300 transition-all checked:bg-orange-500 checked:border-orange-500"
+              className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-zinc-300 dark:border-border transition-all checked:bg-orange-500 checked:border-orange-500"
             />
             <svg
               className="pointer-events-none absolute h-5 w-5 stroke-white opacity-0 peer-checked:opacity-100"
@@ -177,7 +177,7 @@ export default function CreateAccountPage() {
           </div>
           <label
             htmlFor="terms"
-            className="text-sm font-medium text-zinc-700 cursor-pointer"
+            className="text-sm font-medium text-muted-foreground cursor-pointer"
           >
             By clicking, I accept{" "}
             <span className="text-orange-500 hover:underline">terms</span> and{" "}

@@ -23,9 +23,13 @@ export default function DashboardPage() {
         <DepositMethods toggleDeposit={toggleDeposit} />
       ) : (
         <>
-            <AccountOverview openDeposit={openDeposit} />
+            <AccountOverview
+              openDeposit={openDeposit}
+              onDepositClick={toggleDeposit}
+              onWithdrawClick={openWithdrawal}
+            />
           <div className="md:px-4 space-y-4">
-            <div className="grid grid-cols-3 gap-4 px-6 pb-6 md:p-0">
+            <div className="grid grid-cols-2 gap-4 px-6 pb-6 md:p-0">
               <div
                 className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966]"
                 onClick={toggleDeposit}
@@ -39,10 +43,6 @@ export default function DashboardPage() {
               >
                 <Upload />
                 <p className="text-sm md:text-base font-medium">Withdraw</p>
-              </div>
-              <div className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966]">
-                <ArrowUpDown />
-                <p className="text-sm md:text-base font-medium">Convert</p>
               </div>
             </div>
 

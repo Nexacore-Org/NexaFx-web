@@ -28,6 +28,11 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
 
+  const handleCloseDepositFlow = () => {
+    setIsQRModalOpen(false);
+    toggleDeposit();
+  };
+
   const depositMethods: DepositMethod[] = [
     {
       id: "instant",
@@ -62,7 +67,7 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
 
   const MethodCard: React.FC<{ method: DepositMethod }> = ({ method }) => (
     <button
-      className="w-full text-left p-4 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+      className="w-full text-left p-4 bg-card border border-border rounded-lg hover:border-border/70 transition-colors"
       onClick={() => {
         if (method.id === "instant") {
           setIsQRModalOpen(true);
@@ -87,19 +92,19 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
             {method.icon}
           </div>
           <div className="flex-1">
-            <h3 className="font-medium text-gray-900 mb-1 text-sm md:text-base">
+            <h3 className="font-medium text-foreground mb-1 text-sm md:text-base">
               {method.title}
             </h3>
-            <p className="text-xs md:text-sm text-gray-600 mb-2">
+            <p className="text-xs md:text-sm text-muted-foreground mb-2">
               {method.description}
             </p>
-            <p className="text-xs md:text-sm font-medium text-gray-900">
+            <p className="text-xs md:text-sm font-medium text-foreground">
               Fee: {method.fee}
             </p>
           </div>
         </div>
         {method.hasExternalLink && (
-          <ExternalLink className="w-5 h-5 text-gray-400 flex-shrink-0" />
+          <ExternalLink className="w-5 h-5 text-muted-foreground shrink-0" />
         )}
       </div>
     </button>
@@ -127,21 +132,22 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <button
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
                 onClick={toggleDeposit}
+                aria-label="Back"
               >
                 <ArrowLeft className="w-6 h-6" />
               </button>
               <h1 className="text-2xl font-semibold">Deposit</h1>
             </div>
-            <button className="px-6 py-2.5 border-2 border-gray-900 rounded-full font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+            <button className="px-6 py-2.5 border-2 border-border rounded-full font-medium hover:bg-muted transition-colors flex items-center gap-2">
               Withdraw
               <ArrowUp className="w-4 h-4" />
             </button>
           </div>
 
           {/* Deposit Methods */}
-          <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="bg-card rounded-xl p-6 shadow-sm border border-border/50">
             <h2 className="text-lg font-medium mb-4">
               Select a Deposit Method
             </h2>
@@ -159,13 +165,14 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
         <>
           {!isQRModalOpen ? (
             <div className="md:hidden fixed inset-0 bg-[#00000071] bg-opacity-50 flex items-end justify-center z-50 p-0">
-              <div className="bg-white w-full rounded-t-2xl max-h-[90vh] overflow-auto">
+              <div className="bg-card text-card-foreground w-full rounded-t-2xl max-h-[90vh] overflow-auto">
                 {/* Modal Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <div className="flex items-center justify-between p-4 border-b border-border">
                   <h2 className="text-lg font-semibold">Deposit</h2>
                   <button
-                    onClick={toggleDeposit}
-                    className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                    onClick={handleCloseDepositFlow}
+                    className="p-1 hover:bg-muted rounded-lg transition-colors"
+                    aria-label="Close deposit modal"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -173,7 +180,7 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
 
                 {/* Modal Content */}
                 <div className="p-4">
-                  <p className="text-sm font-medium text-gray-700 mb-3">
+                  <p className="text-sm font-medium text-muted-foreground mb-3">
                     Select a Deposit Method
                   </p>
                   <div className="space-y-3">
@@ -198,7 +205,7 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
               )}
 
               <div
-                className="bg-white w-full mt-8 rounded-2xl max-h-[90vh] overflow-auto"
+                className="bg-card text-card-foreground w-full mt-8 rounded-2xl max-h-[90vh] overflow-auto"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Modal Header */}
@@ -214,7 +221,7 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
                   </button>
                 </div> */}
                 <InstantModalDeposit
-                  onClose={() => setIsQRModalOpen(false)}
+                  onClose={handleCloseDepositFlow}
                   isMobile={true}
                 />
               </div>
