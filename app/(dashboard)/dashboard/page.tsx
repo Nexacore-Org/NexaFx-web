@@ -24,11 +24,11 @@ export default function DashboardPage() {
         <DepositMethods toggleDeposit={toggleDeposit} />
       ) : (
         <>
-            <AccountOverview
-              openDeposit={openDeposit}
-              onDepositClick={toggleDeposit}
-              onWithdrawClick={open}
-            />
+          <AccountOverview
+            openDeposit={openDeposit}
+            onDepositClick={toggleDeposit}
+            onWithdrawClick={open}
+          />
           <div className="md:px-4 space-y-4">
             <div className="grid grid-cols-2 gap-4 px-6 pb-6 md:p-0">
               <div
@@ -48,14 +48,6 @@ export default function DashboardPage() {
             </div>
 
             <div className="space-y-4 px-3 md:px-0">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm md:text-lg font-semibold">
-                  Exchange Rates
-                </h3>
-                <p className="text-xs md:text-sm text-muted-foreground">
-                  Live updates
-                </p>
-              </div>
               <MarketOverview />
             </div>
 
