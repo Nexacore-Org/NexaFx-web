@@ -3,16 +3,15 @@ import { AccountOverview } from "@/components/dashboard/account-overview";
 import DepositMethods from "@/components/dashboard/deposit";
 import { MarketOverview } from "@/components/dashboard/market-overview";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
-import { WithdrawalModal } from "@/components/dashboard/withdrawal";
+import { WithdrawalModal } from "@/components/dashboard/withdrawal/WithdrawalModal";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
-import { Download, Upload } from "lucide-react";
+import { ArrowUpDown, Download, Upload } from "lucide-react";
 import { useState } from "react";
 
 
 export default function DashboardPage() {
   const [openDeposit, setOpenDeposit] = useState(false);
-  const { open } = useWithdrawalStore();
-
+  const openWithdrawal = useWithdrawalStore((state) => state.open);
   const toggleDeposit = () => {
     setOpenDeposit(!openDeposit);
   };
@@ -27,7 +26,7 @@ export default function DashboardPage() {
             <AccountOverview
               openDeposit={openDeposit}
               onDepositClick={toggleDeposit}
-              onWithdrawClick={open}
+              onWithdrawClick={openWithdrawal}
             />
           <div className="md:px-4 space-y-4">
             <div className="grid grid-cols-2 gap-4 px-6 pb-6 md:p-0">
@@ -39,8 +38,8 @@ export default function DashboardPage() {
                 <p className="text-sm md:text-base font-medium">Deposit</p>
               </div>
               <div
-                className="flex cursor-pointer flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966]"
-                onClick={open}
+                className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966] cursor-pointer"
+                onClick={openWithdrawal}
               >
                 <Upload />
                 <p className="text-sm md:text-base font-medium">Withdraw</p>

@@ -12,7 +12,7 @@ const currencies = [
 ];
 
 export function WithdrawalSuccess() {
-    const { currency, amount, transactionId, transactionStatus, close, reset } = useWithdrawalStore();
+    const { currency, amount, transactionId, transactionStatus, errorMessage, close, reset, setStep } = useWithdrawalStore();
     const [copied, setCopied] = useState(false);
 
     const selectedCurrency = currencies.find(c => c.id === currency) || currencies[0];
@@ -56,7 +56,7 @@ export function WithdrawalSuccess() {
                 <p className="text-sm text-muted-foreground mt-1 text-center">
                     {isSuccess
                         ? "Your withdrawal has been submitted successfully"
-                        : "Something went wrong. Please try again."
+                        : (errorMessage || "Something went wrong. Please try again.")
                     }
                 </p>
             </div>
@@ -121,7 +121,7 @@ export function WithdrawalSuccess() {
             {/* Actions */}
             <div className="space-y-3 pt-2">
                 <button
-                    onClick={handleDone}
+                    onClick={isSuccess ? handleDone : () => setStep('review')}
                     className={cn(
                         "w-full py-3.5 rounded-xl font-semibold",
                         "bg-primary text-primary-foreground",
