@@ -32,7 +32,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#A0C3FD] to-[#FFE79C]">
+    <div className="min-h-screen bg-linear-to-br from-[#A0C3FD] to-[#FFE79C]">
       {/* Desktop Header */}
       <div className="hidden md:block">
         <div className="flex justify-between items-center px-8 py-6 backdrop-blur-sm bg-white/10">
@@ -47,11 +47,11 @@ export default function SignInPage() {
       </div>
 
       {/* Desktop View */}
-      <div className="hidden md:flex items-center justify-center px-4" style={{ minHeight: 'calc(100vh - 88px)' }}>
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-12">
+      <div className="hidden md:flex items-center justify-center px-4 min-h-[calc(100vh-88px)]">
+        <div className="w-full max-w-md bg-card text-card-foreground rounded-2xl shadow-lg p-12 border border-border/50">
           <div className="mb-8">
             <h1 className="text-3xl font-semibold mb-2 text-center">Sign in</h1>
-            <p className="text-gray-500 text-sm text-center">Hey, Welcome back</p>
+            <p className="text-muted-foreground text-sm text-center">Hey, Welcome back</p>
           </div>
 
           {error && (
@@ -62,21 +62,22 @@ export default function SignInPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
                 Email address or Mobile number
               </label>
               <input
                 type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder=""
-                className="w-full px-4 py-2.5 bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm"
+                placeholder="Enter email address or phone"
+                title="Email address or mobile number"
+                className="w-full px-4 py-2.5 bg-muted border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm text-foreground"
                 disabled={isLoading}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
                 Password
               </label>
               <div className="relative">
@@ -84,14 +85,15 @@ export default function SignInPage() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder=""
-                  className="w-full px-4 py-2.5 bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm"
+                  placeholder="Enter password"
+                  title="Password"
+                  className="w-full px-4 py-2.5 bg-muted border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm text-foreground"
                   disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? (
                     <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -121,7 +123,7 @@ export default function SignInPage() {
             </button>
           </form>
 
-          <div className="mt-4 text-center text-xs text-gray-600">
+          <div className="mt-4 text-center text-xs text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link href="/sign-up" className="text-[#FFA200] hover:underline font-medium">
               Sign up
@@ -132,14 +134,14 @@ export default function SignInPage() {
 
       {/* Mobile View */}
       <div className="md:hidden flex items-center justify-center min-h-screen px-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
+        <div className="w-full max-w-md bg-card text-card-foreground rounded-2xl shadow-lg p-8 border border-border/50">
           <div className="mb-8">
             <div className="flex justify-center mb-6">
               <Image src="/logo.png" alt="NexaFX" width={120} height={40} priority />
             </div>
 
             <h1 className="text-2xl font-semibold text-center mb-2">Sign in</h1>
-            <p className="text-gray-500 text-center text-sm">
+            <p className="text-muted-foreground text-center text-sm">
               Hey, welcome back{" "}
               <Link href="/verify-otp" className="text-[#FFA200] hover:underline font-medium">
                 Login
@@ -155,21 +157,22 @@ export default function SignInPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
               Email address
             </label>
             <input
               type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder=""
-              className="w-full px-4 py-2.5 bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm"
+              placeholder="Enter email address"
+              title="Email address"
+              className="w-full px-4 py-2.5 bg-muted border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm text-foreground"
               disabled={isLoading}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
               Password
             </label>
             <div className="relative">
@@ -177,14 +180,15 @@ export default function SignInPage() {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder=""
-                className="w-full px-4 py-2.5 bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm"
+                placeholder="Enter password"
+                title="Password"
+                className="w-full px-4 py-2.5 bg-muted border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm text-foreground"
                 disabled={isLoading}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 {showPassword ? (
                   <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,7 +218,7 @@ export default function SignInPage() {
           </button>
         </form>
 
-          <div className="mt-4 text-center text-xs text-gray-600">
+          <div className="mt-4 text-center text-xs text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link href="/sign-up" className="text-[#FFA200] hover:underline font-medium">
               Sign up

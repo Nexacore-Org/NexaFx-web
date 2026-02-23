@@ -76,10 +76,10 @@ export function RecentTransactions() {
                         <div key={tx.id} className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <div className={cn(
-                                    "flex items-center justify-center h-12 w-12 rounded-xl border",
-                                    tx.isExchange ? "bg-orange-500/10 border-orange-200 text-orange-500" :
-                                        tx.isComingIn ? "bg-green-500/10 border-green-200 text-green-500" :
-                                            "bg-red-500/10 border-red-200 text-red-500"
+                                    "flex items-center justify-center h-12 w-12 rounded-xl",
+                                    tx.isExchange ? "bg-orange-500/10 text-orange-500" :
+                                        tx.isComingIn ? "bg-green-500/10 text-green-500" :
+                                            "bg-red-500/10 text-red-500"
                                 )}>
                                     {tx.isExchange ? <RefreshCw className="h-6 w-6" /> : <Download className="h-6 w-6" />}
                                 </div>
@@ -90,7 +90,7 @@ export function RecentTransactions() {
                             </div>
                             <div className={cn(
                                 "flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold",
-                                tx.status === "Success" ? "bg-green-500/10 text-green-600 border border-green-200" : "bg-muted text-muted-foreground"
+                                tx.status === "Success" ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-muted text-muted-foreground"
                             )}>
                                 {tx.status === "Success" && <Check className="h-3 w-3" />}
                                 {tx.status}

@@ -3,25 +3,34 @@ import { AccountOverview } from "@/components/dashboard/account-overview";
 import DepositMethods from "@/components/dashboard/deposit";
 import { MarketOverview } from "@/components/dashboard/market-overview";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
-import { ArrowUpDown, Download, Upload } from "lucide-react";
+import { WithdrawalModal } from "@/components/dashboard/withdrawal";
+import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
+import { Download, Upload } from "lucide-react";
 import { useState } from "react";
 
 
 export default function DashboardPage() {
   const [openDeposit, setOpenDeposit] = useState(false);
+  const { open } = useWithdrawalStore();
+
   const toggleDeposit = () => {
     setOpenDeposit(!openDeposit);
   };
 
   return (
     <div className="flex flex-col gap-5 md:gap-10">
+      <WithdrawalModal />
       {openDeposit ? (
         <DepositMethods toggleDeposit={toggleDeposit} />
       ) : (
         <>
-            <AccountOverview openDeposit={openDeposit} />
+            <AccountOverview
+              openDeposit={openDeposit}
+              onDepositClick={toggleDeposit}
+              onWithdrawClick={open}
+            />
           <div className="md:px-4 space-y-4">
-            <div className="grid grid-cols-3 gap-4 px-6 pb-6 md:p-0">
+            <div className="grid grid-cols-2 gap-4 px-6 pb-6 md:p-0">
               <div
                 className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966]"
                 onClick={toggleDeposit}
@@ -29,13 +38,12 @@ export default function DashboardPage() {
                 <Download />
                 <p className="text-sm md:text-base font-medium">Deposit</p>
               </div>
-              <div className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966]">
+              <div
+                className="flex cursor-pointer flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966]"
+                onClick={open}
+              >
                 <Upload />
                 <p className="text-sm md:text-base font-medium">Withdraw</p>
-              </div>
-              <div className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966]">
-                <ArrowUpDown />
-                <p className="text-sm md:text-base font-medium">Convert</p>
               </div>
             </div>
 

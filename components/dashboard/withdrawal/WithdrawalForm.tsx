@@ -12,7 +12,7 @@ const currencies = [
 ];
 
 export function WithdrawalForm() {
-    const { currency, amount, walletAddress, setStep, setFormData } = useWithdrawalStore();
+    const { currency, amount, walletAddress, setStep, setFormData, close, reset } = useWithdrawalStore();
 
     const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
     const [errors, setErrors] = useState<{ address?: string; amount?: string }>({});
@@ -55,6 +55,11 @@ export function WithdrawalForm() {
         setFormData({ amount: selectedCurrency.balance.replace(',', '') });
     };
 
+    const handleCancel = () => {
+        close();
+        setTimeout(() => reset(), 300);
+    };
+
     return (
         <div className="p-6 space-y-6">
             {/* Header */}
@@ -62,6 +67,7 @@ export function WithdrawalForm() {
                 <button
                     onClick={() => setStep('select')}
                     className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors"
+                    aria-label="Back to withdrawal method"
                 >
                     <ChevronLeft className="size-5 text-muted-foreground" />
                 </button>
@@ -232,7 +238,7 @@ export function WithdrawalForm() {
                     Withdraw
                 </button>
                 <button
-                    onClick={() => setStep('select')}
+                    onClick={handleCancel}
                     className="w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                     Cancel
