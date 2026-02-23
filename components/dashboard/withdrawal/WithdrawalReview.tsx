@@ -3,6 +3,7 @@
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createWithdrawal } from "@/lib/api/transactions";
 
 const currencies = [
     { id: 'USDC', name: 'USD Coin', icon: '/icons/usdc.svg' },
@@ -24,13 +25,22 @@ export function WithdrawalReview() {
     const handleConfirm = async () => {
         setStep('processing');
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        try {
+            const response = await createWithdrawal({
+                currency,
+                amount,
+                walletAddress,
+            });
 
-        // Mock successful transaction
-        const mockTxId = `TX${Date.now().toString(36).toUpperCase()}`;
-        setTransactionResult(mockTxId, 'success');
-        setStep('success');
+            setTransactionResult(response.transactionId, 'success');
+            setStep('success');
+        } catch (error) {
+            const errorMessage = error instanceof Error
+                ? error.message
+                : 'An unexpected error occurred';
+            setTransactionResult(null, 'failed', errorMessage);
+            setStep('error');
+        }
     };
 
     const handleCancel = () => {
