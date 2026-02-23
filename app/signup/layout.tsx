@@ -10,7 +10,7 @@ export default function SignupLayout({
     <div className="min-h-screen w-full bg-linear-to-tr from-[#FFE79C]  to-[#A0C3FD] flex flex-col items-center">
       {/* Navbar */}
       <header className="w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8 mt-4">
-        <nav className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/20 px-6 py-4 flex items-center justify-between shadow-sm">
+        <nav className="bg-card/40 backdrop-blur-md rounded-2xl border border-card/20 px-6 py-4 flex items-center justify-between shadow-sm">
           <Link href="/" className="flex items-center gap-2">
             <Image
               src="/nexafx 3.png"

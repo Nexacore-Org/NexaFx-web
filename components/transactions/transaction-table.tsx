@@ -11,8 +11,8 @@ interface TransactionTableProps {
 
 export function TransactionTable({ transactions, onSelectTransaction }: TransactionTableProps) {
     return (
-        <div className="hidden md:block rounded-md border bg-card text-card-foreground shadow-sm overflow-hidden">
-            <table className="w-full text-left">
+        <div className="hidden md:block rounded-md border bg-card text-card-foreground shadow-sm overflow-x-auto">
+            <table className="w-full min-w-190 text-left">
                 <thead>
                     <tr className="border-b bg-muted/30">
                         <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
@@ -52,9 +52,9 @@ export function TransactionTable({ transactions, onSelectTransaction }: Transact
                             <td className="px-6 py-4">
                                 <span className={cn(
                                     "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                                    tx.status === "Success" ? "bg-green-500/10 text-green-500" :
-                                    tx.status === "Pending" ? "bg-yellow-500/10 text-yellow-500" :
-                                    "bg-red-500/10 text-red-500"
+                                    tx.status === "Success" ? "bg-green-500/10 text-green-600 dark:text-green-400" :
+                                    tx.status === "Pending" ? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400" :
+                                    "bg-red-500/10 text-red-600 dark:text-red-400"
                                 )}>
                                     {tx.status === "Success" && <Check className="h-3 w-3" />}
                                     {tx.status === "Failed" && <X className="h-3 w-3" />}

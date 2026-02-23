@@ -11,7 +11,7 @@ const currencies = [
 ];
 
 export function WithdrawalReview() {
-    const { currency, amount, walletAddress, step, setStep, setTransactionResult } = useWithdrawalStore();
+    const { currency, amount, walletAddress, step, setStep, setTransactionResult, close, reset } = useWithdrawalStore();
 
     const isProcessing = step === 'processing';
     const selectedCurrency = currencies.find(c => c.id === currency) || currencies[0];
@@ -33,6 +33,12 @@ export function WithdrawalReview() {
         setStep('success');
     };
 
+    const handleCancel = () => {
+        if (isProcessing) return;
+        close();
+        setTimeout(() => reset(), 300);
+    };
+
     return (
         <div className="p-6 space-y-6">
             {/* Header */}
@@ -44,6 +50,7 @@ export function WithdrawalReview() {
                         "p-2 -ml-2 rounded-full hover:bg-muted transition-colors",
                         isProcessing && "opacity-50 cursor-not-allowed"
                     )}
+                    aria-label="Go back to withdrawal form"
                 >
                     <ChevronLeft className="size-5 text-muted-foreground" />
                 </button>
@@ -132,6 +139,16 @@ export function WithdrawalReview() {
                     )}
                 >
                     Go Back
+                </button>
+                <button
+                    onClick={handleCancel}
+                    disabled={isProcessing}
+                    className={cn(
+                        "w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors",
+                        isProcessing && "opacity-50 cursor-not-allowed"
+                    )}
+                >
+                    Cancel
                 </button>
             </div>
         </div>

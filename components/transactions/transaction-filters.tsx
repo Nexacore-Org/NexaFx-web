@@ -54,7 +54,7 @@ export function TransactionFilters({
             {/* Filters Section */}
             <div className="flex items-center shrink-0 md:w-auto">
                 {/* Desktop: Bordered Tabs Container */}
-                <div className="hidden md:flex items-center border-[0.25px] border-[#7B7B7B] rounded-[10px] overflow-hidden bg-white shadow-sm">
+                <div className="hidden md:flex items-center border border-border rounded-[10px] overflow-hidden bg-card shadow-sm">
                     {filters.map((filter) => (
                         <button
                             key={filter}
@@ -63,7 +63,7 @@ export function TransactionFilters({
                                 "relative px-6 py-3 text-sm font-medium transition-colors whitespace-nowrap min-w-25 text-center",
                                 activeFilter === filter || (filter === "All" && activeFilter === "All")
                                     ? "bg-primary text-primary-foreground rounded-[10px]"
-                                    : "text-[#00000099]/60 hover:bg-muted/50 hover:text-foreground",
+                                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
                             )}
                         >
                             {filter}
@@ -93,7 +93,7 @@ export function TransactionFilters({
                     <div className="relative" ref={dropdownRef}>
                         <button 
                             onClick={() => setIsOpen(!isOpen)}
-                            className="p-2 bg-card text-foreground hover:bg-muted transition-colors  "
+                            className="p-2 bg-muted text-foreground hover:bg-muted/80 transition-colors rounded-md"
                             aria-label="Filter options"
                         >
                            <ListFilter className="h-5 w-5" />
