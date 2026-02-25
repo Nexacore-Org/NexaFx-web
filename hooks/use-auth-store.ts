@@ -19,11 +19,13 @@ interface User {
   // Optionally add more fields if needed
 }
 
+
 interface AuthState {
   user: User | null;
-  token: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: User, token: string) => void;
+  setAuth: (user: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
   profile?: UserProfileStore | null;
   setProfile?: (profile: UserProfileStore) => void;
@@ -33,11 +35,23 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
+      accessToken: null,
+      refreshToken: null,
       isAuthenticated: false,
-      profile: null,
-      setAuth: (user, token) => set({ user, token, isAuthenticated: true }),
-      logout: () => set({ user: null, token: null, isAuthenticated: false, profile: null }),
+      setAuth: (user, accessToken, refreshToken) => {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("access_token", accessToken);
+          localStorage.setItem("refresh_token", refreshToken);
+        }
+        set({ user, accessToken, refreshToken, isAuthenticated: true });
+      },
+      logout: () => {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+        }
+        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+      },   
       setProfile: (profile) => set({ profile }),
     }),
     {
