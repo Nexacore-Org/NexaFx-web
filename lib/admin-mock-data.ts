@@ -168,3 +168,27 @@ export const mockAdminUserDetails = {
   kycStatus: 'Unverified',
   createdAt: 'Jul 4, 2025',
 };
+
+export const mockAdminMetrics = {
+  registeredUsers: 1524,
+  totalTransactions: 15000,
+  pendingKyc: 25,
+  currencies: 8,
+  totalDeposits: 50000,
+  totalWithdrawals: 30000,
+};
+
+export const mockRevenueData = [
+  { month: 'JAN', value: 60000 },
+  { month: 'FEB', value: 85000 },
+  { month: 'MAR', value: 50000 },
+  { month: 'APR', value: 45000 },
+  { month: 'MAY', value: 90000 },
+  { month: 'JUN', value: 10000 },
+  { month: 'JUL', value: 30000 },
+  { month: 'AUG', value: 25000 },
+  { month: 'SEP', value: 92000 },
+  { month: 'OCT', value: 70000 },
+  { month: 'NOV', value: 55000 },
+  { month: 'DEC', value: 68000 },
+];
