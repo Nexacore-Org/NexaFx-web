@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { mockTransactions, Transaction } from "@/lib/mock-data";
+import { useState, useEffect, useRef } from "react";
+import { Transaction, getTransactions } from "@/lib/api/transactions";
 import { TransactionFilters } from "@/components/transactions/transaction-filters";
 import { TransactionTable } from "@/components/transactions/transaction-table";
 import { TransactionList } from "@/components/transactions/transaction-list";
@@ -9,39 +9,78 @@ import { TransactionPagination } from "@/components/transactions/pagination";
 import { TransactionEmptyState } from "@/components/transactions/empty-state";
 import { TransactionDetails } from "@/components/transactions/transaction-details";
 
+const ITEMS_PER_PAGE = 10;
+
 export default function TransactionsPage() {
     const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [activeFilter, setActiveFilter] = useState("All");
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [detailsOpen, setDetailsOpen] = useState(false);
 
-    const itemsPerPage = 10;
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [totalItems, setTotalItems] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const filteredTransactions = useMemo(() => {
-        return mockTransactions.filter((tx) => {
-            // Text Search
-            const matchesSearch = 
-                tx.currency.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                tx.amountString.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (tx.reference && tx.reference.toLowerCase().includes(searchQuery.toLowerCase()));
+    const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-            const matchesFilter = 
-                activeFilter === "All" || 
-                (activeFilter === "Withdrawal" && tx.type === "Withdraw") ||
-                tx.type === activeFilter;
+    const handleSearchChange = (q: string) => {
+        setSearchQuery(q);
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        searchTimeoutRef.current = setTimeout(() => {
+            setDebouncedSearch(q);
+            setCurrentPage(1);
+        }, 400);
+    };
 
-            return matchesSearch && matchesFilter;
-        });
-    }, [searchQuery, activeFilter]);
+    const handleFilterChange = (f: string) => {
+        setActiveFilter(f);
+        setCurrentPage(1);
+    };
 
-    const totalItems = filteredTransactions.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    useEffect(() => {
+        let cancelled = false;
+        setIsLoading(true);
+        setError(null);
 
-    const currentTransactions = filteredTransactions.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    );
+        const typeParam =
+            activeFilter === "Withdrawal"
+                ? "Withdraw"
+                : activeFilter !== "All"
+                ? activeFilter
+                : undefined;
+
+        getTransactions({
+            page: currentPage,
+            limit: ITEMS_PER_PAGE,
+            search: debouncedSearch || undefined,
+            type: typeParam,
+        })
+            .then((result) => {
+                if (!cancelled) {
+                    setTransactions(result.data);
+                    setTotalItems(result.total);
+                }
+            })
+            .catch((err) => {
+                if (!cancelled) {
+                    setError(
+                        err instanceof Error ? err.message : "Failed to load transactions"
+                    );
+                }
+            })
+            .finally(() => {
+                if (!cancelled) setIsLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentPage, debouncedSearch, activeFilter]);
+
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
 
     const handleTransactionClick = (tx: Transaction) => {
         setSelectedTransaction(tx);
@@ -51,30 +90,47 @@ export default function TransactionsPage() {
     return (
         <div className="flex flex-col h-full space-y-4 md:space-y-6 max-w-7xl mx-auto w-full">
             <div className="bg-card rounded-xl p-4 md:p-6 shadow-sm border border-border/50">
-                <TransactionFilters 
+                <TransactionFilters
                     searchQuery={searchQuery}
-                    onSearchChange={setSearchQuery}
+                    onSearchChange={handleSearchChange}
                     activeFilter={activeFilter}
-                    onFilterChange={setActiveFilter}
-                    totalCount={150} 
+                    onFilterChange={handleFilterChange}
+                    totalCount={totalItems}
                 />
 
-                {currentTransactions.length > 0 ? (
+                {isLoading ? (
+                    <div className="flex items-center justify-center py-20">
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                    </div>
+                ) : error ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-3">
+                        <p className="text-sm text-muted-foreground">{error}</p>
+                        <button
+                            onClick={() => {
+                                setError(null);
+                                setIsLoading(true);
+                            }}
+                            className="text-sm font-medium text-primary hover:underline"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                ) : transactions.length > 0 ? (
                     <>
-                        <TransactionTable 
-                            transactions={currentTransactions} 
+                        <TransactionTable
+                            transactions={transactions}
                             onSelectTransaction={handleTransactionClick}
                         />
-                        <TransactionList 
-                            transactions={currentTransactions} 
+                        <TransactionList
+                            transactions={transactions}
                             onSelectTransaction={handleTransactionClick}
                         />
-                        <TransactionPagination 
+                        <TransactionPagination
                             currentPage={currentPage}
                             totalPages={totalPages}
                             onPageChange={setCurrentPage}
                             totalItems={totalItems}
-                            itemsPerPage={itemsPerPage}
+                            itemsPerPage={ITEMS_PER_PAGE}
                         />
                     </>
                 ) : (
@@ -82,10 +138,10 @@ export default function TransactionsPage() {
                 )}
             </div>
 
-            <TransactionDetails 
-                transaction={selectedTransaction} 
-                open={detailsOpen} 
-                onClose={() => setDetailsOpen(false)} 
+            <TransactionDetails
+                transaction={selectedTransaction}
+                open={detailsOpen}
+                onClose={() => setDetailsOpen(false)}
             />
         </div>
     );

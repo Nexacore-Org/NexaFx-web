@@ -1,13 +1,40 @@
-"use client";
+'use client';
 
-import { Eye } from "lucide-react";
+import { UserProfile, getProfile } from '@/lib/api/users';
+import { useEffect, useState } from 'react';
+
+import { Eye } from 'lucide-react';
+import { useAuthStore } from '@/hooks/use-auth-store';
 
 export function PersonalInfo() {
-  const user = {
-    firstLast: "First name , Last name",
-    email: "cerseiloaded@hotmail.com",
-    phone: "+65 9012474475",
-  };
+  const user = useAuthStore((s) => s.user);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(true);
+      getProfile()
+        .then((data) => setProfile(data))
+        .catch((e) => setError(e.message || 'Failed to load profile'))
+        .finally(() => setLoading(false));
+    }
+  }, [user]);
+
+  const name =
+    user?.name || (profile ? `${profile.firstName} ${profile.lastName}` : '');
+  const email = user?.email || profile?.email || '';
+  const phone = profile?.phone || '';
+
+  if (loading) {
+    return (
+      <div className="bg-white dark:bg-card border border-border/50 rounded-xl p-6 shadow-sm animate-pulse h-[150px]" />
+    );
+  }
+  if (error) {
+    return <div className="text-red-500 text-center">{error}</div>;
+  }
 
   return (
     <div className="bg-white dark:bg-card border border-border/50 rounded-xl p-6 shadow-sm">
@@ -22,7 +49,7 @@ export function PersonalInfo() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-1 border-b border-border/10 last:border-0">
           <span className="text-sm text-muted-foreground w-1/3">Name</span>
           <span className="text-sm font-medium text-foreground text-right">
-            {user.firstLast}
+            {name}
           </span>
         </div>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-1 border-b border-border/10 last:border-0">
@@ -30,7 +57,7 @@ export function PersonalInfo() {
             Email address
           </span>
           <span className="text-sm font-medium text-foreground text-right">
-            {user.email}
+            {email}
           </span>
         </div>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-1 border-b border-border/10 last:border-0">
@@ -38,7 +65,7 @@ export function PersonalInfo() {
             Phone Number
           </span>
           <span className="text-sm font-medium text-foreground text-right">
-            {user.phone}
+            {phone}
           </span>
         </div>
       </div>

@@ -1,39 +1,65 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Loader2, Save, User as UserIcon, Mail, Phone } from "lucide-react";
+import { Loader2, Mail, Phone, Save, User as UserIcon } from 'lucide-react';
+import { UserProfile, getProfile, updateProfile } from '@/lib/api/users';
+import { useEffect, useState } from 'react';
+
+import { useAuthStore } from '@/hooks/use-auth-store';
 
 export function ProfileEditForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{
-    type: "success" | "error";
+    type: 'success' | 'error';
     text: string;
   } | null>(null);
-
+  const user = useAuthStore((s) => s.user);
+  const setAuth = useAuthStore((s) => s.setAuth);
   const [formData, setFormData] = useState({
-    firstName: "Victor",
-    lastName: "Kelechi",
-    email: "victor@nexafx.com", // Read-only usually
-    phone: "+234 812 345 6789",
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
   });
+
+  useEffect(() => {
+    getProfile().then((profile) => {
+      setFormData({
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        email: profile.email,
+        phone: profile.phone || '',
+      });
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setMessage(null);
-
     try {
       if (!formData.firstName.trim() || !formData.lastName.trim()) {
-        throw new Error("First and Last name are required");
+        throw new Error('First and Last name are required');
       }
-
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setMessage({ type: "success", text: "Profile updated successfully" });
+      const updated = await updateProfile({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+      });
+      setAuth(
+        {
+          id: updated.id,
+          name: `${updated.firstName} ${updated.lastName}`,
+          email: updated.email,
+          role: 'USER',
+        },
+        localStorage.getItem('token') || '',
+      );
+      setMessage({ type: 'success', text: 'Profile updated successfully' });
     } catch (error) {
       setMessage({
-        type: "error",
+        type: 'error',
         text:
-          error instanceof Error ? error.message : "Failed to update profile",
+          error instanceof Error ? error.message : 'Failed to update profile',
       });
     } finally {
       setIsLoading(false);
@@ -144,13 +170,13 @@ export function ProfileEditForm() {
         {message && (
           <div
             className={`p-4 rounded-lg text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2 ${
-              message.type === "success"
-                ? "bg-green-500/10 text-green-600 border border-green-500/20"
-                : "bg-red-500/10 text-red-600 border border-red-500/20"
+              message.type === 'success'
+                ? 'bg-green-500/10 text-green-600 border border-green-500/20'
+                : 'bg-red-500/10 text-red-600 border border-red-500/20'
             }`}
           >
             <div
-              className={`w-2 h-2 rounded-full ${message.type === "success" ? "bg-green-600" : "bg-red-600"}`}
+              className={`w-2 h-2 rounded-full ${message.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}
             />
             {message.text}
           </div>
