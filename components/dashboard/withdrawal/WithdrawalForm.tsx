@@ -2,22 +2,27 @@
 
 import { useState, useEffect } from "react";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
-import { ChevronDown, ChevronLeft, AlertCircle } from "lucide-react";
+import { ChevronDown, ChevronLeft, AlertCircle, CircleDollarSign, BadgeDollarSign, Coins } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCurrencies, type Currency } from "@/lib/api/currencies";
 
 interface CurrencyOption {
     id: string;
     name: string;
-    icon: string;
+    icon: React.ReactNode;
     balance: string;
 }
 
 function toCurrencyOption(c: Currency): CurrencyOption {
+    let icon = <Coins className="w-6 h-6 text-foreground" />;
+    if (c.code === 'USDC') icon = <CircleDollarSign className="w-6 h-6 text-blue-500" />;
+    else if (c.code === 'ETH') icon = <BadgeDollarSign className="w-6 h-6 text-neutral-500" />;
+    else if (c.code === 'BNB') icon = <Coins className="w-6 h-6 text-yellow-500" />;
+
     return {
         id: c.code,
         name: c.name,
-        icon: `/icons/${c.code.toLowerCase()}.svg`,
+        icon,
         balance: "0.00",
     };
 }
@@ -176,11 +181,7 @@ export function WithdrawalForm() {
                                 </span>
                             ) : selectedCurrency ? (
                                 <div className="flex items-center gap-3">
-                                    <img
-                                        src={selectedCurrency.icon}
-                                        alt={selectedCurrency.name}
-                                        className="w-6 h-6 rounded-full"
-                                    />
+                                    {selectedCurrency.icon}
                                     <span className="font-medium text-foreground">
                                         {selectedCurrency.id}
                                     </span>
@@ -211,11 +212,7 @@ export function WithdrawalForm() {
                                         )}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <img
-                                                src={curr.icon}
-                                                alt={curr.name}
-                                                className="w-6 h-6 rounded-full"
-                                            />
+                                            {curr.icon}
                                             <div className="text-left">
                                                 <p className="font-medium text-foreground">{curr.id}</p>
                                                 <p className="text-xs text-muted-foreground">{curr.name}</p>

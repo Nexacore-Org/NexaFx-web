@@ -1,14 +1,14 @@
 "use client";
 
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2, Coins, CircleDollarSign, BadgeDollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createWithdrawal } from "@/lib/api/transactions";
 
 const currencies = [
-    { id: 'USDC', name: 'USD Coin', icon: '/icons/usdc.svg' },
-    { id: 'ETH', name: 'Ethereum', icon: '/icons/eth.svg' },
-    { id: 'BNB', name: 'BNB', icon: '/icons/bnb.svg' },
+    { id: 'USDC', name: 'USD Coin', icon: <CircleDollarSign className="w-8 h-8 text-blue-500" /> },
+    { id: 'ETH', name: 'Ethereum', icon: <BadgeDollarSign className="w-8 h-8 text-neutral-500" /> },
+    { id: 'BNB', name: 'BNB', icon: <Coins className="w-8 h-8 text-yellow-500" /> },
 ];
 
 export function WithdrawalReview() {
@@ -76,11 +76,7 @@ export function WithdrawalReview() {
                 <div className="text-center pb-4 border-b border-border">
                     <p className="text-sm text-muted-foreground mb-1">You are withdrawing</p>
                     <div className="flex items-center justify-center gap-3">
-                        <img
-                            src={selectedCurrency.icon}
-                            alt={selectedCurrency.name}
-                            className="w-8 h-8 rounded-full"
-                        />
+                        {selectedCurrency.icon}
                         <span className="text-3xl font-bold text-foreground">
                             {parseFloat(amount).toLocaleString()} {currency}
                         </span>
