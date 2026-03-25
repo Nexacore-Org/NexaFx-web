@@ -31,7 +31,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
             role: "ADMIN",
           },
           "mock-admin-token",
-          "mock-refresh-token"
+          "mock-admin-refresh-token"
         );
       }
       return;

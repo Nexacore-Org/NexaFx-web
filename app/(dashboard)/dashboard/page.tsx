@@ -26,13 +26,8 @@ export default function DashboardPage() {
           <AccountOverview
             openDeposit={openDeposit}
             onDepositClick={toggleDeposit}
-            onWithdrawClick={open}
+            onWithdrawClick={openWithdrawal}
           />
-            <AccountOverview
-              openDeposit={openDeposit}
-              onDepositClick={toggleDeposit}
-              onWithdrawClick={openWithdrawal}
-            />
           <div className="md:px-4 space-y-4">
             <div className="grid grid-cols-2 gap-4 px-6 pb-6 md:p-0">
               <div

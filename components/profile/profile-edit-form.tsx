@@ -53,7 +53,7 @@ export function ProfileEditForm() {
           role: 'USER',
         },
         localStorage.getItem('access_token') || '',
-        localStorage.getItem('refresh_token') || ''
+        localStorage.getItem('refresh_token') || '',
       );
       setMessage({ type: 'success', text: 'Profile updated successfully' });
     } catch (error) {

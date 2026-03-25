@@ -65,7 +65,7 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
           >
             <X className="w-4 h-4 text-muted-foreground" />
           </button>
-          {!showNotification && (
+          {showNotification && (
             <DepositNotification
               message="Your deposit of"
               amount="₦50,000"

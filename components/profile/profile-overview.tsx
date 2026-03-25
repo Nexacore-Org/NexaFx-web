@@ -28,7 +28,7 @@ export function ProfileOverview() {
               role: 'USER',
             },
             localStorage.getItem('access_token') || '',
-            localStorage.getItem('refresh_token') || ''
+            localStorage.getItem('refresh_token') || '',
           );
         }
       })
