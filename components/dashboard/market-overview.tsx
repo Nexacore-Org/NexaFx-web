@@ -37,7 +37,7 @@ export function MarketOverview() {
               res?.percentChange ??
               null;
             const isPositive =
-              changeValue !== null ? parseFloat(changeValue) >= 0 : null;
+              changeValue !== null ? parseFloat(changeValue) > 0 : null;
             return {
               pair: p.pair,
               rate: rateValue
