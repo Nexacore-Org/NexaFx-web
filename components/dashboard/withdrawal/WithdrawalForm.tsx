@@ -5,6 +5,7 @@ import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import { ChevronDown, ChevronLeft, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCurrencies, type Currency } from "@/lib/api/currencies";
+import { getBalances, type WalletBalance } from "@/lib/api/wallet";
 
 interface CurrencyOption {
     id: string;
@@ -13,12 +14,15 @@ interface CurrencyOption {
     balance: string;
 }
 
-function toCurrencyOption(c: Currency): CurrencyOption {
+function toCurrencyOption(
+    c: Currency,
+    balanceMap: Record<string, string>,
+): CurrencyOption {
     return {
         id: c.code,
         name: c.name,
         icon: `/icons/${c.code.toLowerCase()}.svg`,
-        balance: "0.00",
+        balance: balanceMap[c.code] ?? "0.00",
     };
 }
 
@@ -31,15 +35,30 @@ export function WithdrawalForm() {
     const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
     const [errors, setErrors] = useState<{ address?: string; amount?: string }>({});
 
-    useEffect(() => {
-        getCurrencies()
-            .then((data) => {
-                setCurrencies(data.map(toCurrencyOption));
+    const fetchCurrenciesAndBalances = () => {
+        setIsLoadingCurrencies(true);
+        setCurrencyError(null);
+
+        Promise.all([getCurrencies(), getBalances()])
+            .then(([currencyData, balanceData]) => {
+                const balanceMap: Record<string, string> = {};
+                for (const b of balanceData) {
+                    balanceMap[b.currency] = b.balance;
+                }
+                setCurrencies(
+                    currencyData.map((c) => toCurrencyOption(c, balanceMap)),
+                );
             })
             .catch(() => {
-                setCurrencyError("Unable to load currencies. Please try again.");
+                setCurrencyError(
+                    "Unable to load currencies or balances. Please try again.",
+                );
             })
             .finally(() => setIsLoadingCurrencies(false));
+    };
+
+    useEffect(() => {
+        fetchCurrenciesAndBalances();
     }, []);
 
     const selectedCurrency = currencies.find(c => c.id === currency) || currencies[0];
@@ -145,14 +164,7 @@ export function WithdrawalForm() {
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setCurrencyError(null);
-                                        setIsLoadingCurrencies(true);
-                                        getCurrencies()
-                                            .then((data) => setCurrencies(data.map(toCurrencyOption)))
-                                            .catch(() => setCurrencyError("Unable to load currencies. Please try again."))
-                                            .finally(() => setIsLoadingCurrencies(false));
-                                    }}
+                                    onClick={fetchCurrenciesAndBalances}
                                     className="text-xs font-semibold text-destructive underline underline-offset-2 hover:opacity-70 transition-opacity shrink-0"
                                 >
                                     Retry
@@ -281,11 +293,13 @@ export function WithdrawalForm() {
             <div className="space-y-3 pt-2">
                 <button
                     onClick={handleSubmit}
+                    disabled={isLoadingCurrencies || !!currencyError}
                     className={cn(
                         "w-full py-3.5 rounded-xl font-semibold",
                         "bg-primary text-primary-foreground",
                         "hover:bg-primary/90 active:scale-[0.98]",
-                        "transition-all duration-200"
+                        "transition-all duration-200",
+                        (isLoadingCurrencies || currencyError) && "opacity-50 cursor-not-allowed"
                     )}
                 >
                     Withdraw
