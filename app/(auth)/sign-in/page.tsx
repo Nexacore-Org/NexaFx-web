@@ -201,13 +201,7 @@ export default function SignInPage() {
 
             <h1 className="text-2xl font-semibold text-center mb-2">Sign in</h1>
             <p className="text-muted-foreground text-center text-sm">
-              Hey, welcome back{' '}
-              <Link
-                href="/verify-otp"
-                className="text-[#FFA200] hover:underline font-medium"
-              >
-                Login
-              </Link>
+              Hey, welcome back
             </p>
           </div>
 
