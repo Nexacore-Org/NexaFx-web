@@ -39,6 +39,10 @@ export function resendSignupOtp (payload: { email: string }) {
     return request("/auth/resend-signup-otp", payload);
 }
 
+export function resendLoginOtp (payload: { email: string }) {
+    return request("/auth/resend-login-otp", payload);
+}
+
 export function forgotPassword (payload: { email: string }) {
     return request("/auth/forgot-password", payload);
 }

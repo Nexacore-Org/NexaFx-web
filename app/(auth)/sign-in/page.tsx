@@ -32,7 +32,6 @@ export default function SignInPage() {
       setIsLoading(false);
       setTempEmail(email); // store for OTP step
       sessionStorage.setItem('login-email', email); // persist for OTP page
-      sessionStorage.setItem('login-password', password); // persist for OTP resend
       router.push('/verify-otp');
     } catch (err: any) {
       setIsLoading(false);
