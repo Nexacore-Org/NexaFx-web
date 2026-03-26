@@ -1,21 +1,42 @@
 "use client";
 
-import { TrendingUp, TrendingDown, DollarSign, PoundSterling, Euro } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  PoundSterling,
+  Euro,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { getExchangeRate } from "@/lib/api/exchange-rates";
 
 interface RateData {
-    pair: string;
-    rate: string;
-    change: string;
-    up: boolean;
-    icon: React.ReactNode;
+  pair: string;
+  rate: string;
+  change: string;
+  up: boolean;
+  icon: React.ReactNode;
 }
 
 const defaultPairs = [
-    { to: "USD", from: "NGN", pair: "NGN/USD", icon: <DollarSign className="w-4 h-4" /> },
-    { to: "GBP", from: "NGN", pair: "NGN/GBP", icon: <PoundSterling className="w-4 h-4" /> },
-    { to: "EUR", from: "NGN", pair: "NGN/EUR", icon: <Euro className="w-4 h-4" /> }
+  {
+    to: "USD",
+    from: "NGN",
+    pair: "NGN/USD",
+    icon: <DollarSign className="w-4 h-4" />,
+  },
+  {
+    to: "GBP",
+    from: "NGN",
+    pair: "NGN/GBP",
+    icon: <PoundSterling className="w-4 h-4" />,
+  },
+  {
+    to: "EUR",
+    from: "NGN",
+    pair: "NGN/EUR",
+    icon: <Euro className="w-4 h-4" />,
+  },
 ];
 
 export function MarketOverview() {
@@ -94,29 +115,36 @@ export function MarketOverview() {
         </p>
       </div>
 
-            <div className="exchange-rates flex items-center overflow-x-auto gap-3 pb-2">
-                {loading && marketData.length === 0 ? (
-                    Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="min-w-[251px] rounded-sm border-[0.43px] border-[#79797966] bg-card p-5 shadow-[4px-4px-12px-0px-#0000001A]">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="h-4 w-12 bg-muted animate-pulse rounded"></div>
-                                <div className="h-8 w-8 bg-muted animate-pulse rounded-full"></div>
-                            </div>
-                            <div className="flex items-center justify-between gap-4 w-full">
-                                <div className="h-6 w-24 bg-muted animate-pulse rounded"></div>
-                                <div className="h-4 w-12 bg-muted animate-pulse rounded-full"></div>
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    marketData.map((item, index) => (
-                        <div key={index} className="min-w-[251px] rounded-sm border-[0.43px] border-[#79797966] bg-card p-5 hover:border-primary/50 transition-colors shadow-[4px-4px-12px-0px-#0000001A]">
-                            <div className="flex items-center justify-between mb-4">
-                                <p className="text-xs font-medium text-muted-foreground">{item.pair}</p>
-                                <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs">
-                                    {item.icon}
-                                </div>
-                            </div>
+      <div className="exchange-rates flex items-center overflow-x-auto gap-3 pb-2">
+        {loading && marketData.length === 0
+          ? Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="min-w-[251px] rounded-sm border-[0.43px] border-[#79797966] bg-card p-5 shadow-[4px-4px-12px-0px-#0000001A]"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="h-4 w-12 bg-muted animate-pulse rounded"></div>
+                  <div className="h-8 w-8 bg-muted animate-pulse rounded-full"></div>
+                </div>
+                <div className="flex items-center justify-between gap-4 w-full">
+                  <div className="h-6 w-24 bg-muted animate-pulse rounded"></div>
+                  <div className="h-4 w-12 bg-muted animate-pulse rounded-full"></div>
+                </div>
+              </div>
+            ))
+          : marketData.map((item, index) => (
+              <div
+                key={index}
+                className="min-w-[251px] rounded-sm border-[0.43px] border-[#79797966] bg-card p-5 hover:border-primary/50 transition-colors shadow-[4px-4px-12px-0px-#0000001A]"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {item.pair}
+                  </p>
+                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs">
+                    {item.icon}
+                  </div>
+                </div>
 
                 <div className="flex items-center justify-between gap-4 w-full">
                   <p className="text-lg font-bold tracking-tight">
