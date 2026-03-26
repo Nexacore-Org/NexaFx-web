@@ -32,7 +32,6 @@ export default function SignInPage() {
       setIsLoading(false);
       setTempEmail(email); // store for OTP step
       sessionStorage.setItem('login-email', email); // persist for OTP page
-      sessionStorage.setItem('login-password', password); // persist for OTP resend
       router.push('/verify-otp');
     } catch (err: any) {
       setIsLoading(false);
@@ -201,13 +200,7 @@ export default function SignInPage() {
 
             <h1 className="text-2xl font-semibold text-center mb-2">Sign in</h1>
             <p className="text-muted-foreground text-center text-sm">
-              Hey, welcome back{' '}
-              <Link
-                href="/verify-otp"
-                className="text-[#FFA200] hover:underline font-medium"
-              >
-                Login
-              </Link>
+              Hey, welcome back
             </p>
           </div>
 

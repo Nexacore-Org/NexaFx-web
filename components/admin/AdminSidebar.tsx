@@ -7,16 +7,18 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useState } from "react";
 
+import { BarChart3, Bell, Users } from "lucide-react";
+
 type Props = {
     isOpen: boolean;
     onClose: () => void;
 };
 
 const adminMenuItems = [
-    { icon: "/icons/analytics.svg", label: "Analytics", href: "/admin/analytics" },
+    { icon: null, label: "Analytics", href: "/admin/analytics", lucide: BarChart3 },
     { icon: null, label: "Transaction", href: "/admin/transactions", lucide: ArrowUpDown },
-    { icon: "/icons/push-notification.svg", label: "Push Notification", href: "/admin/push-notifications" },
-    { icon: "/icons/users-list.svg", label: "User list", href: "/admin/users" },
+    { icon: null, label: "Push Notification", href: "/admin/push-notifications", lucide: Bell },
+    { icon: null, label: "User list", href: "/admin/users", lucide: Users },
 ];
 
 export function AdminSidebar({ isOpen, onClose }: Props) {

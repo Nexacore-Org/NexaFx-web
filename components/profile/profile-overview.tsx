@@ -27,7 +27,8 @@ export function ProfileOverview() {
               email: data.email,
               role: 'USER',
             },
-            localStorage.getItem('token') || '',
+            localStorage.getItem('access_token') || '',
+            localStorage.getItem('refresh_token') || '',
           );
         }
       })

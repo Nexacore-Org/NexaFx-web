@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, PoundSterling, Euro } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getExchangeRate } from "@/lib/api/exchange-rates";
 
@@ -9,13 +9,13 @@ interface RateData {
     rate: string;
     change: string;
     up: boolean;
-    icon: string;
+    icon: React.ReactNode;
 }
 
 const defaultPairs = [
-    { to: "USD", from: "NGN", pair: "NGN/USD", icon: "/icons/usdc.svg" },
-    { to: "GBP", from: "NGN", pair: "NGN/GBP", icon: "/icons/eth.svg" },
-    { to: "EUR", from: "NGN", pair: "NGN/EUR", icon: "/icons/bnb.svg" }
+    { to: "USD", from: "NGN", pair: "NGN/USD", icon: <DollarSign className="w-4 h-4" /> },
+    { to: "GBP", from: "NGN", pair: "NGN/GBP", icon: <PoundSterling className="w-4 h-4" /> },
+    { to: "EUR", from: "NGN", pair: "NGN/EUR", icon: <Euro className="w-4 h-4" /> }
 ];
 
 export function MarketOverview() {
@@ -98,11 +98,7 @@ export function MarketOverview() {
                             <div className="flex items-center justify-between mb-4">
                                 <p className="text-xs font-medium text-muted-foreground">{item.pair}</p>
                                 <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs">
-                                    <img
-                                        src={item.icon}
-                                        alt={item.pair}
-                                        className="w-full h-full rounded-full"
-                                    />
+                                    {item.icon}
                                 </div>
                             </div>
 

@@ -40,14 +40,7 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
       description:
         "Send crypto directly to your NexaFX wallet address. Just copy your address and make the transfer.",
       fee: "0%",
-      icon: (
-        <Image
-          src={`/icons/instant_deposit.svg`}
-          alt={"dsdsds"}
-          width={20}
-          height={20}
-        />
-      ),
+      icon: <Wallet className="w-5 h-5 text-foreground" />,
     },
     {
       id: "exchange",

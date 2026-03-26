@@ -1,7 +1,8 @@
 "use client";
 
-import { ChevronDown, Download, Upload, Copy } from "lucide-react";
+import { ChevronDown, Download, Upload, Copy, Check } from "lucide-react";
 import { Topbar } from "./topbar";
+import { useState } from "react";
 
 const truncateAddress = (addr: string) =>
     `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -18,6 +19,19 @@ export function AccountOverview({
   onDepositClick,
   onWithdrawClick,
 }: AccountOverviewTypes) {
+  const [copied, setCopied] = useState(false);
+  const walletAddress = "0x1234567890123456789012345678901234567890";
+
+  const handleCopyAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(walletAddress);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy address:", err);
+    }
+  };
+
   return (
     <section className="account-overview-bg rounded-b-xl md:rounded-b-none md:ml-4">
       {/* Main balance card */}
@@ -43,12 +57,19 @@ export function AccountOverview({
 
               <div className="hidden md:inline-flex md:items-center gap-2 bg-muted rounded-sm border border-border px-4 py-2">
                 <p className="text-xs font-medium text-foreground">
-                  {truncateAddress(
-                    "0x1234567890123456789012345678901234567890",
-                  )}
+                  {truncateAddress(walletAddress)}
                 </p>
-                <button aria-label="Copy wallet address">
-                  <Copy />
+                <button
+                  onClick={handleCopyAddress}
+                  aria-label="Copy wallet address"
+                  className="transition-colors"
+                  title={copied ? "Copied!" : "Copy address"}
+                >
+                  {copied ? (
+                    <Check className="size-4 text-green-500" />
+                  ) : (
+                    <Copy className="size-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -80,7 +101,7 @@ export function AccountOverview({
               <div className="rounded-sm w-full bg-card p-2.5 md:p-4 md:border-[0.43px] border-[#79797966] shadow-[4px-4px-12px-0px-#0000001A]">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2 bg-muted p-2 rounded-md">
-                    <img src="/icons/usdc.svg" alt="" className="w-6 h-6" />
+                    <CircleDollarSign className="w-6 h-6 text-foreground" />
                     <p className="text-xs font-medium text-muted-foreground">
                       USD
                     </p>
