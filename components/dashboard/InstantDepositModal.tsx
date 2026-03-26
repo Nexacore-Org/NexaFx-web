@@ -11,6 +11,7 @@ import {
   Share2,
   ChevronRight,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { DepositNotification } from "./notification";
 
 interface DepositMethod {
@@ -78,8 +79,32 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
           </h3>
 
           {/* QR Code */}
-          <div className=" p-6 rounded-lg mb-3 md:mb-6 flex items-center justify-center">
-            <div className="w-38 h-38 md:w-58 md:h-58 bg-muted p-4 rounded-lg"></div>
+          <div className="p-6 rounded-lg mb-3 md:mb-6 flex items-center justify-center">
+            {walletAddress ? (
+              <div className="bg-white p-3 rounded-lg shadow-sm">
+                {/* Mobile: 152px, Desktop: 232px */}
+                <QRCodeSVG
+                  value={walletAddress}
+                  size={152}
+                  level="M"
+                  marginSize={2}
+                  className="block md:hidden"
+                  aria-label="Wallet address QR code"
+                />
+                <QRCodeSVG
+                  value={walletAddress}
+                  size={232}
+                  level="M"
+                  marginSize={2}
+                  className="hidden md:block"
+                  aria-label="Wallet address QR code"
+                />
+              </div>
+            ) : (
+              <div className="w-38 h-38 md:w-58 md:h-58 bg-muted p-4 rounded-lg flex items-center justify-center text-center text-sm text-muted-foreground">
+                No wallet address available
+              </div>
+            )}
           </div>
 
           {/* Wallet Address */}
