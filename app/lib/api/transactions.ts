@@ -31,7 +31,7 @@ export interface TransactionResponse {
 const mockTransactions: Transaction[] = [
   {
     id: '1',
-    date: '2024-03-20T10:30:00Z',
+    date: '2026-03-20T10:30:00Z',
     type: 'Deposit',
     currency: 'USD',
     amount: 1000,
@@ -41,7 +41,7 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: '2',
-    date: '2024-03-19T14:15:00Z',
+    date: '2026-03-19T14:15:00Z',
     type: 'Withdraw',
     currency: 'USD',
     amount: 500,
@@ -51,7 +51,7 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: '3',
-    date: '2024-03-18T09:45:00Z',
+    date: '2026-03-18T09:45:00Z',
     type: 'Exchange',
     currency: 'EUR',
     amount: 750,
@@ -61,7 +61,7 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: '4',
-    date: '2024-03-17T16:20:00Z',
+    date: '2026-03-17T16:20:00Z',
     type: 'Transfer',
     currency: 'USD',
     amount: 200,
@@ -71,7 +71,7 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: '5',
-    date: '2024-03-16T11:10:00Z',
+    date: '2026-03-16T11:10:00Z',
     type: 'Deposit',
     currency: 'GBP',
     amount: 800,
@@ -81,7 +81,7 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: '6',
-    date: '2024-03-15T13:25:00Z',
+    date: '2026-03-15T13:25:00Z',
     type: 'Withdraw',
     currency: 'USD',
     amount: 300,
@@ -91,7 +91,7 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: '7',
-    date: '2024-03-14T08:40:00Z',
+    date: '2026-03-14T08:40:00Z',
     type: 'Deposit',
     currency: 'USD',
     amount: 1500,
@@ -101,7 +101,7 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: '8',
-    date: '2024-03-13T17:55:00Z',
+    date: '2026-03-13T17:55:00Z',
     type: 'Exchange',
     currency: 'JPY',
     amount: 50000,
@@ -111,7 +111,7 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: '9',
-    date: '2024-03-12T12:10:00Z',
+    date: '2026-03-12T12:10:00Z',
     type: 'Transfer',
     currency: 'USD',
     amount: 100,
@@ -121,13 +121,53 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: '10',
-    date: '2024-03-11T15:30:00Z',
+    date: '2026-03-11T15:30:00Z',
     type: 'Deposit',
     currency: 'EUR',
     amount: 900,
     status: 'Completed',
     reference: 'DEP-010',
     description: 'SEPA transfer deposit'
+  },
+  {
+    id: '11',
+    date: '2026-02-28T10:30:00Z',
+    type: 'Deposit',
+    currency: 'USD',
+    amount: 2000,
+    status: 'Completed',
+    reference: 'DEP-011',
+    description: 'February deposit'
+  },
+  {
+    id: '12',
+    date: '2026-02-15T14:15:00Z',
+    type: 'Withdraw',
+    currency: 'USD',
+    amount: 750,
+    status: 'Completed',
+    reference: 'WTH-012',
+    description: 'February withdrawal'
+  },
+  {
+    id: '13',
+    date: '2026-01-30T09:45:00Z',
+    type: 'Exchange',
+    currency: 'EUR',
+    amount: 1200,
+    status: 'Completed',
+    reference: 'EXC-013',
+    description: 'January exchange'
+  },
+  {
+    id: '14',
+    date: '2026-01-15T16:20:00Z',
+    type: 'Transfer',
+    currency: 'USD',
+    amount: 400,
+    status: 'Completed',
+    reference: 'TRF-014',
+    description: 'January transfer'
   }
 ];
 
@@ -156,11 +196,17 @@ export async function getTransactions(query: TransactionQueryDto): Promise<Trans
   if (query.from || query.to) {
     filteredTransactions = filteredTransactions.filter(tx => {
       const txDate = new Date(tx.date);
-      const fromDate = query.from ? new Date(query.from) : null;
+      
+      // Convert input dates to proper Date objects
+      const fromDate = query.from ? new Date(query.from + 'T00:00:00Z') : null;
       const toDate = query.to ? new Date(query.to + 'T23:59:59Z') : null;
       
-      if (fromDate && txDate < fromDate) return false;
-      if (toDate && txDate > toDate) return false;
+      if (fromDate && txDate < fromDate) {
+        return false;
+      }
+      if (toDate && txDate > toDate) {
+        return false;
+      }
       return true;
     });
   }

@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 
-import { Sidebar } from '@/components/dashboard/sidebar';
-import { Topbar } from '@/components/dashboard/topbar';
-import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/hooks/use-auth-store';
+import { Sidebar } from '../../components/dashboard/sidebar';
+import { Topbar } from '../../components/dashboard/topbar';
+import { cn } from '../../lib/utils';
+import { useAuthStore } from '../../hooks/use-auth-store';
 import { useRouter } from 'next/navigation';
-import { useSidebarStore } from '@/hooks/use-sidebar-store';
+import { useSidebarStore } from '../../hooks/use-sidebar-store';
 
 export default function DashboardLayout({
   children,

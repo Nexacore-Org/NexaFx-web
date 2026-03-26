@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Transaction, getTransactions } from "@/lib/api/transactions";
-import { TransactionFilters } from "@/components/transactions/transaction-filters";
-import { TransactionTable } from "@/components/transactions/transaction-table";
-import { TransactionList } from "@/components/transactions/transaction-list";
-import { TransactionPagination } from "@/components/transactions/pagination";
-import { TransactionEmptyState } from "@/components/transactions/empty-state";
-import { TransactionDetails } from "@/components/transactions/transaction-details";
-import { exportTransactionsToCSV, generateCSVFilename } from "@/lib/utils/csv-export";
+import { Transaction, getTransactions } from "../../lib/api/transactions";
+import { TransactionFilters } from "../../components/transactions/transaction-filters";
+import { TransactionTable } from "../../components/transactions/transaction-table";
+import { TransactionList } from "../../components/transactions/transaction-list";
+import { TransactionPagination } from "../../components/transactions/pagination";
+import { TransactionEmptyState } from "../../components/transactions/empty-state";
+import { TransactionDetails } from "../../components/transactions/transaction-details";
+import { exportTransactionsToCSV, generateCSVFilename } from "../../lib/utils/csv-export";
 
 const ITEMS_PER_PAGE = 10;
 
