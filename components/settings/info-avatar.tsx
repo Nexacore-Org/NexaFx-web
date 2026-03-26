@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Copy, PencilLine } from "lucide-react";
+import { Copy, PencilLine, CircleUserRound } from "lucide-react";
 import Image from "next/image";
 
 export function InfoAvatar() {
@@ -8,13 +8,7 @@ export function InfoAvatar() {
     <div className="sm:py-8.75 p-3.75 sm:px-5 flex flex-col sm:flex-row items-start justify-between sm:items-center rounded-2xl border-[#E58600] bg-[linear-gradient(83.78deg,rgba(255,162,0,0.3)_-29.73%,rgba(59,130,246,0.3)_143.83%)] border-[0.5px] ">
       <div className="flex flex-col">
         <div className="flex gap-4">
-          <Image
-            src="/icons/user.svg"
-            width={70}
-            height={68}
-            alt="profile"
-            className="object-cover"
-          />
+          <CircleUserRound className="w-[70px] h-[68px] text-muted-foreground" />
           <div className="flex flex-col justify-between sm:flex-row sm:items-center ">
             <div className="flex gap-2 items-center">
               <h3 className="font-semibold text-[19px] sm:text-2xl">

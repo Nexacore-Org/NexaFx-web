@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
-import { ChevronDown, ChevronLeft, AlertCircle } from "lucide-react";
+import { ChevronDown, ChevronLeft, AlertCircle, CircleDollarSign, BadgeDollarSign, Coins } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCurrencies, type Currency } from "@/lib/api/currencies";
 import { getBalances, type WalletBalance } from "@/lib/api/wallet";
@@ -10,7 +10,7 @@ import { getBalances, type WalletBalance } from "@/lib/api/wallet";
 interface CurrencyOption {
     id: string;
     name: string;
-    icon: string;
+    icon: React.ReactNode;
     balance: string;
 }
 
@@ -188,11 +188,7 @@ export function WithdrawalForm() {
                                 </span>
                             ) : selectedCurrency ? (
                                 <div className="flex items-center gap-3">
-                                    <img
-                                        src={selectedCurrency.icon}
-                                        alt={selectedCurrency.name}
-                                        className="w-6 h-6 rounded-full"
-                                    />
+                                    {selectedCurrency.icon}
                                     <span className="font-medium text-foreground">
                                         {selectedCurrency.id}
                                     </span>
@@ -223,11 +219,7 @@ export function WithdrawalForm() {
                                         )}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <img
-                                                src={curr.icon}
-                                                alt={curr.name}
-                                                className="w-6 h-6 rounded-full"
-                                            />
+                                            {curr.icon}
                                             <div className="text-left">
                                                 <p className="font-medium text-foreground">{curr.id}</p>
                                                 <p className="text-xs text-muted-foreground">{curr.name}</p>

@@ -42,7 +42,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     } else if (user?.role !== "ADMIN") {
       router.push("/dashboard");
     }
-  }, [isMounted, token, isAuthenticated, user, router, setAuth]);
+  }, [isMounted, accessToken, isAuthenticated, user, router, setAuth]);
 
   if (!isMounted) {
     return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, UserPlus, ArrowUpDown, Clock, Coins } from "lucide-react";
 import { AdminMetricCard } from "@/components/admin/AdminMetricCard";
 import { RevenueChart } from "@/components/admin/RevenueChart";
 import { mockAdminMetrics, mockAdminUsers } from "@/lib/admin-mock-data";
@@ -25,22 +25,22 @@ export default function AnalyticsPage() {
                 <AdminMetricCard
                     label="Registered Users"
                     value={mockAdminMetrics.registeredUsers}
-                    iconSrc="/icons/register.svg.svg"
+                    icon={UserPlus}
                 />
                 <AdminMetricCard
                     label="Total Transaction"
                     value={mockAdminMetrics.totalTransactions}
-                    iconSrc="/icons/total.svg.svg"
+                    icon={ArrowUpDown}
                 />
                 <AdminMetricCard
                     label="Pending KYC"
                     value={mockAdminMetrics.pendingKyc}
-                    iconSrc="/icons/pending.svg.svg"
+                    icon={Clock}
                 />
                 <AdminMetricCard
                     label="Currency"
                     value={mockAdminMetrics.currencies}
-                    iconSrc="/icons/currency.svg.svg"
+                    icon={Coins}
                 />
             </div>
 
