@@ -8,6 +8,7 @@ import { TransactionList } from "@/components/transactions/transaction-list";
 import { TransactionPagination } from "@/components/transactions/pagination";
 import { TransactionEmptyState } from "@/components/transactions/empty-state";
 import { TransactionDetails } from "@/components/transactions/transaction-details";
+import { exportTransactionsToCSV, generateCSVFilename } from "@/lib/utils/csv-export";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -18,6 +19,8 @@ export default function TransactionsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [detailsOpen, setDetailsOpen] = useState(false);
+    const [dateFrom, setDateFrom] = useState<string>("");
+    const [dateTo, setDateTo] = useState<string>("");
 
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [totalItems, setTotalItems] = useState(0);
@@ -40,6 +43,29 @@ export default function TransactionsPage() {
         setCurrentPage(1);
     };
 
+    const handleDateFromChange = (date: string) => {
+        setDateFrom(date);
+        setCurrentPage(1);
+    };
+
+    const handleDateToChange = (date: string) => {
+        setDateTo(date);
+        setCurrentPage(1);
+    };
+
+    const handleClearDateRange = () => {
+        setDateFrom("");
+        setDateTo("");
+        setCurrentPage(1);
+    };
+
+    const handleExportCSV = () => {
+        if (transactions.length > 0) {
+            const filename = generateCSVFilename(dateFrom, dateTo);
+            exportTransactionsToCSV(transactions, filename);
+        }
+    };
+
     useEffect(() => {
         let cancelled = false;
         setIsLoading(true);
@@ -57,6 +83,8 @@ export default function TransactionsPage() {
             limit: ITEMS_PER_PAGE,
             search: debouncedSearch || undefined,
             type: typeParam,
+            from: dateFrom || undefined,
+            to: dateTo || undefined,
         })
             .then((result) => {
                 if (!cancelled) {
@@ -78,7 +106,7 @@ export default function TransactionsPage() {
         return () => {
             cancelled = true;
         };
-    }, [currentPage, debouncedSearch, activeFilter]);
+    }, [currentPage, debouncedSearch, activeFilter, dateFrom, dateTo]);
 
     const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
 
@@ -96,6 +124,12 @@ export default function TransactionsPage() {
                     activeFilter={activeFilter}
                     onFilterChange={handleFilterChange}
                     totalCount={totalItems}
+                    dateFrom={dateFrom}
+                    dateTo={dateTo}
+                    onDateFromChange={handleDateFromChange}
+                    onDateToChange={handleDateToChange}
+                    onClearDateRange={handleClearDateRange}
+                    onExportCSV={handleExportCSV}
                 />
 
                 {isLoading ? (
