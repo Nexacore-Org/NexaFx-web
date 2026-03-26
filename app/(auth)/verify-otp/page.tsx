@@ -1,6 +1,6 @@
 'use client';
 
-import { login, verifyLoginOtp } from '@/lib/api/auth';
+import { verifyLoginOtp, resendLoginOtp } from '@/lib/api/auth';
 import { useEffect, useRef, useState } from 'react';
 
 import Image from 'next/image';
@@ -14,10 +14,6 @@ export default function VerifyOtpPage() {
   const [email, setEmail] = useState<string | null>(null);
   useEffect(() => {
     setEmail(sessionStorage.getItem('login-email'));
-  }, []);
-  const [password, setPassword] = useState<string>('');
-  useEffect(() => {
-    setPassword(sessionStorage.getItem('login-password') || '');
   }, []);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
@@ -94,12 +90,12 @@ export default function VerifyOtpPage() {
     setOtp(['', '', '', '', '', '']);
     setError('');
     inputRefs.current[0]?.focus();
-    if (!email || !password) {
-      setError('Missing email or password. Please sign in again.');
+    if (!email) {
+      setError('Missing email. Please sign in again.');
       return;
     }
     try {
-      await login({ email, password });
+      await resendLoginOtp({ email });
     } catch (err: any) {
       setError('Failed to resend code');
     }

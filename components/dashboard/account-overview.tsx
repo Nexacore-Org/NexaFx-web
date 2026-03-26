@@ -101,7 +101,7 @@ export function AccountOverview({
               <div className="rounded-sm w-full bg-card p-2.5 md:p-4 md:border-[0.43px] border-[#79797966] shadow-[4px-4px-12px-0px-#0000001A]">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2 bg-muted p-2 rounded-md">
-                    <img src="/icons/usdc.svg" alt="" className="w-6 h-6" />
+                    <CircleDollarSign className="w-6 h-6 text-foreground" />
                     <p className="text-xs font-medium text-muted-foreground">
                       USD
                     </p>

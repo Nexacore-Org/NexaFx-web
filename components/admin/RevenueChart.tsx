@@ -60,8 +60,8 @@ export function RevenueChart() {
                         />
                         <Tooltip
                             cursor={{ fill: "transparent" }}
-                            formatter={(value: number | undefined) => [
-                                `$${(value ?? 0).toLocaleString()}`,
+                            formatter={(value: any) => [
+                                `$${(Number(value) || 0).toLocaleString()}`,
                                 "Revenue",
                             ]}
                             contentStyle={{
