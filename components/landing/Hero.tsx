@@ -41,7 +41,7 @@ export default function Hero() {
         </div>
       </div>
 
-      <div className="w-full md:w-1/2 justify-end flex">
+      <div className="w-full md:w-1/2 justify-end hidden md:flex">
         <div className="bg-white/50 p-4 rounded-4xl shadow-2xl backdrop-blur border">
           <Image
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1PN7qlz34UQ6gDkocfttxjMDcpXhtoow77zY0gKhHDrHSCeoaUHrk1sRH-cthSgBLiJgW15bXQs7Kp2N2n9DTvz5rjfcDWXqeOwZOrzgEUI5bzuUKZbPSIpqQOzC0G6DE61r0rKh4WswW2Sd9PL3Mfxr9Ryyn750VhWoTlntb7URx3s_bpqyk7GWLTpZ4oMHSIa_F4Dbqn9L9ir8ILSPi8uZ6qQdOTkkaoHk13oRdM6IAl02cwmmvjxCtX5Mk8RAQbNPteB0ib4ZS"
