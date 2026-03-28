@@ -4,13 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/hooks/use-auth-store";
 
-// Set to true to bypass auth for testing/development
-const BYPASS_AUTH = true;
-
 export function AdminGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
-  const { user, isAuthenticated, accessToken, setAuth } = useAuthStore();
+  const { user, isAuthenticated, accessToken } = useAuthStore();
 
   useEffect(() => {
     setIsMounted(true);
@@ -19,30 +16,12 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isMounted) return;
 
-    // Bypass auth for development/testing
-    if (BYPASS_AUTH) {
-      if (!accessToken || !isAuthenticated) {
-        // Set mock admin user
-        setAuth(
-          {
-            id: "admin-1",
-            name: "Admin User",
-            email: "admin@nexafx.com",
-            role: "ADMIN",
-          },
-          "mock-admin-token",
-          "mock-admin-refresh-token"
-        );
-      }
-      return;
-    }
-
     if (!accessToken || !isAuthenticated) {
       router.push("/sign-in");
     } else if (user?.role !== "ADMIN") {
       router.push("/dashboard");
     }
-  }, [isMounted, accessToken, isAuthenticated, user, router, setAuth]);
+  }, [isMounted, accessToken, isAuthenticated, user, router]);
 
   if (!isMounted) {
     return (
@@ -52,8 +31,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Allow access if bypassing auth or properly authenticated
-  if (BYPASS_AUTH || (accessToken && isAuthenticated && user?.role === "ADMIN")) {
+  if (accessToken && isAuthenticated && user?.role === "ADMIN") {
     return <>{children}</>;
   }
 
