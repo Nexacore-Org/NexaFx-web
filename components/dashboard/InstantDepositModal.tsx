@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useRef } from "react";
 import {
   ArrowLeft,
   ArrowUp,
@@ -12,6 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { DepositNotification } from "./notification";
 
 interface DepositMethod {
@@ -35,6 +38,10 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Use focus trap for modal
+  useFocusTrap(true, onClose, modalRef);
 
   // Sample wallet address
   const walletAddress = "0x5A08FcdBEA516Cf086572157791dB12CA3beF1B32";
@@ -58,10 +65,16 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
     <>
       {" "}
       <div className="">
-        <div className="bg-card text-card-foreground rounded-xl p-6 shadow-sm border border-border/50 relative">
+        <div
+          ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="deposit-modal-title"
+          className="bg-card text-card-foreground rounded-xl p-6 shadow-sm border border-border/50 relative"
+        >
           <button
             onClick={onClose}
-            className="absolute right-1 top-1 p-1.5 rounded-md hover:bg-muted transition-colors"
+            className="absolute right-1 top-1 p-1.5 rounded-md hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
             aria-label="Close deposit modal"
           >
             <X className="w-4 h-4 text-muted-foreground" />
@@ -74,7 +87,10 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
               onClose={() => setShowNotification(false)}
             />
           )}
-          <h3 className="text-lg font-semibold text-center mb-3 md:mb-6">
+          <h3
+            id="deposit-modal-title"
+            className="text-lg font-semibold text-center mb-3 md:mb-6"
+          >
             NEXA FX - Deposit
           </h3>
 
@@ -118,7 +134,7 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
               </span>
               <button
                 onClick={handleCopyAddress}
-                className="p-1 hover:bg-background rounded"
+                className="p-1 hover:bg-background rounded focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1"
                 aria-label="Copy wallet address"
               >
                 <Copy className="w-4 h-4 text-muted-foreground" />
@@ -130,13 +146,15 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
           <div className="flex gap-3  md:flex-row flex-col">
             <button
               onClick={handleCopyAddress}
-              className="flex-1 py-3 bg-yellow-400 hover:bg-yellow-500 text-black font-medium rounded-lg transition-colors md:text-sm"
+              className="flex-1 py-3 bg-yellow-400 hover:bg-yellow-500 text-black font-medium rounded-lg transition-colors md:text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
+              aria-label="Copy wallet address button"
             >
               {copied ? "Copied!" : "Copy Address"}
             </button>
             <button
               onClick={onClose}
-              className="flex-1 py-3 border-2 border-border hover:bg-muted text-foreground font-medium rounded-lg transition-colors"
+              className="flex-1 py-3 border-2 border-border hover:bg-muted text-foreground font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
+              aria-label="Cancel and close deposit modal"
             >
               Cancel
             </button>
