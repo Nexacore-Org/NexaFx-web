@@ -26,6 +26,7 @@ interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   setAuth: (user: User, accessToken: string, refreshToken: string) => void;
+  setTokens: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
   profile?: UserProfileStore | null;
   setProfile?: (profile: UserProfileStore) => void;
@@ -44,6 +45,13 @@ export const useAuthStore = create<AuthState>()(
           localStorage.setItem("refresh_token", refreshToken);
         }
         set({ user, accessToken, refreshToken, isAuthenticated: true });
+      },
+      setTokens: (accessToken, refreshToken) => {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("access_token", accessToken);
+          localStorage.setItem("refresh_token", refreshToken);
+        }
+        set({ accessToken, refreshToken });
       },
       logout: () => {
         if (typeof window !== "undefined") {

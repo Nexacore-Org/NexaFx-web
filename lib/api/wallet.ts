@@ -1,13 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
-
-function getAuthHeaders(): HeadersInit {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
+import { apiClient } from "../api-client";
 
 export interface WalletBalance {
   currency: string;
@@ -15,15 +6,10 @@ export interface WalletBalance {
 }
 
 export async function getBalances(): Promise<WalletBalance[]> {
-  const res = await fetch(`${API_BASE}/wallets/balances`, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = await apiClient<any>("/wallets/balances", {
     method: "GET",
-    headers: getAuthHeaders(),
-    credentials: "include",
+    useProxy: false,
   });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.message || "Failed to fetch balances");
-  }
-  const data = await res.json();
   return Array.isArray(data) ? data : (data.data ?? data.balances ?? []);
 }

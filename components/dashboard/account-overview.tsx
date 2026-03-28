@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Download, Upload, Copy, Check } from "lucide-react";
+import { ChevronDown, Download, Upload, Copy, Check, CircleDollarSign } from "lucide-react";
 import { Topbar } from "./topbar";
 import { useState } from "react";
 

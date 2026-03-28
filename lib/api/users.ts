@@ -1,26 +1,5 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
+import { apiClient } from "../api-client";
 
-function getAuthHeaders (): HeadersInit {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-export async function deleteProfile (): Promise<void> {
-  const res = await fetch(`${API_BASE}/users/profile`, {
-    method: "DELETE",
-    headers: getAuthHeaders(),
-  });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.message || "Failed to delete account");
-  }
-}
-
-// --- Added for profile integration ---
 export interface UserProfile {
   id: string;
   firstName: string;
@@ -37,29 +16,24 @@ export interface UpdateProfileDto {
   phone?: string;
 }
 
-export async function getProfile (): Promise<UserProfile> {
-  const res = await fetch(`${API_BASE}/users/profile`, {
-    method: "GET",
-    headers: getAuthHeaders(),
-    credentials: "include",
+export async function deleteProfile (): Promise<void> {
+  return apiClient("/users/profile", {
+    method: "DELETE",
+    useProxy: false,
   });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.message || "Failed to fetch profile");
-  }
-  return res.json();
+}
+
+export async function getProfile (): Promise<UserProfile> {
+  return apiClient("/users/profile", {
+    method: "GET",
+    useProxy: false,
+  });
 }
 
 export async function updateProfile (data: UpdateProfileDto): Promise<UserProfile> {
-  const res = await fetch(`${API_BASE}/users/profile`, {
+  return apiClient("/users/profile", {
     method: "PATCH",
-    headers: getAuthHeaders(),
-    credentials: "include",
+    useProxy: false,
     body: JSON.stringify(data),
   });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.message || "Failed to update profile");
-  }
-  return res.json();
 }
