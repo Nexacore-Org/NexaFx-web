@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   ArrowLeft,
   ArrowUp,
@@ -13,6 +13,7 @@ import InstantModalDeposit from "./InstantDepositModal";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { MobileNotificationBanner } from "./notification";
 import Image from "next/image";
+import { getProfile } from "@/lib/api/users";
 
 interface DepositMethod {
   id: string;
@@ -30,9 +31,16 @@ type DepositMethodTypes = {
 const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const desktopModalRef = useRef<HTMLDivElement>(null);
   const mobileMethodsModalRef = useRef<HTMLDivElement>(null);
   const mobileQRModalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    getProfile()
+      .then((profile) => setWalletAddress(profile.walletAddress ?? null))
+      .catch(() => setWalletAddress(null));
+  }, []);
 
   const handleCloseDepositFlow = () => {
     setIsQRModalOpen(false);
@@ -76,22 +84,38 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
   ];
 
   const handleMoonPayOpen = () => {
-    // Replace with actual MoonPay URL and user wallet address
-    const moonPayUrl = `https://buy.moonpay.com?apiKey=YOUR_API_KEY&walletAddress=USER_WALLET_ADDRESS`;
-    window.open(moonPayUrl, "_blank");
+    const apiKey = process.env.NEXT_PUBLIC_MOONPAY_API_KEY;
+    if (!apiKey) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("MoonPay: NEXT_PUBLIC_MOONPAY_API_KEY is not set.");
+      }
+      return;
+    }
+    const url = new URL("https://buy.moonpay.com");
+    url.searchParams.set("apiKey", apiKey);
+    url.searchParams.set("walletAddress", walletAddress!);
+    url.searchParams.set("currencyCode", "usdc");
+    url.searchParams.set("baseCurrencyCode", "ngn");
+    window.open(url.toString(), "_blank");
   };
 
-  const MethodCard: React.FC<{ method: DepositMethod }> = ({ method }) => (
-    <button
-      className="w-full text-left p-4 bg-card border border-border rounded-lg hover:border-border/70 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
-      onClick={() => {
-        if (method.id === "instant") {
-          setIsQRModalOpen(true);
-        } else if (method.id === "exchange") {
-          handleMoonPayOpen();
-        }
-      }}
-    >
+  const MethodCard: React.FC<{ method: DepositMethod }> = ({ method }) => {
+    const isMoonPay = method.id === "exchange";
+    const moonPayDisabled = isMoonPay && !walletAddress;
+
+    return (
+      <button
+        className="w-full text-left p-4 bg-card border border-border rounded-lg hover:border-border/70 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled={moonPayDisabled}
+        title={moonPayDisabled ? "Wallet address is loading…" : undefined}
+        onClick={() => {
+          if (method.id === "instant") {
+            setIsQRModalOpen(true);
+          } else if (method.id === "exchange") {
+            handleMoonPayOpen();
+          }
+        }}
+      >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 flex-1">
           <div className="mt-0.5">
@@ -125,6 +149,7 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
       </div>
     </button>
   );
+  };
 
   return (
     <>

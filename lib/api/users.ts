@@ -8,6 +8,7 @@ export interface UserProfile {
   phone?: string;
   avatarUrl?: string;
   isVerified?: boolean;
+  walletAddress?: string;
 }
 
 export interface UpdateProfileDto {
