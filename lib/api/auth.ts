@@ -1,26 +1,19 @@
+import { apiClient } from "../api-client";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 export function login (payload: { email: string; password: string }) {
-    return request("/auth/login", payload);
+    return apiClient("/auth/login", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        useProxy: false,
+    });
 }
 
 export function verifyLoginOtp (payload: { email: string; otp: string }) {
-    return request("/auth/verify-login-otp", payload);
-}
-
-async function request<T> (path: string, body: object): Promise<T> {
-    const res = await fetch(`${BASE_URL}${path}`, {
+    return apiClient("/auth/verify-login-otp", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(payload),
+        useProxy: false,
     });
-
-    if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.message || res.statusText);
-    }
-
-    return res.json();
 }
 
 export function signUp (payload: {
@@ -28,23 +21,43 @@ export function signUp (payload: {
     phone: string;
     password: string;
 }) {
-    return request("/auth/signup", payload);
+    return apiClient("/auth/signup", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        useProxy: false,
+    });
 }
 
 export function verifySignupOtp (payload: { email: string; otp: string }) {
-    return request("/auth/verify-signup-otp", payload);
+    return apiClient("/auth/verify-signup-otp", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        useProxy: false,
+    });
 }
 
 export function resendSignupOtp (payload: { email: string }) {
-    return request("/auth/resend-signup-otp", payload);
+    return apiClient("/auth/resend-signup-otp", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        useProxy: false,
+    });
 }
 
 export function resendLoginOtp (payload: { email: string }) {
-    return request("/auth/resend-login-otp", payload);
+    return apiClient("/auth/resend-login-otp", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        useProxy: false,
+    });
 }
 
 export function forgotPassword (payload: { email: string }) {
-    return request("/auth/forgot-password", payload);
+    return apiClient("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        useProxy: false,
+    });
 }
 
 export function resetPassword (payload: {
@@ -52,5 +65,9 @@ export function resetPassword (payload: {
     otp: string;
     newPassword: string;
 }) {
-    return request("/auth/reset-password", payload);
+    return apiClient("/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        useProxy: false,
+    });
 }

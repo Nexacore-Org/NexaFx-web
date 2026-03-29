@@ -1,3 +1,5 @@
+import { apiClient } from "../api-client";
+
 export type TransactionStatus = "Success" | "Pending" | "Failed";
 export type TransactionType = "Deposit" | "Withdraw" | "Convert";
 
@@ -29,21 +31,6 @@ export interface PaginatedTransactions {
     total: number;
     page: number;
     limit: number;
-}
-
-// All requests go through the local Next.js proxy to avoid CORS and inject auth server-side.
-// Once a real login flow exists, the proxy will forward the client's token automatically.
-const BASE_URL = "/api/proxy";
-
-function getAuthHeaders(): HeadersInit {
-    const token =
-        typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-    return {
-        "Content-Type": "application/json",
-        // Forward the client token to the proxy via a custom header so it takes priority
-        // over the dev fallback token in .env.local
-        ...(token ? { "x-client-token": token } : {}),
-    };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -105,23 +92,20 @@ function mapTransaction(dto: Record<string, any>): Transaction {
 export async function getTransactions(
     query: TransactionQueryDto = {}
 ): Promise<PaginatedTransactions> {
-    const params = new URLSearchParams();
-    if (query.page) params.set("page", String(query.page));
-    if (query.limit) params.set("limit", String(query.limit));
-    if (query.search) params.set("search", query.search);
+    const params: Record<string, string> = {};
+    if (query.page) params.page = String(query.page);
+    if (query.limit) params.limit = String(query.limit);
+    if (query.search) params.search = query.search;
     if (query.type && query.type !== "All") {
         const typeParam =
             query.type === "Withdraw" ? "withdrawal" : query.type.toLowerCase();
-        params.set("type", typeParam);
+        params.type = typeParam;
     }
 
-    const res = await fetch(`${BASE_URL}/transactions?${params.toString()}`, {
-        headers: getAuthHeaders(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const json = await apiClient<any>("/transactions", {
+        params
     });
-
-    if (!res.ok) throw new Error(`Failed to fetch transactions: ${res.status}`);
-
-    const json = await res.json();
 
     if (Array.isArray(json)) {
         return {
@@ -135,23 +119,20 @@ export async function getTransactions(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = (json.data ?? json.transactions ?? json.items ?? []) as Record<string, any>[];
     const total = (json.total ?? json.totalCount ?? json.count ?? data.length) as number;
+    const page = (json.page ?? query.page ?? 1) as number;
+    const limit = (json.limit ?? query.limit ?? 10) as number;
 
     return {
         data: data.map(mapTransaction),
         total,
-        page: json.page ?? query.page ?? 1,
-        limit: json.limit ?? query.limit ?? 10,
+        page,
+        limit,
     };
 }
 
 export async function getTransactionById(id: string): Promise<Transaction> {
-    const res = await fetch(`${BASE_URL}/transactions/${id}`, {
-        headers: getAuthHeaders(),
-    });
-
-    if (!res.ok) throw new Error(`Failed to fetch transaction: ${res.status}`);
-
-    const json = await res.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const json = await apiClient<any>(`/transactions/${id}`);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dto = (json.data ?? json) as Record<string, any>;
     return mapTransaction(dto);
@@ -174,19 +155,11 @@ export interface WithdrawalResponse {
 export async function createWithdrawal(
     data: CreateWithdrawalDto
 ): Promise<WithdrawalResponse> {
-    const res = await fetch(`${BASE_URL}/transactions/withdraw`, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const json = await apiClient<any>("/transactions/withdraw", {
         method: "POST",
-        headers: getAuthHeaders(),
         body: JSON.stringify(data),
     });
-
-    const json = await res.json();
-
-    if (!res.ok) {
-        const errorMessage =
-            json.message ?? json.error ?? `Withdrawal failed: ${res.status}`;
-        throw new Error(errorMessage);
-    }
 
     // Normalize response - backend may use different field names
     const transactionId = (json.transactionId ??
@@ -203,7 +176,7 @@ export async function createWithdrawal(
     return {
         transactionId,
         status,
-        message: json.message,
+        message: json.message as string | undefined,
     };
 }
 
@@ -224,19 +197,11 @@ export interface DepositResponse {
 export async function createDeposit(
     data: CreateDepositDto
 ): Promise<DepositResponse> {
-    const res = await fetch(`${BASE_URL}/transactions/deposit`, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const json = await apiClient<any>("/transactions/deposit", {
         method: "POST",
-        headers: getAuthHeaders(),
         body: JSON.stringify(data),
     });
-
-    const json = await res.json();
-
-    if (!res.ok) {
-        const errorMessage =
-            json.message ?? json.error ?? `Deposit failed: ${res.status}`;
-        throw new Error(errorMessage);
-    }
 
     // Normalize response - backend may use different field names
     const transactionId = (json.transactionId ??
@@ -253,7 +218,7 @@ export async function createDeposit(
     return {
         transactionId,
         status,
-        walletAddress: json.walletAddress ?? json.wallet_address ?? json.address,
-        message: json.message,
+        walletAddress: (json.walletAddress ?? json.wallet_address ?? json.address) as string | undefined,
+        message: json.message as string | undefined,
     };
 }

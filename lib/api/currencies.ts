@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
+import { apiClient } from "../api-client";
 
 export interface Currency {
   code: string;
@@ -7,14 +7,11 @@ export interface Currency {
 }
 
 export async function getCurrencies(): Promise<Currency[]> {
-  const res = await fetch(`${API_BASE}/currencies`);
-  if (!res.ok) throw new Error("Failed to fetch currencies");
-  const data = await res.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = await apiClient<any>("/currencies", { useProxy: false });
   return Array.isArray(data) ? data : (data.data ?? data.currencies ?? []);
 }
 
 export async function getBaseCurrency(): Promise<Currency> {
-  const res = await fetch(`${API_BASE}/currencies/base`);
-  if (!res.ok) throw new Error("Failed to fetch base currency");
-  return res.json();
+  return apiClient<Currency>("/currencies/base", { useProxy: false });
 }
