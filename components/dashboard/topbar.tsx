@@ -49,7 +49,8 @@ export function Topbar() {
       <div className="flex items-center gap-4">
         <button
           onClick={openSidebar}
-          className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
+          className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
+          aria-label="Open navigation menu"
         >
           <Menu className="h-6 w-6" />
         </button>
@@ -61,8 +62,10 @@ export function Topbar() {
       <div className="flex items-center gap-2 sm:gap-4">
         <button
           onClick={toggleTheme}
-          className="p-2 hover:bg-muted rounded-full transition-colors text-foreground"
-          title="Toggle Theme"
+          className="p-2 hover:bg-muted rounded-full transition-colors text-foreground focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
+          aria-label={
+            isDarkMode ? "Switch to light mode" : "Switch to dark mode"
+          }
         >
           {isDarkMode ? (
             <Sun className="h-5 w-5" />
@@ -75,22 +78,30 @@ export function Topbar() {
           {/* Mobile: Link to notifications page */}
           <Link
             href="/notifications"
-            className="md:hidden relative p-2 hover:bg-muted rounded-full transition-colors text-foreground block"
+            className="md:hidden relative p-2 hover:bg-muted rounded-full transition-colors text-foreground block focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
+            aria-label={`View notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ""}`}
           >
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border-2 border-background" />
+              <span
+                className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border-2 border-background"
+                aria-label={`${unreadCount} unread notifications`}
+              />
             )}
           </Link>
 
           {/* Desktop: Toggle notifications panel */}
           <button
             onClick={toggleNotifications}
-            className="hidden md:block relative p-2 hover:bg-muted rounded-full transition-colors text-foreground"
+            className="hidden md:block relative p-2 hover:bg-muted rounded-full transition-colors text-foreground focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
+            aria-label={`Toggle notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ""}`}
           >
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border-2 border-background" />
+              <span
+                className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border-2 border-background"
+                aria-label={`${unreadCount} unread notifications`}
+              />
             )}
           </button>
 

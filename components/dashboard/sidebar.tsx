@@ -8,6 +8,7 @@ import {
   CircleUserRound,
   ChevronLeft,
   ChevronRight,
+  ArrowUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/hooks/use-sidebar-store";
@@ -15,7 +16,7 @@ import Image from "next/image";
 
 const menuItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
-  // { icon: ArrowUpDown, label: "Convert", href: "/convert" },
+  { icon: ArrowUpDown, label: "Convert", href: "/convert" },
   { icon: Mail, label: "Transactions", href: "/transactions" },
   { icon: CircleUserRound, label: "Settings", href: "/settings" },
 ];
@@ -57,7 +58,12 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
           {onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
-              className="hover:bg-muted rounded-full p-1 transition-colors"
+              className="hover:bg-muted rounded-full p-1 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
+              aria-label={
+                isCollapsed
+                  ? "Expand navigation menu"
+                  : "Collapse navigation menu"
+              }
             >
               {!isCollapsed ? (
                 <ChevronLeft className="size-5 text-black dark:text-white" />
@@ -69,20 +75,25 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
         </div>
       </div>
 
-      <div className="flex-1 space-y-2.5 px-4 py-4">
+      <div
+        className="flex-1 space-y-2.5 px-4 py-4"
+        role="navigation"
+        aria-label="Main navigation"
+      >
         {menuItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             onClick={close}
             className={cn(
-              "flex items-center gap-3 rounded-full py-3 text-sm font-medium transition-all",
+              "flex items-center gap-3 rounded-full py-3 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 rounded-lg",
               isCollapsed ? "justify-center px-0" : "px-4",
               pathname === item.href
                 ? "bg-primary text-black"
                 : "bg-white dark:bg-muted/10 text-black dark:text-white hover:bg-sidebar-accent",
             )}
-            title={isCollapsed ? item.label : ""}
+            aria-label={item.label}
+            aria-current={pathname === item.href ? "page" : undefined}
           >
             <item.icon className="h-5 w-5 shrink-0" />
             {!isCollapsed && <span>{item.label}</span>}

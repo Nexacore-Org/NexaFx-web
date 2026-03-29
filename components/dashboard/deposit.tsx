@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useRef } from "react";
 import {
   ArrowLeft,
   ArrowUp,
@@ -8,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import InstantModalDeposit from "./InstantDepositModal";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { MobileNotificationBanner } from "./notification";
 import Image from "next/image";
 
@@ -27,11 +30,31 @@ type DepositMethodTypes = {
 const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+  const desktopModalRef = useRef<HTMLDivElement>(null);
+  const mobileMethodsModalRef = useRef<HTMLDivElement>(null);
+  const mobileQRModalRef = useRef<HTMLDivElement>(null);
 
   const handleCloseDepositFlow = () => {
     setIsQRModalOpen(false);
     toggleDeposit();
   };
+
+  // Focus trap for desktop modal
+  useFocusTrap(isQRModalOpen, () => setIsQRModalOpen(false), desktopModalRef);
+
+  // Focus trap for mobile methods modal
+  useFocusTrap(
+    !isQRModalOpen && typeof window !== "undefined" && window.innerWidth < 768,
+    handleCloseDepositFlow,
+    mobileMethodsModalRef,
+  );
+
+  // Focus trap for mobile QR modal
+  useFocusTrap(
+    isQRModalOpen && typeof window !== "undefined" && window.innerWidth < 768,
+    handleCloseDepositFlow,
+    mobileQRModalRef,
+  );
 
   const depositMethods: DepositMethod[] = [
     {
@@ -60,7 +83,7 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
 
   const MethodCard: React.FC<{ method: DepositMethod }> = ({ method }) => (
     <button
-      className="w-full text-left p-4 bg-card border border-border rounded-lg hover:border-border/70 transition-colors"
+      className="w-full text-left p-4 bg-card border border-border rounded-lg hover:border-border/70 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
       onClick={() => {
         if (method.id === "instant") {
           setIsQRModalOpen(true);
@@ -109,6 +132,10 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
       <div className="hidden md:block w-full px-3 min-h-screen">
         {isQRModalOpen && (
           <div
+            ref={desktopModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="deposit-qr-title"
             className="fixed inset-0 bg-[#00000071] bg-opacity-50 flex items-center justify-center z-50 p-4"
             onClick={() => setIsQRModalOpen(false)}
           >
@@ -125,15 +152,15 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <button
-                className="p-2 hover:bg-muted rounded-lg transition-colors"
+                className="p-2 hover:bg-muted rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
                 onClick={toggleDeposit}
-                aria-label="Back"
+                aria-label="Back to dashboard"
               >
                 <ArrowLeft className="w-6 h-6" />
               </button>
               <h1 className="text-2xl font-semibold">Deposit</h1>
             </div>
-            <button className="px-6 py-2.5 border-2 border-border rounded-full font-medium hover:bg-muted transition-colors flex items-center gap-2">
+            <button className="px-6 py-2.5 border-2 border-border rounded-full font-medium hover:bg-muted transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2">
               Withdraw
               <ArrowUp className="w-4 h-4" />
             </button>
@@ -157,14 +184,25 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
       {typeof window !== "undefined" && window.innerWidth < 768 && (
         <>
           {!isQRModalOpen ? (
-            <div className="md:hidden fixed inset-0 bg-[#00000071] bg-opacity-50 flex items-end justify-center z-50 p-0">
+            <div
+              ref={mobileMethodsModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="deposit-methods-title"
+              className="md:hidden fixed inset-0 bg-[#00000071] bg-opacity-50 flex items-end justify-center z-50 p-0"
+            >
               <div className="bg-card text-card-foreground w-full rounded-t-2xl max-h-[90vh] overflow-auto">
                 {/* Modal Header */}
                 <div className="flex items-center justify-between p-4 border-b border-border">
-                  <h2 className="text-lg font-semibold">Deposit</h2>
+                  <h2
+                    id="deposit-methods-title"
+                    className="text-lg font-semibold"
+                  >
+                    Deposit
+                  </h2>
                   <button
                     onClick={handleCloseDepositFlow}
-                    className="p-1 hover:bg-muted rounded-lg transition-colors"
+                    className="p-1 hover:bg-muted rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1"
                     aria-label="Close deposit modal"
                   >
                     <X className="w-5 h-5" />
@@ -186,6 +224,10 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
             </div>
           ) : (
             <div
+              ref={mobileQRModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="deposit-qr-title"
               className="md:hidden p-2 fixed inset-0 bg-[#00000071] bg-opacity-50 flex items-center justify-center z-50"
               onClick={() => setIsQRModalOpen(false)}
             >
