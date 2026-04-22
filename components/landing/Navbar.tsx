@@ -22,9 +22,9 @@ export default function Navbar() {
 
         {/* Desktop Nav */}
         <div className="hidden md:flex gap-8 text-slate-600 font-medium">
-          <span className="hover:text-[#F39A00] cursor-pointer">Solutions</span>
-          <span className="hover:text-[#F39A00] cursor-pointer">Exchange</span>
-          <span className="hover:text-[#F39A00] cursor-pointer">Security</span>
+          <a href="#solutions" className="hover:text-[#F39A00] cursor-pointer">Solutions</a>
+          <a href="#exchange" className="hover:text-[#F39A00] cursor-pointer">Exchange</a>
+          <a href="#security" className="hover:text-[#F39A00] cursor-pointer">Security</a>
         </div>
 
         {/* Desktop Auth */}
@@ -56,9 +56,9 @@ export default function Navbar() {
       {open && (
         <div className="md:hidden px-4 pb-6 pt-2 bg-white rounded-b-2xl shadow-lg">
           <div className="flex flex-col text-center gap-4 text-slate-600 font-medium">
-            <span>Solutions</span>
-            <span>Exchange</span>
-            <span>Security</span>
+            <a href="#solutions" onClick={() => setOpen(false)}>Solutions</a>
+            <a href="#exchange" onClick={() => setOpen(false)}>Exchange</a>
+            <a href="#security" onClick={() => setOpen(false)}>Security</a>
           </div>
 
           <div className="flex flex-col gap-3 mt-6">
