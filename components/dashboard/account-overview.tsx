@@ -1,6 +1,5 @@
 "use client";
 
-import { ChevronDown, Download, Upload, Copy, Check, CircleDollarSign } from "lucide-react";
 import {
   ChevronDown,
   Download,
@@ -9,7 +8,6 @@ import {
   Check,
   CircleDollarSign,
 } from "lucide-react";
-import { Topbar } from "./topbar";
 import { useEffect, useState } from "react";
 
 const truncateAddress = (addr: string) =>
