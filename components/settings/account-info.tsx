@@ -5,7 +5,11 @@ import { Preference } from "./preference";
 export function AccountInfo() {
   return (
     <div>
-      <InfoAvatar />
+      <InfoAvatar 
+        name="cerseiload" 
+        walletAddress="0xAbc...123" 
+        isVerified={true}
+      />
       <Information />
       <Preference />
 

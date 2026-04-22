@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AccountIcon, SecurityIcon, IdentityIcon } from "../icons";
+import { AccountIcon, SecurityIcon, IdentityIcon, NotificationIcon } from "../icons";
 import { AccountInfo } from "./account-info";
 import { Security } from "./security";
 import { Notification } from "./notification";
@@ -36,7 +36,7 @@ export function TabsSettings() {
           Security
         </TabsTrigger>
         <TabsTrigger value="notification">
-          <SecurityIcon
+          <NotificationIcon
             color={isActiveTap === "notification" ? "#000" : ""}
             className="size-3.5"
           />
