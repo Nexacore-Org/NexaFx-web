@@ -71,7 +71,7 @@ export function NotificationItem({
   notification,
   onClick,
 }: NotificationItemProps) {
-  const { type, title, message, timestamp, isRead } = notification;
+  const { type, message, timestamp, isRead } = notification;
 
   return (
     <button

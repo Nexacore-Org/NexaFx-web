@@ -21,18 +21,18 @@ export function SwipeableNotificationItem({
 }: SwipeableNotificationItemProps) {
   const [translateX, setTranslateX] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const startX = useRef(0);
   const currentX = useRef(0);
-  const isDragging = useRef(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
     currentX.current = e.touches[0].clientX;
-    isDragging.current = true;
+    setIsDragging(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging.current) return;
+    if (!isDragging) return;
 
     currentX.current = e.touches[0].clientX;
     const diff = currentX.current - startX.current;
@@ -40,7 +40,7 @@ export function SwipeableNotificationItem({
   };
 
   const handleTouchEnd = () => {
-    isDragging.current = false;
+    setIsDragging(false);
 
     if (Math.abs(translateX) > SWIPE_THRESHOLD) {
       // Trigger delete animation
@@ -79,9 +79,9 @@ export function SwipeableNotificationItem({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        style={{
+style={{
           transform: `translateX(${translateX}px)`,
-          transition: isDragging.current ? "none" : "transform 0.2s ease-out",
+          transition: isDragging ? 'none' : 'transform 0.2s ease-out',
         }}
         className={cn(
           "relative bg-card touch-pan-y",

@@ -12,15 +12,13 @@ export default function VerifyOtpPage() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [email, setEmail] = useState<string | null>(null);
-  useEffect(() => {
-    setEmail(sessionStorage.getItem('login-email'));
-  }, []);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
+    setEmail(sessionStorage.getItem('login-email'));
     inputRefs.current[0]?.focus();
   }, []);
 
@@ -75,14 +73,13 @@ export default function VerifyOtpPage() {
     setIsLoading(true);
     setError('');
     try {
-      const res = (await verifyLoginOtp({ email, otp: otpCode })) as any;
-      // { accessToken, refreshToken, expiresIn, user }
+      const res = await verifyLoginOtp({ email, otp: otpCode }) as { user: { id: string; name: string; email: string; role: 'USER' | 'ADMIN' }; accessToken: string; refreshToken: string };
       setAuth(res.user, res.accessToken, res.refreshToken);
       setIsLoading(false);
       router.push('/dashboard');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setIsLoading(false);
-      setError(err.message || 'Invalid or expired OTP');
+      setError(err instanceof Error ? err.message : 'Invalid or expired OTP');
     }
   };
 
@@ -96,7 +93,7 @@ export default function VerifyOtpPage() {
     }
     try {
       await resendLoginOtp({ email });
-    } catch (err: any) {
+    } catch {
       setError('Failed to resend code');
     }
   };

@@ -30,9 +30,9 @@ export async function GET(req: NextRequest) {
 
         const data = await externalRes.json();
         return NextResponse.json(data);
-    } catch (error: any) {
+} catch (error: unknown) {
         return NextResponse.json(
-            { error: error.message || "Failed to fetch exchange rates" },
+            { error: error instanceof Error ? error.message : 'Failed to fetch exchange rates' },
             { status: 500 }
         );
     }

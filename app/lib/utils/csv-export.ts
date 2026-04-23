@@ -1,4 +1,4 @@
-import { Transaction } from "../api/transactions";
+import { Transaction } from "@/lib/api/transactions";
 
 export function exportTransactionsToCSV(transactions: Transaction[], filename?: string) {
   // Define CSV headers
