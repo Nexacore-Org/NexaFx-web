@@ -25,7 +25,7 @@ const features = [
 
 export default function Features() {
   return (
-    <section className="max-w-[1440px] mx-auto px-6 md:px-12 py-24 mb-32">
+    <section id="solutions" className="max-w-[1440px] mx-auto px-6 md:px-12 py-24 mb-32">
       <div className="flex flex-col items-center text-center mb-16 max-w-4xl mx-auto">
         <h2 className="hidden md:flex flex-col gap-4 text-4xl sm:text-5xl md:text-6xl font-bold mb-4">
           Redefining the standard of <br />
@@ -47,7 +47,7 @@ export default function Features() {
             key={f.title}
             className="p-6 rounded-2xl bg-white border hover:shadow-lg transition"
           >
-            <div className="w-fit p-3 rounded-xl bg-amber-50 mb-4">
+            <div id={f.title.toLowerCase() === "blockchain security" ? "security" : undefined} className="w-fit p-3 rounded-xl bg-amber-50 mb-4">
               <span className="text-[#F39A00]">
                 {<f.icon size={30}/>}
               </span>

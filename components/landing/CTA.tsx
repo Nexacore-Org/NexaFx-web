@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function CTA() {
   return (
-    <section className="max-w-[1440px] mx-auto px-6 md:px-12 mb-20">
+    <section id="exchange" className="max-w-[1440px] mx-auto px-6 md:px-12 mb-20">
       <div className="bg-black text-white rounded-3xl px-8 py-20 text-center">
         <h2 className="text-4xl md:text-5xl font-bold mb-6">
           Ready to start your financial journey?
