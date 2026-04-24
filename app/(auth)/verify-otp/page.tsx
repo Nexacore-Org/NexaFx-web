@@ -11,14 +11,12 @@ import { useRouter } from 'next/navigation';
 export default function VerifyOtpPage() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
-  const [email, setEmail] = useState<string | null>(null);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    setEmail(sessionStorage.getItem('login-email'));
     inputRefs.current[0]?.focus();
   }, []);
 
@@ -66,14 +64,15 @@ export default function VerifyOtpPage() {
       setError('Please enter all 6 digits');
       return;
     }
-    if (!email) {
+    const storedEmail = sessionStorage.getItem('login-email');
+    if (!storedEmail) {
       setError('No email found. Please sign in again.');
       return;
     }
     setIsLoading(true);
     setError('');
     try {
-      const res = await verifyLoginOtp({ email, otp: otpCode }) as { user: { id: string; name: string; email: string; role: 'USER' | 'ADMIN' }; accessToken: string; refreshToken: string };
+      const res = await verifyLoginOtp({ email: storedEmail, otp: otpCode }) as { user: { id: string; name: string; email: string; role: 'USER' | 'ADMIN' }; accessToken: string; refreshToken: string };
       setAuth(res.user, res.accessToken, res.refreshToken);
       setIsLoading(false);
       router.push('/dashboard');
@@ -87,12 +86,13 @@ export default function VerifyOtpPage() {
     setOtp(['', '', '', '', '', '']);
     setError('');
     inputRefs.current[0]?.focus();
-    if (!email) {
+    const storedEmail = sessionStorage.getItem('login-email');
+    if (!storedEmail) {
       setError('Missing email. Please sign in again.');
       return;
     }
     try {
-      await resendLoginOtp({ email });
+      await resendLoginOtp({ email: storedEmail });
     } catch {
       setError('Failed to resend code');
     }
