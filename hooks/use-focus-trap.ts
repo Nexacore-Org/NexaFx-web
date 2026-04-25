@@ -9,7 +9,7 @@ import { useEffect, useRef } from "react";
 export function useFocusTrap(
   isOpen: boolean,
   onClose: () => void,
-  containerRef: React.RefObject<HTMLDivElement>,
+  containerRef: React.RefObject<HTMLDivElement | null>,
 ) {
   const triggerRef = useRef<HTMLElement | null>(null);
 
