@@ -38,8 +38,8 @@ export default function ForgotPasswordPage() {
                     `/reset-password?email=${encodeURIComponent(email)}`,
                 );
             }, 2000);
-        } catch (err: any) {
-            setError(err.message || "Something went wrong");
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Something went wrong');
         } finally {
             setIsLoading(false);
         }

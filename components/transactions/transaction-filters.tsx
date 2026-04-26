@@ -10,6 +10,12 @@ interface TransactionFiltersProps {
     activeFilter: string;
     onFilterChange: (filter: string) => void;
     totalCount: number;
+    dateFrom?: string;
+    dateTo?: string;
+    onDateFromChange?: (date: string) => void;
+    onDateToChange?: (date: string) => void;
+    onClearDateRange?: () => void;
+    onExportCSV?: () => void;
 }
 
 const filters = ["All", "Deposit", "Withdrawal", "Convert"];

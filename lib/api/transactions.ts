@@ -1,7 +1,7 @@
-import { apiClient } from "../api-client";
+import { apiClient } from '../api-client';
 
-export type TransactionStatus = "Success" | "Pending" | "Failed";
-export type TransactionType = "Deposit" | "Withdraw" | "Convert";
+export type TransactionStatus = 'Success' | 'Pending' | 'Failed';
+export type TransactionType = 'Deposit' | 'Withdraw' | 'Convert';
 
 export interface Transaction {
     id: string;
@@ -24,6 +24,8 @@ export interface TransactionQueryDto {
     limit?: number;
     search?: string;
     type?: string;
+    from?: string;
+    to?: string;
 }
 
 export interface PaginatedTransactions {
@@ -36,17 +38,17 @@ export interface PaginatedTransactions {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapTransaction(dto: Record<string, any>): Transaction {
     const typeMap: Record<string, TransactionType> = {
-        deposit: "Deposit",
-        withdrawal: "Withdraw",
-        withdraw: "Withdraw",
-        convert: "Convert",
-        conversion: "Convert",
-        exchange: "Convert",
+        deposit: 'Deposit',
+        withdrawal: 'Withdraw',
+        withdraw: 'Withdraw',
+        convert: 'Convert',
+        conversion: 'Convert',
+        exchange: 'Convert',
     };
     const statusMap: Record<string, TransactionStatus> = {
-        success: "Success",
-        pending: "Pending",
-        failed: "Failed",
+        success: 'Success',
+        pending: 'Pending',
+        failed: 'Failed',
     };
 
     const type =
@@ -55,22 +57,22 @@ function mapTransaction(dto: Record<string, any>): Transaction {
         statusMap[(dto.status as string)?.toLowerCase()] ?? (dto.status as TransactionStatus);
 
     const amount = Number(dto.amount) || 0;
-    const currency = (dto.currency as string) ?? "";
+    const currency = (dto.currency as string) ?? '';
 
     let amountString = `${amount.toLocaleString()} ${currency}`;
-    if (type === "Deposit") amountString = `+ ${amountString}`;
-    else if (type === "Withdraw") amountString = `- ${amountString}`;
+    if (type === 'Deposit') amountString = `+ ${amountString}`;
+    else if (type === 'Withdraw') amountString = `- ${amountString}`;
 
     const rawDate = (dto.createdAt ?? dto.date ?? dto.created_at) as string;
     const date = rawDate
-        ? new Date(rawDate).toLocaleString("en-GB", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
+        ? new Date(rawDate).toLocaleString('en-GB', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
           })
-        : "";
+        : '';
 
     return {
         id: (dto.id ?? dto._id) as string,
@@ -81,7 +83,7 @@ function mapTransaction(dto: Record<string, any>): Transaction {
         amountString,
         date,
         status,
-        reference: (dto.reference ?? dto.transactionRef ?? dto.transaction_ref ?? "") as string,
+        reference: (dto.reference ?? dto.transactionRef ?? dto.transaction_ref ?? '') as string,
         description: dto.description as string | undefined,
         fee: dto.fee as number | undefined,
         exchangeRate: (dto.exchangeRate ?? dto.exchange_rate) as number | undefined,
@@ -96,15 +98,17 @@ export async function getTransactions(
     if (query.page) params.page = String(query.page);
     if (query.limit) params.limit = String(query.limit);
     if (query.search) params.search = query.search;
-    if (query.type && query.type !== "All") {
+    if (query.type && query.type !== 'All') {
         const typeParam =
-            query.type === "Withdraw" ? "withdrawal" : query.type.toLowerCase();
+            query.type === 'Withdraw' ? 'withdrawal' : query.type.toLowerCase();
         params.type = typeParam;
     }
+    if (query.from) params.from = query.from;
+    if (query.to) params.to = query.to;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const json = await apiClient<any>("/transactions", {
-        params
+    const json = await apiClient<any>('/transactions', {
+        params,
     });
 
     if (Array.isArray(json)) {
@@ -148,7 +152,7 @@ export interface CreateWithdrawalDto {
 
 export interface WithdrawalResponse {
     transactionId: string;
-    status: "pending" | "success" | "failed";
+    status: 'pending' | 'success' | 'failed';
     message?: string;
 }
 
@@ -156,8 +160,8 @@ export async function createWithdrawal(
     data: CreateWithdrawalDto
 ): Promise<WithdrawalResponse> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const json = await apiClient<any>("/transactions/withdraw", {
-        method: "POST",
+    const json = await apiClient<any>('/transactions/withdraw', {
+        method: 'POST',
         body: JSON.stringify(data),
     });
 
@@ -168,10 +172,10 @@ export async function createWithdrawal(
         json.data?.id ??
         json.data?.transactionId) as string;
 
-    const status = (json.status ?? json.data?.status ?? "pending") as
-        | "pending"
-        | "success"
-        | "failed";
+    const status = (json.status ?? json.data?.status ?? 'pending') as
+        | 'pending'
+        | 'success'
+        | 'failed';
 
     return {
         transactionId,
@@ -189,7 +193,7 @@ export interface CreateDepositDto {
 
 export interface DepositResponse {
     transactionId: string;
-    status: "pending" | "success" | "failed";
+    status: 'pending' | 'success' | 'failed';
     walletAddress?: string;
     message?: string;
 }
@@ -198,8 +202,8 @@ export async function createDeposit(
     data: CreateDepositDto
 ): Promise<DepositResponse> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const json = await apiClient<any>("/transactions/deposit", {
-        method: "POST",
+    const json = await apiClient<any>('/transactions/deposit', {
+        method: 'POST',
         body: JSON.stringify(data),
     });
 
@@ -210,10 +214,10 @@ export async function createDeposit(
         json.data?.id ??
         json.data?.transactionId) as string;
 
-    const status = (json.status ?? json.data?.status ?? "pending") as
-        | "pending"
-        | "success"
-        | "failed";
+    const status = (json.status ?? json.data?.status ?? 'pending') as
+        | 'pending'
+        | 'success'
+        | 'failed';
 
     return {
         transactionId,

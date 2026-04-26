@@ -1,7 +1,7 @@
 'use client';
 
 import { Loader2, Mail, Phone, Save, User as UserIcon } from 'lucide-react';
-import { UserProfile, getProfile, updateProfile } from '@/lib/api/users';
+import { getProfile, updateProfile } from '@/lib/api/users';
 import { useEffect, useState } from 'react';
 
 import { useAuthStore } from '@/hooks/use-auth-store';
@@ -12,7 +12,7 @@ export function ProfileEditForm() {
     type: 'success' | 'error';
     text: string;
   } | null>(null);
-  const user = useAuthStore((s) => s.user);
+  
   const setAuth = useAuthStore((s) => s.setAuth);
   const [formData, setFormData] = useState({
     firstName: '',

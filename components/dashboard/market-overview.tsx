@@ -71,7 +71,7 @@ export function MarketOverview() {
               up: isPositive ?? true,
               icon: p.icon,
             };
-          } catch (e) {
+          } catch {
             return {
               pair: p.pair,
               rate: "...",

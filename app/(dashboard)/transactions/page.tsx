@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Transaction, getTransactions } from "../../lib/api/transactions";
-import { TransactionFilters } from "../../components/transactions/transaction-filters";
-import { TransactionTable } from "../../components/transactions/transaction-table";
-import { TransactionList } from "../../components/transactions/transaction-list";
-import { TransactionPagination } from "../../components/transactions/pagination";
-import { TransactionEmptyState } from "../../components/transactions/empty-state";
-import { TransactionDetails } from "../../components/transactions/transaction-details";
-import { exportTransactionsToCSV, generateCSVFilename } from "../../lib/utils/csv-export";
+import { Transaction, getTransactions } from "@/lib/api/transactions";
+import { TransactionFilters } from "@/components/transactions/transaction-filters";
+import { TransactionTable } from "@/components/transactions/transaction-table";
+import { TransactionList } from "@/components/transactions/transaction-list";
+import { TransactionPagination } from "@/components/transactions/pagination";
+import { TransactionEmptyState } from "@/components/transactions/empty-state";
+import { TransactionDetails } from "@/components/transactions/transaction-details";
+import { exportTransactionsToCSV, generateCSVFilename } from "@/app/lib/utils/csv-export";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -66,42 +66,42 @@ export default function TransactionsPage() {
         }
     };
 
-    useEffect(() => {
+useEffect(() => {
         let cancelled = false;
-        setIsLoading(true);
-        setError(null);
 
-        const typeParam =
-            activeFilter === "Withdrawal"
-                ? "Withdraw"
-                : activeFilter !== "All"
-                ? activeFilter
-                : undefined;
+        const fetchTransactions = async () => {
+            const typeParam =
+                activeFilter === 'Withdrawal'
+                    ? 'Withdraw'
+                    : activeFilter !== 'All'
+                    ? activeFilter
+                    : undefined;
 
-        getTransactions({
-            page: currentPage,
-            limit: ITEMS_PER_PAGE,
-            search: debouncedSearch || undefined,
-            type: typeParam,
-            from: dateFrom || undefined,
-            to: dateTo || undefined,
-        })
-            .then((result) => {
+            try {
+                const result = await getTransactions({
+                    page: currentPage,
+                    limit: ITEMS_PER_PAGE,
+                    search: debouncedSearch || undefined,
+                    type: typeParam,
+                    from: dateFrom || undefined,
+                    to: dateTo || undefined,
+                });
                 if (!cancelled) {
                     setTransactions(result.data);
                     setTotalItems(result.total);
                 }
-            })
-            .catch((err) => {
+            } catch (err) {
                 if (!cancelled) {
                     setError(
-                        err instanceof Error ? err.message : "Failed to load transactions"
+                        err instanceof Error ? err.message : 'Failed to load transactions'
                     );
                 }
-            })
-            .finally(() => {
+            } finally {
                 if (!cancelled) setIsLoading(false);
-            });
+            }
+        };
+
+        fetchTransactions();
 
         return () => {
             cancelled = true;

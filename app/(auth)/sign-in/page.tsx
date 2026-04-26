@@ -3,13 +3,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { login } from '@/lib/api/auth';
-import { useAuthStore } from '@/hooks/use-auth-store';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function SignInPage() {
   const router = useRouter();
-  const [tempEmail, setTempEmail] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -28,14 +26,13 @@ export default function SignInPage() {
     setIsLoading(true);
 
     try {
-      const res = await login({ email, password });
+      await login({ email, password });
       setIsLoading(false);
-      setTempEmail(email); // store for OTP step
-      sessionStorage.setItem('login-email', email); // persist for OTP page
+      sessionStorage.setItem('login-email', email);
       router.push('/verify-otp');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setIsLoading(false);
-      setError(err.message || 'Login failed');
+      setError(err instanceof Error ? err.message : 'Login failed');
     }
   };
 
