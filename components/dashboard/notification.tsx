@@ -1,11 +1,10 @@
 import React from "react";
-import { Download, X } from "lucide-react";
+import { Download } from "lucide-react";
 
 export interface NotificationProps {
   message: string;
   amount?: string;
   onViewTransaction?: () => void;
-  onClose?: () => void;
 }
 
 /* Desktop Notification */
@@ -13,7 +12,6 @@ export const DepositNotification: React.FC<NotificationProps> = ({
   message,
   amount,
   onViewTransaction,
-  onClose,
 }) => {
   return (
     <div className="bg-green-500/10 border border-green-600/30 rounded-lg p-3 flex items-start gap-3 mb-4 animate-slideDown">
@@ -56,7 +54,6 @@ export const DepositNotification: React.FC<NotificationProps> = ({
 export const MobileNotificationBanner: React.FC<NotificationProps> = ({
   message,
   amount,
-  onClose,
 }) => {
   return (
     <div className="bg-card space-x-2 absolute top-1 left-1 right-1 w-full rounded-sm border-b border-border p-3 flex items-center gap-3 animate-slideDown">

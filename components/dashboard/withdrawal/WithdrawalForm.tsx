@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
-import { ChevronDown, ChevronLeft, AlertCircle, CircleDollarSign, BadgeDollarSign, Coins } from "lucide-react";
+import { ChevronDown, ChevronLeft, AlertCircle,  } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCurrencies, type Currency } from "@/lib/api/currencies";
-import { getBalances, type WalletBalance } from "@/lib/api/wallet";
+import { getBalances } from "@/lib/api/wallet";
 
 interface CurrencyOption {
     id: string;
@@ -35,12 +35,37 @@ export function WithdrawalForm() {
     const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
     const [errors, setErrors] = useState<{ address?: string; amount?: string }>({});
 
-    const fetchCurrenciesAndBalances = () => {
+const fetchCurrenciesAndBalances = async () => {
         setIsLoadingCurrencies(true);
         setCurrencyError(null);
 
-        Promise.all([getCurrencies(), getBalances()])
-            .then(([currencyData, balanceData]) => {
+        try {
+            const [currencyData, balanceData] = await Promise.all([getCurrencies(), getBalances()]);
+            const balanceMap: Record<string, string> = {};
+            for (const b of balanceData) {
+                balanceMap[b.currency] = b.balance;
+            }
+            setCurrencies(
+                currencyData.map((c) => toCurrencyOption(c, balanceMap)),
+            );
+        } catch {
+            setCurrencyError(
+                'Unable to load currencies or balances. Please try again.',
+            );
+        } finally {
+            setIsLoadingCurrencies(false);
+        }
+    };
+
+    useEffect(() => {
+        let cancelled = false;
+        const loadData = async () => {
+            setIsLoadingCurrencies(true);
+            setCurrencyError(null);
+
+            try {
+                const [currencyData, balanceData] = await Promise.all([getCurrencies(), getBalances()]);
+                if (cancelled) return;
                 const balanceMap: Record<string, string> = {};
                 for (const b of balanceData) {
                     balanceMap[b.currency] = b.balance;
@@ -48,17 +73,20 @@ export function WithdrawalForm() {
                 setCurrencies(
                     currencyData.map((c) => toCurrencyOption(c, balanceMap)),
                 );
-            })
-            .catch(() => {
-                setCurrencyError(
-                    "Unable to load currencies or balances. Please try again.",
-                );
-            })
-            .finally(() => setIsLoadingCurrencies(false));
-    };
-
-    useEffect(() => {
-        fetchCurrenciesAndBalances();
+            } catch {
+                if (!cancelled) {
+                    setCurrencyError(
+                        'Unable to load currencies or balances. Please try again.',
+                    );
+                }
+            } finally {
+                if (!cancelled) setIsLoadingCurrencies(false);
+            }
+        };
+        loadData();
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const selectedCurrency = currencies.find(c => c.id === currency) || currencies[0];

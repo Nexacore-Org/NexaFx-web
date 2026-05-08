@@ -31,12 +31,23 @@ export function TransactionDetails({ transaction, open, onClose }: TransactionDe
             setDetail(null);
             return;
         }
-        setIsLoading(true);
-        getTransactionById(transaction.id)
-            .then(setDetail)
-            .catch(() => setDetail(transaction))
-            .finally(() => setIsLoading(false));
-    }, [open, transaction?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+        let cancelled = false;
+        const fetchDetail = async () => {
+            setIsLoading(true);
+            try {
+                const data = await getTransactionById(transaction.id);
+                if (!cancelled) setDetail(data);
+            } catch {
+                if (!cancelled) setDetail(transaction);
+            } finally {
+                if (!cancelled) setIsLoading(false);
+            }
+        };
+        fetchDetail();
+        return () => {
+            cancelled = true;
+        };
+    }, [open, transaction?.id, transaction]); 
 
     if (!open || !transaction) return null;
 

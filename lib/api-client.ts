@@ -1,7 +1,7 @@
-import { useAuthStore } from "@/hooks/use-auth-store";
+import { useAuthStore } from '@/hooks/use-auth-store';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
-const PROXY_URL = "/api/proxy";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const PROXY_URL = '/api/proxy';
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string>;
@@ -21,18 +21,18 @@ function onRefreshed(token: string) {
 }
 
 async function refreshToken(): Promise<string | null> {
-  const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null;
-  if (!refreshToken) return null;
+  const refreshTokenStr = typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
+  if (!refreshTokenStr) return null;
 
   try {
     const response = await fetch(`${BASE_URL}/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: refreshTokenStr }),
     });
 
     if (!response.ok) {
-        throw new Error("Failed to refresh token");
+      throw new Error('Failed to refresh token');
     }
 
     const data = await response.json();
@@ -44,7 +44,7 @@ async function refreshToken(): Promise<string | null> {
     }
     return null;
   } catch (error) {
-    console.error("Refresh token error:", error);
+    console.error('Refresh token error:', error);
     useAuthStore.getState().logout();
     return null;
   }
@@ -52,15 +52,15 @@ async function refreshToken(): Promise<string | null> {
 
 export async function apiClient<T>(
   path: string,
-  options: RequestOptions = {}
+  options: RequestOptions = {},
 ): Promise<T> {
   const { params, useProxy = true, ...fetchOptions } = options;
   
-  let url = "";
+  let url = '';
   if (useProxy) {
-      url = `${PROXY_URL}${path.startsWith("/") ? path : `/${path}`}`;
+    url = `${PROXY_URL}${path.startsWith('/') ? path : `/${path}`}`;
   } else {
-      url = `${BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+    url = `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
   }
   
   const searchParams = new URLSearchParams();
@@ -70,22 +70,22 @@ export async function apiClient<T>(
   const finalUrl = searchParams.toString() ? `${url}?${searchParams.toString()}` : url;
 
   const getHeaders = () => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
     const headers = new Headers(fetchOptions.headers || {});
-    if (!headers.has("Content-Type")) {
-      headers.set("Content-Type", "application/json");
+    if (!headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
     }
     if (token) {
       if (useProxy) {
-        headers.set("x-client-token", token);
+        headers.set('x-client-token', token);
       } else {
-        headers.set("Authorization", `Bearer ${token}`);
+        headers.set('Authorization', `Bearer ${token}`);
       }
     }
     return headers;
   };
 
-  const executeRequest = async (): Promise<Response> => {
+  const executeRequest = (): Promise<Response> => {
     return fetch(finalUrl, {
       ...fetchOptions,
       headers: getHeaders(),
@@ -102,21 +102,19 @@ export async function apiClient<T>(
       if (newToken) {
         onRefreshed(newToken);
       } else {
-          // If refresh failed, reject all subscribers
-          refreshSubscribers = [];
-          const data = await response.clone().json().catch(() => ({}));
-          throw new Error(data?.message || "Unauthorized");
+        refreshSubscribers = [];
+        const data = await response.clone().json().catch(() => ({}));
+        throw new Error(data?.message || 'Unauthorized');
       }
     } else {
-      // Re-run original request once refresh is done
       return new Promise<T>((resolve, reject) => {
-        subscribeTokenRefresh(async (_token) => {
+        subscribeTokenRefresh(async () => {
           try {
             const retryResponse = await executeRequest();
             if (!retryResponse.ok) {
-                const data = await retryResponse.json().catch(() => ({}));
-                reject(new Error(data?.message || `Request failed with status ${retryResponse.status}`));
-                return;
+              const data = await retryResponse.json().catch(() => ({}));
+              reject(new Error(data?.message || `Request failed with status ${retryResponse.status}`));
+              return;
             }
             resolve(await retryResponse.json());
           } catch (err) {
@@ -126,7 +124,6 @@ export async function apiClient<T>(
       });
     }
 
-    // After refreshing, retry the request
     response = await executeRequest();
   }
 

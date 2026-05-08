@@ -4,6 +4,7 @@ import { UserProfile, getProfile } from '@/lib/api/users';
 import { useEffect, useState } from 'react';
 
 import { Copy } from 'lucide-react';
+import Image from 'next/image';
 import { useAuthStore } from '@/hooks/use-auth-store';
 
 export function ProfileOverview() {
@@ -11,13 +12,13 @@ export function ProfileOverview() {
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const setAuth = useAuthStore((s) => s.setAuth);
-  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
-    getProfile()
-      .then((data) => {
+    const loadProfile = async () => {
+      setLoading(true);
+      try {
+        const data = await getProfile();
         if (mounted) {
           setProfile(data);
           setAuth(
@@ -31,13 +32,13 @@ export function ProfileOverview() {
             localStorage.getItem('refresh_token') || '',
           );
         }
-      })
-      .catch((e) => {
-        if (mounted) setError(e.message || 'Failed to load profile');
-      })
-      .finally(() => {
+      } catch (e) {
+        if (mounted) setError(e instanceof Error ? e.message : 'Failed to load profile');
+      } finally {
         if (mounted) setLoading(false);
-      });
+      }
+    };
+    loadProfile();
     return () => {
       mounted = false;
     };
@@ -64,14 +65,7 @@ export function ProfileOverview() {
     <div className="bg-white dark:bg-card rounded-xl p-8 border border-border/50 shadow-sm flex flex-col items-center text-center space-y-4 h-full min-h-[300px] justify-center">
       <div className="relative">
         <div className="h-24 w-24 rounded-2xl bg-[#5E5699] flex items-center justify-center overflow-hidden shadow-lg">
-          <img
-            src={
-              profile.avatarUrl ||
-              `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.firstName}`
-            }
-            alt="Avatar"
-            className="h-full w-full object-cover"
-          />
+          <Image src={profile.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.firstName}`} alt="Avatar" fill className="object-cover" />
         </div>
       </div>
 

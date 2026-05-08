@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ChevronDown, AlertCircle, ArrowDownUp, DollarSign, RefreshCw } from "lucide-react";
+import { ChevronDown, AlertCircle, ArrowDownUp,  } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CurrencyOption {
@@ -82,11 +82,7 @@ const CURRENCIES: CurrencyOption[] = [
     { id: "ETH", name: "Ethereum", symbol: "ETH", balance: MOCK_BALANCES.ETH },
 ];
 
-interface ConvertFormProps {
-    // can be extended with callbacks later
-}
-
-export function ConvertForm({}: ConvertFormProps) {
+export function ConvertForm() {
     const [fromCurrency, setFromCurrency] = useState("USD");
     const [toCurrency, setToCurrency] = useState("NGN");
     const [amount, setAmount] = useState("");
@@ -133,35 +129,8 @@ export function ConvertForm({}: ConvertFormProps) {
         if (errors.amount) setErrors(prev => ({ ...prev, amount: undefined }));
     };
 
-    const validateForm = () => {
-        const newErrors: { amount?: string } = {};
 
-        if (!amount.trim()) {
-            newErrors.amount = "Amount is required";
-        } else {
-            const numAmount = parseFloat(amount);
-            if (isNaN(numAmount) || numAmount <= 0) {
-                newErrors.amount = "Amount must be greater than 0";
-            } else if (numAmount > parseFloat(fromCurrencyData.balance.replace(",", ""))) {
-                newErrors.amount = "Insufficient balance";
-            }
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleConvert = () => {
-        if (validateForm()) {
-            // Backend API will be integrated in future issue
-            console.log({
-                from: fromCurrency,
-                to: toCurrency,
-                amount,
-                convertedAmount,
-            });
-        }
-    };
+    // Convert will be integrated when backend API is ready
 
     return (
         <div className="w-full max-w-md mx-auto px-4 py-6">

@@ -12,7 +12,7 @@ import {
 import InstantModalDeposit from "./InstantDepositModal";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { MobileNotificationBanner } from "./notification";
-import Image from "next/image";
+
 import { getProfile } from "@/lib/api/users";
 
 interface DepositMethod {
@@ -30,7 +30,7 @@ type DepositMethodTypes = {
 
 const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
-  const [showNotification, setShowNotification] = useState(false);
+  const [showNotification] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const desktopModalRef = useRef<HTMLDivElement>(null);
   const mobileMethodsModalRef = useRef<HTMLDivElement>(null);
@@ -256,11 +256,10 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
               className="md:hidden p-2 fixed inset-0 bg-[#00000071] bg-opacity-50 flex items-center justify-center z-50"
               onClick={() => setIsQRModalOpen(false)}
             >
-              {!showNotification && (
+{!showNotification && (
                 <MobileNotificationBanner
-                  message="Your deposit of"
-                  amount="₦50,000"
-                  onClose={() => setShowNotification(false)}
+                  message='Your deposit of'
+                  amount='₦50,000'
                 />
               )}
 

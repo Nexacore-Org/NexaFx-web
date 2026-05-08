@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Copy, PencilLine, CircleUserRound } from "lucide-react";
-import Image from "next/image";
+
 
 export function InfoAvatar() {
   const isVerified = true;

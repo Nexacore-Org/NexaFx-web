@@ -24,11 +24,11 @@ interface NotificationsStore {
   removeNotification: (id: string) => void;
 }
 
-export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
+export const useNotificationsStore = create<NotificationsStore>((set) => ({
   notifications: [],
   isOpen: false,
   unreadCount: 0,
-  isLoading: false,
+  isLoading: false, 
   error: null,
 
   open: () => set({ isOpen: true }),

@@ -14,11 +14,22 @@ export function PersonalInfo() {
 
   useEffect(() => {
     if (!user) {
-      setLoading(true);
-      getProfile()
-        .then((data) => setProfile(data))
-        .catch((e) => setError(e.message || 'Failed to load profile'))
-        .finally(() => setLoading(false));
+      let cancelled = false;
+      const loadProfile = async () => {
+        setLoading(true);
+        try {
+          const data = await getProfile();
+          if (!cancelled) setProfile(data);
+        } catch (e) {
+          if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load profile');
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      };
+      loadProfile();
+      return () => {
+        cancelled = true;
+      };
     }
   }, [user]);
 
