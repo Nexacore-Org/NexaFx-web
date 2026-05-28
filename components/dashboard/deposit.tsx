@@ -32,9 +32,11 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [showNotification] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [moonPayError, setMoonPayError] = useState<string | null>(null);
   const desktopModalRef = useRef<HTMLDivElement>(null);
   const mobileMethodsModalRef = useRef<HTMLDivElement>(null);
   const mobileQRModalRef = useRef<HTMLDivElement>(null);
+  const moonPayApiKey = process.env.NEXT_PUBLIC_MOONPAY_API_KEY;
 
   useEffect(() => {
     getProfile()
@@ -44,6 +46,7 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
 
   const handleCloseDepositFlow = () => {
     setIsQRModalOpen(false);
+    setMoonPayError(null);
     toggleDeposit();
   };
 
@@ -84,15 +87,18 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
   ];
 
   const handleMoonPayOpen = () => {
-    const apiKey = process.env.NEXT_PUBLIC_MOONPAY_API_KEY;
-    if (!apiKey) {
+    if (!moonPayApiKey) {
       if (process.env.NODE_ENV === "development") {
         console.warn("MoonPay: NEXT_PUBLIC_MOONPAY_API_KEY is not set.");
       }
+      setMoonPayError(
+        "MoonPay is currently unavailable. Please use Instant Deposit.",
+      );
       return;
     }
+    setMoonPayError(null);
     const url = new URL("https://buy.moonpay.com");
-    url.searchParams.set("apiKey", apiKey);
+    url.searchParams.set("apiKey", moonPayApiKey);
     url.searchParams.set("walletAddress", walletAddress!);
     url.searchParams.set("currencyCode", "usdc");
     url.searchParams.set("baseCurrencyCode", "ngn");
@@ -110,6 +116,7 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
         title={moonPayDisabled ? "Wallet address is loading…" : undefined}
         onClick={() => {
           if (method.id === "instant") {
+            setMoonPayError(null);
             setIsQRModalOpen(true);
           } else if (method.id === "exchange") {
             handleMoonPayOpen();
@@ -196,6 +203,14 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
             <h2 className="text-lg font-medium mb-4">
               Select a Deposit Method
             </h2>
+            {moonPayError && (
+              <div
+                role="alert"
+                className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              >
+                {moonPayError}
+              </div>
+            )}
             <div className="space-y-3">
               {depositMethods.map((method) => (
                 <MethodCard key={method.id} method={method} />
@@ -239,6 +254,14 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
                   <p className="text-sm font-medium text-muted-foreground mb-3">
                     Select a Deposit Method
                   </p>
+                  {moonPayError && (
+                    <div
+                      role="alert"
+                      className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                    >
+                      {moonPayError}
+                    </div>
+                  )}
                   <div className="space-y-3">
                     {depositMethods.map((method) => (
                       <MethodCard key={method.id} method={method} />
