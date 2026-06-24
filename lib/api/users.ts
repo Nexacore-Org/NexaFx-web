@@ -12,8 +12,8 @@ export interface UserProfile {
 }
 
 export interface UpdateProfileDto {
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string;
 }
 

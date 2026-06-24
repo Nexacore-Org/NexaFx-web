@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import { CheckCircle2, XCircle, Copy, ExternalLink, Coins, CircleDollarSign, BadgeDollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { toast } from "@/hooks/use-toast-store";
 
 const currencies = [
     { id: 'USDC', name: 'USD Coin', icon: <CircleDollarSign className="w-8 h-8 text-blue-500" /> },
@@ -12,11 +14,18 @@ const currencies = [
 ];
 
 export function WithdrawalSuccess() {
-    const { currency, amount, transactionId, transactionStatus, errorMessage, close, reset, setStep } = useWithdrawalStore();
+    const { currency, amount, transactionId, transactionStatus, errorMessage, close, reset, setStep, setFormData } = useWithdrawalStore();
     const [copied, setCopied] = useState(false);
 
     const selectedCurrency = currencies.find(c => c.id === currency) || currencies[0];
     const isSuccess = transactionStatus === 'success';
+
+    useEffect(() => {
+        if (isSuccess) {
+            toast("Withdrawal submitted", "success");
+            setFormData({ amount: "", walletAddress: "" });
+        }
+    }, [isSuccess, setFormData]);
 
     const handleCopyTxId = () => {
         if (transactionId) {
@@ -83,8 +92,10 @@ export function WithdrawalSuccess() {
                             <p className="text-sm font-mono font-medium text-foreground">{transactionId}</p>
                         </div>
                         <button
+                            type="button"
                             onClick={handleCopyTxId}
                             className="p-2 hover:bg-muted rounded-lg transition-colors"
+                            aria-label={copied ? "Transaction ID copied" : "Copy transaction ID"}
                         >
                             <Copy className={cn(
                                 "size-4",

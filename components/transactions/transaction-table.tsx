@@ -15,11 +15,11 @@ export function TransactionTable({ transactions, onSelectTransaction }: Transact
             <table className="w-full min-w-190 text-left">
                 <thead>
                     <tr className="border-b bg-muted/30">
-                        <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
-                        <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Currency</th>
-                        <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
-                        <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Amount</th>
+                        <th scope="col" className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
+                        <th scope="col" className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Currency</th>
+                        <th scope="col" className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
+                        <th scope="col" className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th scope="col" className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Amount</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y border-border">
@@ -50,12 +50,15 @@ export function TransactionTable({ transactions, onSelectTransaction }: Transact
                             </td>
                             <td className="px-6 py-4 text-sm text-muted-foreground">{tx.date}</td>
                             <td className="px-6 py-4">
-                                <span className={cn(
+                                <span
+                                    className={cn(
                                     "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                                    tx.status === "Success" ? "bg-green-500/10 text-green-600 dark:text-green-400" :
-                                    tx.status === "Pending" ? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400" :
-                                    "bg-red-500/10 text-red-600 dark:text-red-400"
-                                )}>
+                                    tx.status === "Success" ? "bg-green-500/10 text-green-700 dark:text-green-400" :
+                                    tx.status === "Pending" ? "bg-yellow-600/10 text-yellow-700 dark:text-yellow-400" :
+                                    "bg-red-500/10 text-red-700 dark:text-red-400"
+                                )}
+                                    aria-label={`Transaction status: ${tx.status}`}
+                                >
                                     {tx.status === "Success" && <Check className="h-3 w-3" />}
                                     {tx.status === "Failed" && <X className="h-3 w-3" />}
                                     {tx.status}

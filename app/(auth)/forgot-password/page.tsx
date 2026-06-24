@@ -30,32 +30,16 @@ export default function ForgotPasswordPage() {
         try {
             await forgotPassword({ email });
 
+            sessionStorage.setItem("reset-password-email", email);
             setStatus("confirmation");
 
-            // Redirect after short delay
             setTimeout(() => {
-                router.push(
-                    `/reset-password?email=${encodeURIComponent(email)}`,
-                );
+                router.push("/reset-password");
             }, 2000);
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Something went wrong');
         } finally {
             setIsLoading(false);
-        }
-
-        {
-            /*
-            setTimeout(() => {
-            setIsLoading(false);
-            setStatus("confirmation");
-        }, 1000);
-
-        setTimeout(() => {
-            setStatus("form");
-            router.push("/reset-password");
-        }, 3000);
-    */
         }
     };
 
@@ -71,12 +55,12 @@ export default function ForgotPasswordPage() {
             </div>
 
             <h1 className="sm:text-2xl md:text-3xl font-black text-zinc-900 tracking-tight mb-4 uppercase">
-                Reset Code Sent
+                Check Your Email
             </h1>
 
             <div className="space-y-6">
-                <p className="text-zinc-500 sm:text-lg md:text-xl font-medium max-w-sm mx-auto">
-                    Check your email for a reset code
+                <p className="text-zinc-600 sm:text-lg md:text-xl font-medium max-w-md mx-auto">
+                    If an account exists for this email, you will receive a reset code
                 </p>
             </div>
         </div>
@@ -149,9 +133,18 @@ export default function ForgotPasswordPage() {
                                 disabled={isLoading}
                                 className="w-full py-2.5 bg-[#F39A00] hover:bg-[#da8a00] text-black font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-6"
                             >
-                                {isLoading ? "Sending" : "Send Reset Code"}
+                                {isLoading ? "Sending…" : "Send Reset Code"}
                             </button>
                         </form>
+
+                        <p className="mt-6 text-center text-sm text-gray-600">
+                            <Link
+                                href="/sign-in"
+                                className="text-[#FFA200] hover:underline font-medium"
+                            >
+                                Back to sign in
+                            </Link>
+                        </p>
                     </div>
                 ) : (
                     <ConfirmationModal />
@@ -208,9 +201,18 @@ export default function ForgotPasswordPage() {
                                 disabled={isLoading}
                                 className="w-full py-2.5 bg-[#F39A00] hover:bg-[#da8a00] text-black font-semibold rounded-md transition-colors disabled:opacity-50 text-sm mt-6"
                             >
-                                {isLoading ? "Sending..." : "Send Reset Code"}
+                                {isLoading ? "Sending…" : "Send Reset Code"}
                             </button>
                         </form>
+
+                        <p className="mt-6 text-center text-sm text-gray-600">
+                            <Link
+                                href="/sign-in"
+                                className="text-[#FFA200] hover:underline font-medium"
+                            >
+                                Back to sign in
+                            </Link>
+                        </p>
                     </div>
                 ) : (
                     <ConfirmationModal />

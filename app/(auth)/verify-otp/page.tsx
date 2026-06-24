@@ -138,7 +138,15 @@ export default function VerifyOtpPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="flex gap-2.5 justify-between">
+            <div>
+              <label id="verify-otp-label-desktop" className="sr-only">
+                Verification code
+              </label>
+              <div
+                className="flex gap-2.5 justify-between"
+                role="group"
+                aria-labelledby="verify-otp-label-desktop"
+              >
               {otp.map((digit, index) => (
                 <input
                   key={index}
@@ -152,10 +160,12 @@ export default function VerifyOtpPage() {
                   onChange={(e) => handleChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={handlePaste}
+                  aria-label={`Digit ${index + 1} of 6`}
                   className="w-12 h-12 text-center text-xl font-semibold bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all"
                   disabled={isLoading}
                 />
               ))}
+              </div>
             </div>
 
             <div className="text-center">
@@ -187,6 +197,7 @@ export default function VerifyOtpPage() {
           <button
             onClick={() => router.back()}
             className="p-2 text-gray-700 hover:text-gray-900 transition-colors"
+            aria-label="Go back"
           >
             <svg
               width="20"
@@ -232,7 +243,15 @@ export default function VerifyOtpPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="flex gap-2 justify-between">
+              <div>
+                <label id="verify-otp-label-mobile" className="sr-only">
+                  Verification code
+                </label>
+                <div
+                  className="flex gap-2 justify-between"
+                  role="group"
+                  aria-labelledby="verify-otp-label-mobile"
+                >
                 {otp.map((digit, index) => (
                   <input
                     key={index}
@@ -246,10 +265,12 @@ export default function VerifyOtpPage() {
                     onChange={(e) => handleChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     onPaste={handlePaste}
+                    aria-label={`Digit ${index + 1} of 6`}
                     className="w-11 h-11 text-center text-lg font-semibold bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all"
                     disabled={isLoading}
                   />
                 ))}
+                </div>
               </div>
 
               <div className="text-center">
