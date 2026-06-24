@@ -4,7 +4,8 @@
       "Bash(git -C /Users/user/Desktop/Projects/NexaFx-web log --oneline -20)",
       "Bash(npm run build:*)",
       "Bash(ls:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(GIT_EDITOR=true git rebase *)"
     ]
   },
   "disabledMcpjsonServers": [
