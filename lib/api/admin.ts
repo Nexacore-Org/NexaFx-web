@@ -17,7 +17,6 @@ export interface AdminUser {
   phone: string | null;
   walletAddress: string;
   username: string;
-  avatarUrl: string | null;
   transactions: number;
   totalDeposit: number;
   totalWithdraw: number;
@@ -149,7 +148,6 @@ export function mapAdminUser(dto: AdminUserDto): AdminUser {
     phone: dto.phone ?? null,
     walletAddress: dto.walletAddress ?? dto.wallet_address ?? dto.address ?? '0x...',
     username: dto.username ?? dto.email?.split('@')[0] ?? 'user',
-    avatarUrl: dto.avatarUrl ?? dto.avatar_url ?? null,
     transactions: Number(dto.transactions ?? dto.transactionCount ?? 0),
     totalDeposit: Number(dto.totalDeposit ?? dto.total_deposit ?? 0),
     totalWithdraw: Number(dto.totalWithdraw ?? dto.total_withdraw ?? 0),
@@ -179,17 +177,17 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
   };
 }
 
-export async function getAdminUsers(): Promise<AdminUser[]> {
+export const getAdminUsers = async (): Promise<AdminUser[]> => {
   const response = await apiClient<AdminUsersResponse | AdminUserDto[]>('/admin/users');
   const data = (Array.isArray(response) ? response : response?.data) ?? [];
   return data.map(mapAdminUser);
-}
+};
 
-export async function getAdminUser(id: string): Promise<AdminUser> {
+export const getAdminUser = async (id: string): Promise<AdminUser> => {
   const response = await apiClient<AdminUserResponse | AdminUserDto>(`/admin/users/${id}`);
   const data = ('data' in response && response.data ? response.data : response) as AdminUserDto;
   return mapAdminUser(data);
-}
+};
 
 export const getAdminUserById = getAdminUser;
 
