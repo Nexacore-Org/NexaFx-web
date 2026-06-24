@@ -185,11 +185,13 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
   return data.map(mapAdminUser);
 }
 
-export async function getAdminUserById(id: string): Promise<AdminUser> {
+export async function getAdminUser(id: string): Promise<AdminUser> {
   const response = await apiClient<AdminUserResponse | AdminUserDto>(`/admin/users/${id}`);
   const data = ('data' in response && response.data ? response.data : response) as AdminUserDto;
   return mapAdminUser(data);
 }
+
+export const getAdminUserById = getAdminUser;
 
 export async function getAdminTransactions(): Promise<AdminTransaction[]> {
   const response = await apiClient<AdminTransactionsResponse | AdminTransactionDto[]>('/admin/transactions');
