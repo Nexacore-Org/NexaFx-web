@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { type AdminUser, getAdminUser } from '@/lib/api/admin';
 import { X, Copy, Mail, Phone, User, Shield, Calendar, Landmark, Hash, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
