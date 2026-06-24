@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { type AdminUser, getAdminUser } from '@/lib/api/admin';
 import { X, Copy, Mail, Phone, User, Shield, Calendar, Landmark, Hash, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -23,7 +23,7 @@ export function UserDetailPanel({ userId, onClose }: UserDetailPanelProps) {
     };
   }, []);
 
-  const fetchDetails = async () => {
+  const fetchDetails = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -35,11 +35,11 @@ export function UserDetailPanel({ userId, onClose }: UserDetailPanelProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     fetchDetails();
-  }, [userId]);
+  }, [fetchDetails]);
 
   const handleCopy = (text: string, field: string) => {
     if (!text) return;
