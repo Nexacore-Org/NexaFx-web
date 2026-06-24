@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Search, Filter } from 'lucide-react';
 import { AdminUserTable } from '@/components/admin/AdminUserTable';
 import { UserDetailPanel } from '@/components/admin/user-detail-panel';
@@ -94,7 +94,7 @@ export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -106,11 +106,11 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   // Filter users based on search query
   const filteredUsers = useMemo(() => {
@@ -249,7 +249,7 @@ export default function UsersPage() {
             ) : (
               <AdminUserTable 
                 users={paginatedUsers} 
-                onUserClick={setSelectedUserId}
+                onUserClick={(id) => setSelectedUserId(id)}
               />
             )}
           </div>
