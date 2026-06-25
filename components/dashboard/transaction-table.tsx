@@ -1,0 +1,98 @@
+"use client";
+
+import { ArrowDownLeft, ArrowUpRight, Check, RefreshCw, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Transaction } from "@/lib/api/transactions";
+
+interface TransactionTableProps {
+  transactions: Transaction[];
+}
+
+export function TransactionTable({ transactions }: TransactionTableProps) {
+  return (
+    <div className="rounded-md border bg-card text-card-foreground shadow-sm overflow-x-auto">
+      <table className="w-full min-w-[600px] text-left">
+        <thead>
+          <tr className="border-b bg-muted/30">
+            <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
+            <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Currency</th>
+            <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
+            <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+            <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y border-border">
+          {transactions.map((tx) => (
+            <tr key={tx.id} className="hover:bg-muted/50 transition-colors">
+              <td className="px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={cn(
+                      "h-8 w-8 rounded-full flex items-center justify-center",
+                      tx.type === "Deposit"
+                        ? "bg-green-500/10 text-green-500"
+                        : tx.type === "Withdraw"
+                        ? "bg-red-500/10 text-red-500"
+                        : "bg-orange-500/10 text-orange-500"
+                    )}
+                  >
+                    {tx.type === "Convert" ? (
+                      <RefreshCw className="h-4 w-4" />
+                    ) : tx.type === "Deposit" ? (
+                      <ArrowDownLeft className="h-4 w-4" />
+                    ) : (
+                      <ArrowUpRight className="h-4 w-4" />
+                    )}
+                  </div>
+                  <span className="font-medium">{tx.type}</span>
+                </div>
+              </td>
+              <td className="px-6 py-4 text-sm">
+                {tx.currency}
+                {tx.type === "Convert" && tx.toCurrency && (
+                  <span className="text-muted-foreground"> → {tx.toCurrency}</span>
+                )}
+              </td>
+              <td className="px-6 py-4 text-sm text-muted-foreground">
+                {new Date(tx.createdAt).toLocaleString("en-GB", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </td>
+              <td className="px-6 py-4">
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
+                    tx.status === "Success"
+                      ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                      : tx.status === "Pending"
+                      ? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
+                      : "bg-red-500/10 text-red-600 dark:text-red-400"
+                  )}
+                >
+                  {tx.status === "Success" && <Check className="h-3 w-3" />}
+                  {tx.status === "Failed" && <X className="h-3 w-3" />}
+                  {tx.status}
+                </span>
+              </td>
+              <td className="px-6 py-4 text-sm font-bold text-right">
+                <span className={cn(tx.type === "Deposit" ? "text-green-500" : "text-foreground")}>
+                  {tx.type === "Deposit" ? "+ " : tx.type === "Withdraw" ? "- " : ""}
+                  {tx.amount.toLocaleString()} {tx.currency}
+                </span>
+                {tx.type === "Convert" && tx.toAmount != null && tx.toCurrency && (
+                  <div className="text-xs text-muted-foreground font-normal">
+                    {tx.toAmount.toLocaleString()} {tx.toCurrency}
+                  </div>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
