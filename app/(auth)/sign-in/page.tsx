@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { login } from '@/lib/api/auth';
+import { RateLimitError } from '@/lib/api-client';
+import { RateLimitMessage } from '@/components/shared/rate-limit-message';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -13,10 +15,12 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [rateLimit, setRateLimit] = useState<{ retryAfterSeconds: number } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setRateLimit(null);
 
     if (!email || !password) {
       setError('Please fill in all fields');
@@ -32,7 +36,11 @@ export default function SignInPage() {
       router.push('/verify-otp');
     } catch (err: unknown) {
       setIsLoading(false);
-      setError(err instanceof Error ? err.message : 'Login failed');
+      if (err instanceof RateLimitError) {
+        setRateLimit({ retryAfterSeconds: err.retryAfterSeconds });
+      } else {
+        setError(err instanceof Error ? err.message : 'Login failed');
+      }
     }
   };
 
@@ -74,6 +82,13 @@ export default function SignInPage() {
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
               {error}
             </div>
+          )}
+
+          {rateLimit && (
+            <RateLimitMessage
+              retryAfterSeconds={rateLimit.retryAfterSeconds}
+              onRetry={() => setRateLimit(null)}
+            />
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -162,7 +177,7 @@ export default function SignInPage() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || (rateLimit && rateLimit.retryAfterSeconds > 0)}
               className="w-full py-2.5 bg-[#F39A00] hover:bg-[#da8a00] text-black font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-6"
             >
               {isLoading ? 'Logging in...' : 'Log in'}
@@ -205,6 +220,13 @@ export default function SignInPage() {
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
               {error}
             </div>
+          )}
+
+          {rateLimit && (
+            <RateLimitMessage
+              retryAfterSeconds={rateLimit.retryAfterSeconds}
+              onRetry={() => setRateLimit(null)}
+            />
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -293,7 +315,7 @@ export default function SignInPage() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || (rateLimit && rateLimit.retryAfterSeconds > 0)}
               className="w-full py-2.5 bg-[#F39A00] hover:bg-[#da8a00] text-black font-semibold rounded-md transition-colors disabled:opacity-50 text-sm mt-6"
             >
               {isLoading ? 'Logging in...' : 'Log in'}

@@ -6,17 +6,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { forgotPassword } from "@/lib/api/auth";
+import { RateLimitError } from "@/lib/api-client";
+import { RateLimitMessage } from "@/components/shared/rate-limit-message";
 
 export default function ForgotPasswordPage() {
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+    const [rateLimit, setRateLimit] = useState<{ retryAfterSeconds: number } | null>(null);
     const [status, setStatus] = useState<"form" | "confirmation">("form");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
+        setRateLimit(null);
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -39,7 +43,11 @@ export default function ForgotPasswordPage() {
                 );
             }, 2000);
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Something went wrong');
+            if (err instanceof RateLimitError) {
+                setRateLimit({ retryAfterSeconds: err.retryAfterSeconds });
+            } else {
+                setError(err instanceof Error ? err.message : 'Something went wrong');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -129,6 +137,13 @@ export default function ForgotPasswordPage() {
                             </div>
                         )}
 
+                        {rateLimit && (
+                            <RateLimitMessage
+                                retryAfterSeconds={rateLimit.retryAfterSeconds}
+                                onRetry={() => setRateLimit(null)}
+                            />
+                        )}
+
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-medium text-gray-700 mb-1.5">
@@ -146,7 +161,7 @@ export default function ForgotPasswordPage() {
 
                             <button
                                 type="submit"
-                                disabled={isLoading}
+                                disabled={isLoading || (rateLimit && rateLimit.retryAfterSeconds > 0)}
                                 className="w-full py-2.5 bg-[#F39A00] hover:bg-[#da8a00] text-black font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-6"
                             >
                                 {isLoading ? "Sending" : "Send Reset Code"}
@@ -188,6 +203,13 @@ export default function ForgotPasswordPage() {
                             </div>
                         )}
 
+                        {rateLimit && (
+                            <RateLimitMessage
+                                retryAfterSeconds={rateLimit.retryAfterSeconds}
+                                onRetry={() => setRateLimit(null)}
+                            />
+                        )}
+
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-medium text-gray-700 mb-1.5">
@@ -205,7 +227,7 @@ export default function ForgotPasswordPage() {
 
                             <button
                                 type="submit"
-                                disabled={isLoading}
+                                disabled={isLoading || (rateLimit && rateLimit.retryAfterSeconds > 0)}
                                 className="w-full py-2.5 bg-[#F39A00] hover:bg-[#da8a00] text-black font-semibold rounded-md transition-colors disabled:opacity-50 text-sm mt-6"
                             >
                                 {isLoading ? "Sending..." : "Send Reset Code"}

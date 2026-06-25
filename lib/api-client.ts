@@ -1,7 +1,18 @@
 import { useAuthStore } from '@/hooks/use-auth-store';
+import { parseRetryAfter } from './utils/retry-after';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 const PROXY_URL = '/api/proxy';
+
+export class RateLimitError extends Error {
+  retryAfterSeconds: number;
+
+  constructor(message: string, retryAfterSeconds: number) {
+    super(message);
+    this.name = 'RateLimitError';
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string>;
@@ -129,6 +140,10 @@ export async function apiClient<T>(
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
+    if (response.status === 429) {
+      const retryAfter = parseRetryAfter(response.headers.get('Retry-After'));
+      throw new RateLimitError(data?.message || 'Too many requests. Please try again later.', retryAfter);
+    }
     throw new Error(data?.message || `Request failed with status ${response.status}`);
   }
 

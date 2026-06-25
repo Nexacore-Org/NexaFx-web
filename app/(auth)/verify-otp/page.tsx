@@ -1,6 +1,8 @@
 'use client';
 
 import { verifyLoginOtp, resendLoginOtp } from '@/lib/api/auth';
+import { RateLimitError } from '@/lib/api-client';
+import { RateLimitMessage } from '@/components/shared/rate-limit-message';
 import { useEffect, useRef, useState } from 'react';
 
 import Image from 'next/image';
@@ -14,6 +16,7 @@ export default function VerifyOtpPage() {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [rateLimit, setRateLimit] = useState<{ retryAfterSeconds: number } | null>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -60,6 +63,8 @@ export default function VerifyOtpPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const otpCode = otp.join('');
+    setError('');
+    setRateLimit(null);
     if (otpCode.length !== 6) {
       setError('Please enter all 6 digits');
       return;
@@ -79,13 +84,18 @@ export default function VerifyOtpPage() {
       router.push('/dashboard');
     } catch (err: unknown) {
       setIsLoading(false);
-      setError(err instanceof Error ? err.message : 'Invalid or expired OTP');
+      if (err instanceof RateLimitError) {
+        setRateLimit({ retryAfterSeconds: err.retryAfterSeconds });
+      } else {
+        setError(err instanceof Error ? err.message : 'Invalid or expired OTP');
+      }
     }
   };
 
   const handleResend = async () => {
     setOtp(['', '', '', '', '', '']);
     setError('');
+    setRateLimit(null);
     inputRefs.current[0]?.focus();
     const storedEmail = sessionStorage.getItem('login-email');
     if (!storedEmail) {
@@ -94,8 +104,12 @@ export default function VerifyOtpPage() {
     }
     try {
       await resendLoginOtp({ email: storedEmail });
-    } catch {
-      setError('Failed to resend code');
+    } catch (err: unknown) {
+      if (err instanceof RateLimitError) {
+        setRateLimit({ retryAfterSeconds: err.retryAfterSeconds });
+      } else {
+        setError('Failed to resend code');
+      }
     }
   };
 
@@ -137,6 +151,13 @@ export default function VerifyOtpPage() {
             </div>
           )}
 
+          {rateLimit && (
+            <RateLimitMessage
+              retryAfterSeconds={rateLimit.retryAfterSeconds}
+              onRetry={() => setRateLimit(null)}
+            />
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="flex gap-2.5 justify-between">
               {otp.map((digit, index) => (
@@ -163,7 +184,7 @@ export default function VerifyOtpPage() {
                 type="button"
                 onClick={handleResend}
                 className="text-xs text-gray-600 hover:text-gray-800"
-                disabled={isLoading}
+                disabled={isLoading || (rateLimit && rateLimit.retryAfterSeconds > 0)}
               >
                 Resend code
               </button>
@@ -171,7 +192,7 @@ export default function VerifyOtpPage() {
 
             <button
               type="submit"
-              disabled={!isComplete || isLoading}
+              disabled={!isComplete || isLoading || (rateLimit && rateLimit.retryAfterSeconds > 0)}
               className="w-full py-2.5 bg-[#F39A00] hover:bg-[#da8a00] text-black font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-6"
             >
               {isLoading ? 'Processing...' : 'Proceed'}
@@ -217,21 +238,28 @@ export default function VerifyOtpPage() {
         >
           <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
             <div className="mb-8">
-              <h1 className="text-2xl font-semibold text-center mb-4">
-                VERIFY CODE
-              </h1>
-              <p className="text-gray-500 text-center text-xs">
-                Confirmation code sent. Check inbox or spam folder for the code
-              </p>
+            <h1 className="text-2xl font-semibold text-center mb-4">
+              VERIFY CODE
+            </h1>
+            <p className="text-gray-500 text-center text-xs">
+              Confirmation code sent. Check inbox or spam folder for the code
+            </p>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+              {error}
             </div>
+          )}
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
+          {rateLimit && (
+            <RateLimitMessage
+              retryAfterSeconds={rateLimit.retryAfterSeconds}
+              onRetry={() => setRateLimit(null)}
+            />
+          )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
               <div className="flex gap-2 justify-between">
                 {otp.map((digit, index) => (
                   <input
@@ -253,23 +281,23 @@ export default function VerifyOtpPage() {
               </div>
 
               <div className="text-center">
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  className="text-xs text-gray-600 hover:text-gray-800"
-                  disabled={isLoading}
-                >
-                  Resend code
-                </button>
-              </div>
-
               <button
-                type="submit"
-                disabled={!isComplete || isLoading}
-                className="w-full py-2.5 bg-[#F39A00] hover:bg-[#da8a00] text-black font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-6"
+                type="button"
+                onClick={handleResend}
+                className="text-xs text-gray-600 hover:text-gray-800"
+                disabled={isLoading || (rateLimit && rateLimit.retryAfterSeconds > 0)}
               >
-                {isLoading ? 'Processing...' : 'Proceed'}
+                Resend code
               </button>
+            </div>
+
+            <button
+              type="submit"
+              disabled={!isComplete || isLoading || (rateLimit && rateLimit.retryAfterSeconds > 0)}
+              className="w-full py-2.5 bg-[#F39A00] hover:bg-[#da8a00] text-black font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-6"
+            >
+              {isLoading ? 'Processing...' : 'Proceed'}
+            </button>
             </form>
           </div>
         </div>
