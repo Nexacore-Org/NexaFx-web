@@ -1,6 +1,7 @@
 "use client";
 import { AccountOverview } from "@/components/dashboard/account-overview";
 import DepositMethods from "@/components/dashboard/deposit";
+import { KYCStatusBanner } from "@/components/dashboard/kyc-status-banner";
 import { MarketOverview } from "@/components/dashboard/market-overview";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { WithdrawalModal } from "@/components/dashboard/withdrawal/WithdrawalModal";
@@ -18,6 +19,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-5 md:gap-10">
       <WithdrawalModal />
+      <KYCStatusBanner />
       {openDeposit ? (
         <DepositMethods toggleDeposit={toggleDeposit} />
       ) : (

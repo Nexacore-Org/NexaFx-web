@@ -8,6 +8,7 @@ export interface UserProfile {
   phone?: string;
   avatarUrl?: string;
   isVerified?: boolean;
+  kycStatus?: string;
   walletAddress?: string;
 }
 

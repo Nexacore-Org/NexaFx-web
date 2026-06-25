@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AccountIcon, SecurityIcon, IdentityIcon } from "../icons";
 import { AccountInfo } from "./account-info";
+import { KycSection } from "../dashboard/settings/kyc-section";
 import { Security } from "./security";
 import { Notification } from "./notification";
 import { ProfileOverview } from "../profile/profile-overview";
@@ -72,6 +73,7 @@ export function TabsSettings() {
           {/* Right Column: Content Stack */}
           <div className="space-y-6">
             <PersonalInfo />
+            <KycSection />
             <VerificationBanner />
           </div>
         </div>
