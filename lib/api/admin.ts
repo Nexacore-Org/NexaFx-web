@@ -1,12 +1,13 @@
 import { apiClient } from '../api-client';
 
 export interface AdminMetrics {
-  registeredUsers: number;
+  totalUsers: number;
   totalTransactions: number;
-  pendingKyc: number;
-  currencies: number;
+  totalVolume: number;
+  activeUsers: number;
   totalDeposits: number;
   totalWithdrawals: number;
+  revenueTimeSeries?: Array<{ label: string; value: number }>;
 }
 
 export interface AdminUser {
@@ -168,14 +169,22 @@ export function mapAdminUser(dto: AdminUserDto): AdminUser {
 
 export async function getAdminMetrics(): Promise<AdminMetrics> {
   const response = await apiClient<AdminMetricsResponse>('/admin/metrics');
-  const data = response?.data ?? (response as AdminMetricsDto) ?? {};
+  const data = response?.data ?? (response as unknown as AdminMetricsDto) ?? {};
+
+  const normalizeNumber = (value: unknown) => Number(value ?? 0);
+  const timeSeries = Array.isArray(data.revenueTimeSeries) ? data.revenueTimeSeries : undefined;
+
   return {
-    registeredUsers: Number(data.registeredUsers ?? 0),
-    totalTransactions: Number(data.totalTransactions ?? 0),
-    pendingKyc: Number(data.pendingKyc ?? 0),
-    currencies: Number(data.currencies ?? 0),
-    totalDeposits: Number(data.totalDeposits ?? 0),
-    totalWithdrawals: Number(data.totalWithdrawals ?? 0),
+    totalUsers: normalizeNumber(data.totalUsers ?? data.registeredUsers),
+    totalTransactions: normalizeNumber(data.totalTransactions),
+    totalVolume: normalizeNumber(data.totalVolume ?? data.totalDeposits ?? data.totalWithdrawals),
+    activeUsers: normalizeNumber(data.activeUsers ?? data.activeUsersCount),
+    totalDeposits: normalizeNumber(data.totalDeposits),
+    totalWithdrawals: normalizeNumber(data.totalWithdrawals),
+    revenueTimeSeries: timeSeries?.map((item) => ({
+      label: String(item.label ?? item.period ?? item.date ?? ''),
+      value: normalizeNumber(item.value ?? item.amount),
+    })),
   };
 }
 
