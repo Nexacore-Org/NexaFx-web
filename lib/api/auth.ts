@@ -1,20 +1,28 @@
 import { apiClient } from "../api-client";
 
-export function login(payload: { email: string; password: string }) {
+export const login = (email: string, password: string) => {
   return apiClient("/auth/login", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ email, password }),
     useProxy: false,
   });
-}
+};
 
-export function verifyLoginOtp(payload: { email: string; otp: string }) {
+export const verifyLoginOtp = (email: string, otp: string) => {
   return apiClient("/auth/verify-login-otp", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ email, otp }),
     useProxy: false,
   });
-}
+};
+
+export const resendOtp = (email: string) => {
+  return apiClient("/auth/resend-login-otp", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+    useProxy: false,
+  });
+};
 
 export function signUp(payload: {
   email: string;
@@ -44,14 +52,6 @@ export function resendSignupOtp(payload: { email: string }) {
   });
 }
 
-export function resendLoginOtp(payload: { email: string }) {
-  return apiClient("/auth/resend-login-otp", {
-    method: "POST",
-    body: JSON.stringify(payload),
-    useProxy: false,
-  });
-}
-
 export function forgotPassword(payload: { email: string }) {
   return apiClient("/auth/forgot-password", {
     method: "POST",
@@ -65,13 +65,6 @@ export function resetPassword(payload: {
   otp: string;
   password: string;
 }) {
-  /*
-      Backend reset-password DTO confirmed to use:
-      { email, otp, password }
-      - `email`: user email used for forgot-password flow
-      - `otp`: 6-digit reset code
-      - `password`: new password value
-    */
   return apiClient("/auth/reset-password", {
     method: "POST",
     body: JSON.stringify(payload),

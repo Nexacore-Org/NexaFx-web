@@ -6,7 +6,7 @@ import { login } from '@/lib/api/auth';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-export default function SignInPage() {
+export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,6 +20,12 @@ export default function SignInPage() {
 
     if (!email || !password) {
       setError('Please fill in all fields');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
       return;
     }
 

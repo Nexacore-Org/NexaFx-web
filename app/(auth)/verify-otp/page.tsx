@@ -1,6 +1,6 @@
 'use client';
 
-import { verifyLoginOtp, resendLoginOtp } from '@/lib/api/auth';
+import { verifyLoginOtp, resendOtp } from '@/lib/api/auth';
 import { useEffect, useRef, useState } from 'react';
 
 import Image from 'next/image';
@@ -13,7 +13,9 @@ export default function VerifyOtpPage() {
   const setAuth = useAuthStore((s) => s.setAuth);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -27,6 +29,7 @@ export default function VerifyOtpPage() {
     newOtp[index] = value.slice(-1);
     setOtp(newOtp);
     setError('');
+    setSuccessMessage('');
 
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
@@ -72,30 +75,37 @@ export default function VerifyOtpPage() {
     setIsLoading(true);
     setError('');
     try {
-      const res = await verifyLoginOtp({ email: storedEmail, otp: otpCode }) as { user: { id: string; firstName: string; lastName: string; email: string; role: 'USER' | 'ADMIN' }; accessToken: string; refreshToken: string };
+      const res = await verifyLoginOtp(storedEmail, otpCode) as { user: { id: string; firstName: string; lastName: string; email: string; role: 'USER' | 'ADMIN' }; accessToken: string; refreshToken: string };
       const fullName = [res.user.firstName, res.user.lastName].filter(Boolean).join(' ');
       setAuth({ ...res.user, name: fullName }, res.accessToken, res.refreshToken);
       setIsLoading(false);
       router.push('/dashboard');
     } catch (err: unknown) {
       setIsLoading(false);
-      setError(err instanceof Error ? err.message : 'Invalid or expired OTP');
+      setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+      setError(err instanceof Error ? err.message : 'Invalid OTP');
     }
   };
 
   const handleResend = async () => {
     setOtp(['', '', '', '', '', '']);
     setError('');
+    setSuccessMessage('');
     inputRefs.current[0]?.focus();
     const storedEmail = sessionStorage.getItem('login-email');
     if (!storedEmail) {
       setError('Missing email. Please sign in again.');
       return;
     }
+    setIsResending(true);
     try {
-      await resendLoginOtp({ email: storedEmail });
+      await resendOtp(storedEmail);
+      setSuccessMessage('OTP resent successfully');
     } catch {
       setError('Failed to resend code');
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -137,6 +147,12 @@ export default function VerifyOtpPage() {
             </div>
           )}
 
+          {successMessage && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded-lg text-sm">
+              {successMessage}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="flex gap-2.5 justify-between">
               {otp.map((digit, index) => (
@@ -153,7 +169,7 @@ export default function VerifyOtpPage() {
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={handlePaste}
                   className="w-12 h-12 text-center text-xl font-semibold bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all"
-                  disabled={isLoading}
+                  disabled={isLoading || isResending}
                 />
               ))}
             </div>
@@ -163,9 +179,9 @@ export default function VerifyOtpPage() {
                 type="button"
                 onClick={handleResend}
                 className="text-xs text-gray-600 hover:text-gray-800"
-                disabled={isLoading}
+                disabled={isLoading || isResending}
               >
-                Resend code
+                {isResending ? 'Resending...' : 'Resend code'}
               </button>
             </div>
 
@@ -231,6 +247,12 @@ export default function VerifyOtpPage() {
               </div>
             )}
 
+            {successMessage && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded-lg text-sm">
+                {successMessage}
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="flex gap-2 justify-between">
                 {otp.map((digit, index) => (
@@ -247,7 +269,7 @@ export default function VerifyOtpPage() {
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     onPaste={handlePaste}
                     className="w-11 h-11 text-center text-lg font-semibold bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all"
-                    disabled={isLoading}
+                    disabled={isLoading || isResending}
                   />
                 ))}
               </div>
@@ -257,9 +279,9 @@ export default function VerifyOtpPage() {
                   type="button"
                   onClick={handleResend}
                   className="text-xs text-gray-600 hover:text-gray-800"
-                  disabled={isLoading}
+                  disabled={isLoading || isResending}
                 >
-                  Resend code
+                  {isResending ? 'Resending...' : 'Resend code'}
                 </button>
               </div>
 
