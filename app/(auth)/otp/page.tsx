@@ -1,3 +1,1 @@
-export default function OtpPage() {
-  return <div>OTP Verification</div>;
-}
+export { default } from "../verify-otp/page";
