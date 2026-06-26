@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useMemo, useEffect } from 'react';
-import { Search, Filter } from 'lucide-react';
-import { AdminUserTable } from '@/components/admin/AdminUserTable';
-import { UserDetailPanel } from '@/components/admin/UserDetailPanel';
-import { getAdminUsers, type AdminUser } from '@/lib/api/admin';
+import { useState, useMemo, useEffect, useRef } from "react";
+import { Search, Filter } from "lucide-react";
+import { AdminUserTable } from "@/components/admin/AdminUserTable";
+import { UserDetailPanel } from "@/components/admin/UserDetailPanel";
+import { getAdminUsers, type AdminUser } from "@/lib/api/admin";
+import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -12,7 +13,9 @@ export default function UsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [offlineNotice, setOfflineNotice] = useState<string | null>(null);
+  const cachedUsersRef = useRef<AdminUser[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
 
@@ -22,10 +25,23 @@ export default function UsersPage() {
         setLoading(true);
         setError(null);
         const fetchedUsers = await getAdminUsers();
+        cachedUsersRef.current = fetchedUsers;
+        setOfflineNotice(null);
         setUsers(fetchedUsers);
       } catch (err: unknown) {
-        console.error('Error fetching users:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load users.');
+        console.error("Error fetching users:", err);
+        const hasCachedData = cachedUsersRef.current.length > 0;
+        const message = getRequestErrorMessage(err, {
+          fallback: "Failed to load users.",
+          hasCachedData,
+        });
+
+        if (isOfflineError(err) && hasCachedData) {
+          setOfflineNotice(message);
+        } else {
+          setOfflineNotice(null);
+          setError(message);
+        }
       } finally {
         setLoading(false);
       }
@@ -36,12 +52,13 @@ export default function UsersPage() {
   // Filter users based on search query
   const filteredUsers = useMemo(() => {
     if (!searchQuery.trim()) return users;
-    
+
     const query = searchQuery.toLowerCase();
-    return users.filter(user => 
-      user.email.toLowerCase().includes(query) ||
-      user.firstName?.toLowerCase().includes(query) ||
-      user.lastName?.toLowerCase().includes(query)
+    return users.filter(
+      (user) =>
+        user.email.toLowerCase().includes(query) ||
+        user.firstName?.toLowerCase().includes(query) ||
+        user.lastName?.toLowerCase().includes(query),
     );
   }, [users, searchQuery]);
 
@@ -53,7 +70,8 @@ export default function UsersPage() {
   }, [filteredUsers, currentPage]);
 
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
-  const startEntry = filteredUsers.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+  const startEntry =
+    filteredUsers.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
   const endEntry = Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length);
 
   const handleNextPage = () => {
@@ -79,8 +97,8 @@ export default function UsersPage() {
       <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg max-w-lg mx-auto mt-8">
         <p className="font-semibold">Error Loading Users</p>
         <p className="text-sm">{error}</p>
-        <button 
-          onClick={() => window.location.reload()} 
+        <button
+          onClick={() => window.location.reload()}
           className="mt-2 text-xs font-semibold underline hover:text-red-800"
         >
           Try Again
@@ -89,14 +107,25 @@ export default function UsersPage() {
     );
   }
 
-
   return (
     <div className="space-y-6">
+      {offlineNotice && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {offlineNotice}
+        </div>
+      )}
       {/* Mobile Header */}
       <div className="lg:hidden flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <button className="p-2">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <line x1="3" y1="12" x2="21" y2="12"></line>
               <line x1="3" y1="6" x2="21" y2="6"></line>
               <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -112,7 +141,7 @@ export default function UsersPage() {
       {/* Desktop Header */}
       <div className="hidden lg:block">
         <h1 className="text-2xl font-semibold text-gray-900 mb-6">User-list</h1>
-        
+
         {/* Top Bar */}
         <div className="flex items-center justify-between gap-4">
           {/* Search */}
@@ -171,10 +200,7 @@ export default function UsersPage() {
 
       {/* Desktop Table */}
       <div className="hidden lg:block">
-        <AdminUserTable 
-          users={paginatedUsers} 
-          onUserClick={setSelectedUser}
-        />
+        <AdminUserTable users={paginatedUsers} onUserClick={setSelectedUser} />
       </div>
 
       {/* Mobile List */}
@@ -182,11 +208,15 @@ export default function UsersPage() {
         <div className="border-b border-gray-200 px-4 py-3 flex items-center justify-between bg-gray-50">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-            <span className="text-xs font-medium text-gray-600 uppercase">User Email</span>
+            <span className="text-xs font-medium text-gray-600 uppercase">
+              User Email
+            </span>
           </div>
-          <span className="text-xs font-medium text-gray-600 uppercase">Added On</span>
+          <span className="text-xs font-medium text-gray-600 uppercase">
+            Added On
+          </span>
         </div>
-        
+
         {paginatedUsers.map((user) => (
           <div
             key={user.id}
@@ -194,10 +224,16 @@ export default function UsersPage() {
             className="border-b border-gray-100 px-4 py-4 flex items-center justify-between hover:bg-gray-50 active:bg-gray-100 transition-colors"
           >
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <span className={`w-2 h-2 rounded-full shrink-0 ${user.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-              <span className="text-sm text-gray-900 truncate">{user.email}</span>
+              <span
+                className={`w-2 h-2 rounded-full shrink-0 ${user.isActive ? "bg-green-500" : "bg-gray-400"}`}
+              ></span>
+              <span className="text-sm text-gray-900 truncate">
+                {user.email}
+              </span>
             </div>
-            <span className="text-sm text-gray-600 ml-4 shrink-0">{user.createdAt}</span>
+            <span className="text-sm text-gray-600 ml-4 shrink-0">
+              {user.createdAt}
+            </span>
           </div>
         ))}
       </div>
@@ -207,7 +243,7 @@ export default function UsersPage() {
         <p className="text-sm text-gray-600">
           Showing {startEntry} to {endEntry} of {filteredUsers.length} entries
         </p>
-        
+
         <div className="flex gap-3">
           <button
             onClick={handleSeeAll}
@@ -227,8 +263,8 @@ export default function UsersPage() {
 
       {/* User Detail Panel */}
       {selectedUser && (
-        <UserDetailPanel 
-          user={selectedUser} 
+        <UserDetailPanel
+          user={selectedUser}
           onClose={() => setSelectedUser(null)}
         />
       )}

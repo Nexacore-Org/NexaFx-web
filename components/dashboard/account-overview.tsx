@@ -8,9 +8,10 @@ import {
   Check,
   CircleDollarSign,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getBalances } from "@/lib/api/wallet";
 import { getProfile } from "@/lib/api/users";
+import { getRequestErrorMessage } from "@/lib/api-client";
 
 const truncateAddress = (addr: string) =>
   `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -33,18 +34,28 @@ export function AccountOverview({
   const [balance, setBalance] = useState("");
   const [ngnBalance, setNgnBalance] = useState("");
   const [usdBalance, setUsdBalance] = useState("");
+  const hasLoadedAccountRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
 
-    const formatCurrency = (amount: string | number | undefined, currency: string) => {
+    const formatCurrency = (
+      amount: string | number | undefined,
+      currency: string,
+    ) => {
       if (amount === undefined || amount === null || amount === "") return "";
-      const raw = typeof amount === "string" ? amount.replace(/[^0-9.-]+/g, "") : String(amount);
+      const raw =
+        typeof amount === "string"
+          ? amount.replace(/[^0-9.-]+/g, "")
+          : String(amount);
       const num = Number(raw);
       if (!Number.isFinite(num)) return String(amount);
       try {
         const locale = currency === "NGN" ? "en-NG" : "en-US";
-        return new Intl.NumberFormat(locale, { style: "currency", currency }).format(num as number);
+        return new Intl.NumberFormat(locale, {
+          style: "currency",
+          currency,
+        }).format(num as number);
       } catch {
         return String(amount);
       }
@@ -55,7 +66,10 @@ export function AccountOverview({
         setIsLoading(true);
         setError(null);
 
-        const [profile, balances] = await Promise.all([getProfile(), getBalances()]);
+        const [profile, balances] = await Promise.all([
+          getProfile(),
+          getBalances(),
+        ]);
 
         if (cancelled) return;
 
@@ -65,7 +79,9 @@ export function AccountOverview({
         const balanceMap: Record<string, string> = {};
         for (const b of balances ?? []) {
           if (!b || !b.currency) continue;
-          balanceMap[String(b.currency).toUpperCase()] = String(b.balance ?? "");
+          balanceMap[String(b.currency).toUpperCase()] = String(
+            b.balance ?? "",
+          );
         }
 
         const ngn = balanceMap["NGN"] ?? balanceMap["NGN"];
@@ -79,9 +95,15 @@ export function AccountOverview({
 
         // Use NGN as primary total if available, otherwise USD, otherwise blank
         setBalance(formattedNgn || formattedUsd || "");
+        hasLoadedAccountRef.current = true;
       } catch (err) {
         console.error("Failed to load account data", err);
-        setError("Failed to load account data");
+        setError(
+          getRequestErrorMessage(err, {
+            fallback: "Failed to load account data",
+            hasCachedData: hasLoadedAccountRef.current,
+          }),
+        );
       } finally {
         if (!cancelled) setIsLoading(false);
       }
