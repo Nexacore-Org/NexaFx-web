@@ -34,6 +34,9 @@ pnpm-lock.yaml
 # env files (can opt-in for committing if needed)
 .env*
 
+# E2E example config - contains documentation for required env variables
+.env.e2e.example
+
 # vercel
 .vercel
 
