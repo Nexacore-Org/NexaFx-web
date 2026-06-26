@@ -6,21 +6,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { forgotPassword } from "@/lib/api/auth";
-
-export default function ForgotPasswordPage() {
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [status, setStatus] = useState<"form" | "confirmation">("form");
 
-    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        if (!emailRegex.test(email)) {
             setError("Please enter a valid email address");
             return;
         }
@@ -43,11 +39,7 @@ export default function ForgotPasswordPage() {
         } finally {
             setIsLoading(false);
         }
-
-        {
-            /*
-            setTimeout(() => {
-            setIsLoading(false);
+            setError(err instanceof Error ? err.message : 'Something went wrong');
             setStatus("confirmation");
         }, 1000);
 
@@ -137,13 +129,6 @@ export default function ForgotPasswordPage() {
                                 <input
                                     type="email"
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder=""
-                                    className="w-full px-4 py-2.5 bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm"
-                                    disabled={isLoading}
-                                />
-                            </div>
-
                             <button
                                 type="submit"
                                 disabled={isLoading}
@@ -161,7 +146,7 @@ export default function ForgotPasswordPage() {
             {/* Mobile View */}
             <div className="md:hidden flex items-center justify-center min-h-screen px-4">
                 {status === "form" ? (
-                    <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
+                                disabled={isLoading}
                         <div className="mb-8">
                             <div className="flex justify-center mb-6">
                                 <Image
@@ -203,13 +188,6 @@ export default function ForgotPasswordPage() {
                                 />
                             </div>
 
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="w-full py-2.5 bg-[#F39A00] hover:bg-[#da8a00] text-black font-semibold rounded-md transition-colors disabled:opacity-50 text-sm mt-6"
-                            >
-                                {isLoading ? "Sending..." : "Send Reset Code"}
-                            </button>
                         </form>
                     </div>
                 ) : (

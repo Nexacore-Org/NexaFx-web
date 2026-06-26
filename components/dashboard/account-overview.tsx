@@ -8,9 +8,9 @@ import {
   Check,
   CircleDollarSign,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { getBalances } from "@/lib/api/wallet";
+import { useEffect, useState, useMemo } from "react";
 import { getProfile } from "@/lib/api/users";
+import { useWalletStore } from "@/lib/store/wallet-store";
 
 const truncateAddress = (addr: string) =>
   `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -27,71 +27,61 @@ export function AccountOverview({
   onWithdrawClick,
 }: AccountOverviewTypes) {
   const [copied, setCopied] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState("");
-  const [balance, setBalance] = useState("");
-  const [ngnBalance, setNgnBalance] = useState("");
-  const [usdBalance, setUsdBalance] = useState("");
+  
+  const { balances, isLoading, error, fetchBalances } = useWalletStore();
+
+  const formatCurrency = (amount: string | number | undefined, currency: string) => {
+    if (amount === undefined || amount === null || amount === "") return "";
+    const raw = typeof amount === "string" ? amount.replace(/[^0-9.-]+/g, "") : String(amount);
+    const num = Number(raw);
+    if (!Number.isFinite(num)) return String(amount);
+    try {
+      const locale = currency === "NGN" ? "en-NG" : "en-US";
+      return new Intl.NumberFormat(locale, { style: "currency", currency }).format(num as number);
+    } catch {
+      return String(amount);
+    }
+  };
+
+  const { ngnBalance, usdBalance, balance } = useMemo(() => {
+    const balanceMap: Record<string, string> = {};
+    for (const b of balances ?? []) {
+      if (!b || !b.currency) continue;
+      balanceMap[String(b.currency).toUpperCase()] = String(b.balance ?? "");
+    }
+
+    const ngn = balanceMap["NGN"] ?? "";
+    const usd = balanceMap["USD"] ?? "";
+
+    const formattedNgn = ngn ? formatCurrency(ngn, "NGN") : "";
+    const formattedUsd = usd ? formatCurrency(usd, "USD") : "";
+
+    return {
+      ngnBalance: formattedNgn,
+      usdBalance: formattedUsd,
+      balance: formattedNgn || formattedUsd || "",
+    };
+  }, [balances]);
 
   useEffect(() => {
     let cancelled = false;
-
-    const formatCurrency = (amount: string | number | undefined, currency: string) => {
-      if (amount === undefined || amount === null || amount === "") return "";
-      const raw = typeof amount === "string" ? amount.replace(/[^0-9.-]+/g, "") : String(amount);
-      const num = Number(raw);
-      if (!Number.isFinite(num)) return String(amount);
+    const fetchProfile = async () => {
       try {
-        const locale = currency === "NGN" ? "en-NG" : "en-US";
-        return new Intl.NumberFormat(locale, { style: "currency", currency }).format(num as number);
-      } catch {
-        return String(amount);
-      }
-    };
-
-    const fetchAccount = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const [profile, balances] = await Promise.all([getProfile(), getBalances()]);
-
+        const profile = await getProfile();
         if (cancelled) return;
-
-        const addr = profile?.walletAddress ?? "";
-        setWalletAddress(addr);
-
-        const balanceMap: Record<string, string> = {};
-        for (const b of balances ?? []) {
-          if (!b || !b.currency) continue;
-          balanceMap[String(b.currency).toUpperCase()] = String(b.balance ?? "");
-        }
-
-        const ngn = balanceMap["NGN"] ?? balanceMap["NGN"];
-        const usd = balanceMap["USD"] ?? balanceMap["USD"];
-
-        const formattedNgn = ngn ? formatCurrency(ngn, "NGN") : "";
-        const formattedUsd = usd ? formatCurrency(usd, "USD") : "";
-
-        setNgnBalance(formattedNgn);
-        setUsdBalance(formattedUsd);
-
-        // Use NGN as primary total if available, otherwise USD, otherwise blank
-        setBalance(formattedNgn || formattedUsd || "");
+        setWalletAddress(profile?.walletAddress ?? "");
       } catch (err) {
-        console.error("Failed to load account data", err);
-        setError("Failed to load account data");
-      } finally {
-        if (!cancelled) setIsLoading(false);
+        console.error("Failed to load profile", err);
       }
     };
-
-    fetchAccount();
+    fetchProfile();
+    fetchBalances();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fetchBalances]);
+
   const handleCopyAddress = async () => {
     try {
       await navigator.clipboard.writeText(walletAddress);

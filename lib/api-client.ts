@@ -1,19 +1,8 @@
 import { useAuthStore } from '@/hooks/use-auth-store';
-
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 const PROXY_URL = '/api/proxy';
 
 interface RequestOptions extends RequestInit {
-  params?: Record<string, string>;
-  useProxy?: boolean;
-}
-
-let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
-
-function subscribeTokenRefresh(cb: (token: string) => void) {
-  refreshSubscribers.push(cb);
-}
 
 function onRefreshed(token: string) {
   refreshSubscribers.map((cb) => cb(token));

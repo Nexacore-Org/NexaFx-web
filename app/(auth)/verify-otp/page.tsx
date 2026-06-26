@@ -1,8 +1,6 @@
 'use client';
 
 import { verifyLoginOtp, resendLoginOtp } from '@/lib/api/auth';
-import { useEffect, useRef, useState } from 'react';
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuthStore } from '@/hooks/use-auth-store';
@@ -16,7 +14,6 @@ export default function VerifyOtpPage() {
   const [error, setError] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
 
@@ -63,8 +60,6 @@ export default function VerifyOtpPage() {
     if (otpCode.length !== 6) {
       setError('Please enter all 6 digits');
       return;
-    }
-    const storedEmail = sessionStorage.getItem('login-email');
     if (!storedEmail) {
       setError('No email found. Please sign in again.');
       return;
@@ -84,18 +79,13 @@ export default function VerifyOtpPage() {
   };
 
   const handleResend = async () => {
-    setOtp(['', '', '', '', '', '']);
-    setError('');
-    inputRefs.current[0]?.focus();
-    const storedEmail = sessionStorage.getItem('login-email');
-    if (!storedEmail) {
+      setError(err instanceof Error ? err.message : 'Invalid or expired OTP');
       setError('Missing email. Please sign in again.');
       return;
     }
     try {
       await resendLoginOtp({ email: storedEmail });
     } catch {
-      setError('Failed to resend code');
     }
   };
 
@@ -104,12 +94,8 @@ export default function VerifyOtpPage() {
   return (
     <div className="min-h-screen bg-linear-to-br from-[#A0C3FD] to-[#FFE79C]">
       {/* Desktop Header */}
-      <div className="hidden md:block">
-        <div className="flex justify-between items-center px-8 py-6 backdrop-blur-sm bg-white/10">
-          <Image
-            src="/logo.png"
-            alt="NexaFX"
-            width={120}
+    } catch {
+      setError('Failed to resend code');
             height={40}
             priority
           />
@@ -151,13 +137,6 @@ export default function VerifyOtpPage() {
                   value={digit}
                   onChange={(e) => handleChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
-                  onPaste={handlePaste}
-                  className="w-12 h-12 text-center text-xl font-semibold bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all"
-                  disabled={isLoading}
-                />
-              ))}
-            </div>
-
             <div className="text-center">
               <button
                 type="button"
@@ -184,7 +163,7 @@ export default function VerifyOtpPage() {
       <div className="md:hidden min-h-screen bg-linear-to-br from-[#A0C3FD] to-[#FFE79C] p-4">
         {/* Mobile Header */}
         <div className="flex justify-between items-center mb-6">
-          <button
+                disabled={isLoading}
             onClick={() => router.back()}
             className="p-2 text-gray-700 hover:text-gray-900 transition-colors"
           >
@@ -192,7 +171,7 @@ export default function VerifyOtpPage() {
               width="20"
               height="20"
               fill="none"
-              stroke="currentColor"
+              disabled={!isComplete || isLoading}
               viewBox="0 0 24 24"
             >
               <path
@@ -238,28 +217,21 @@ export default function VerifyOtpPage() {
                     key={index}
                     ref={(el) => {
                       inputRefs.current[index] = el;
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleChange(index, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
+              <h1 className="text-2xl font-semibold text-center mb-4">
+                VERIFY CODE
+              </h1>
+              <p className="text-gray-500 text-center text-xs">
+                Confirmation code sent. Check inbox or spam folder for the code
+              </p>
+            </div>
                     onPaste={handlePaste}
-                    className="w-11 h-11 text-center text-lg font-semibold bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all"
-                    disabled={isLoading}
-                  />
-                ))}
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                {error}
               </div>
+            )}
 
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  className="text-xs text-gray-600 hover:text-gray-800"
-                  disabled={isLoading}
-                >
-                  Resend code
+            <form onSubmit={handleSubmit} className="space-y-5">
                 </button>
               </div>
 

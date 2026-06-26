@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Transaction, getTransactions } from "@/lib/api/transactions";
+import { Transaction } from "@/lib/api/transactions";
 import { TransactionFilters } from "@/components/transactions/transaction-filters";
 import { TransactionTable } from "@/components/transactions/transaction-table";
 import { TransactionList } from "@/components/transactions/transaction-list";
@@ -9,6 +9,7 @@ import { TransactionPagination } from "@/components/transactions/pagination";
 import { TransactionEmptyState } from "@/components/transactions/empty-state";
 import { TransactionDetails } from "@/components/transactions/transaction-details";
 import { exportTransactionsToCSV, generateCSVFilename } from "@/app/lib/utils/csv-export";
+import { useTransactionStore } from "@/lib/store/transaction-store";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -22,10 +23,7 @@ export default function TransactionsPage() {
     const [dateFrom, setDateFrom] = useState<string>("");
     const [dateTo, setDateTo] = useState<string>("");
 
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [totalItems, setTotalItems] = useState(0);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { transactions, total, isLoading, error, fetchTransactions } = useTransactionStore();
 
     const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -66,49 +64,25 @@ export default function TransactionsPage() {
         }
     };
 
-useEffect(() => {
-        let cancelled = false;
+    useEffect(() => {
+        const typeParam =
+            activeFilter === 'Withdrawal'
+                ? 'Withdraw'
+                : activeFilter !== 'All'
+                ? activeFilter
+                : undefined;
 
-        const fetchTransactions = async () => {
-            const typeParam =
-                activeFilter === 'Withdrawal'
-                    ? 'Withdraw'
-                    : activeFilter !== 'All'
-                    ? activeFilter
-                    : undefined;
+        fetchTransactions({
+            page: currentPage,
+            limit: ITEMS_PER_PAGE,
+            search: debouncedSearch || undefined,
+            type: typeParam,
+            from: dateFrom || undefined,
+            to: dateTo || undefined,
+        });
+    }, [currentPage, debouncedSearch, activeFilter, dateFrom, dateTo, fetchTransactions]);
 
-            try {
-                const result = await getTransactions({
-                    page: currentPage,
-                    limit: ITEMS_PER_PAGE,
-                    search: debouncedSearch || undefined,
-                    type: typeParam,
-                    from: dateFrom || undefined,
-                    to: dateTo || undefined,
-                });
-                if (!cancelled) {
-                    setTransactions(result.data);
-                    setTotalItems(result.total);
-                }
-            } catch (err) {
-                if (!cancelled) {
-                    setError(
-                        err instanceof Error ? err.message : 'Failed to load transactions'
-                    );
-                }
-            } finally {
-                if (!cancelled) setIsLoading(false);
-            }
-        };
-
-        fetchTransactions();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [currentPage, debouncedSearch, activeFilter, dateFrom, dateTo]);
-
-    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+    const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
     const handleTransactionClick = (tx: Transaction) => {
         setSelectedTransaction(tx);
@@ -123,7 +97,7 @@ useEffect(() => {
                     onSearchChange={handleSearchChange}
                     activeFilter={activeFilter}
                     onFilterChange={handleFilterChange}
-                    totalCount={totalItems}
+                    totalCount={total}
                     dateFrom={dateFrom}
                     dateTo={dateTo}
                     onDateFromChange={handleDateFromChange}
@@ -141,8 +115,21 @@ useEffect(() => {
                         <p className="text-sm text-muted-foreground">{error}</p>
                         <button
                             onClick={() => {
-                                setError(null);
-                                setIsLoading(true);
+                                const typeParam =
+                                    activeFilter === 'Withdrawal'
+                                        ? 'Withdraw'
+                                        : activeFilter !== 'All'
+                                        ? activeFilter
+                                        : undefined;
+
+                                fetchTransactions({
+                                    page: currentPage,
+                                    limit: ITEMS_PER_PAGE,
+                                    search: debouncedSearch || undefined,
+                                    type: typeParam,
+                                    from: dateFrom || undefined,
+                                    to: dateTo || undefined,
+                                });
                             }}
                             className="text-sm font-medium text-primary hover:underline"
                         >
@@ -163,7 +150,7 @@ useEffect(() => {
                             currentPage={currentPage}
                             totalPages={totalPages}
                             onPageChange={setCurrentPage}
-                            totalItems={totalItems}
+                            totalItems={total}
                             itemsPerPage={ITEMS_PER_PAGE}
                         />
                     </>

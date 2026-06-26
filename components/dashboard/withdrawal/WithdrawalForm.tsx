@@ -5,7 +5,7 @@ import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import { ChevronDown, ChevronLeft, AlertCircle,  } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCurrencies, type Currency } from "@/lib/api/currencies";
-import { getBalances } from "@/lib/api/wallet";
+import { useWalletStore } from "@/lib/store/wallet-store";
 
 interface CurrencyOption {
     id: string;
@@ -28,6 +28,7 @@ function toCurrencyOption(
 
 export function WithdrawalForm() {
     const { currency, amount, walletAddress, setStep, setFormData, close, reset } = useWithdrawalStore();
+    const { balances, isLoading, error, fetchBalances, refreshBalances } = useWalletStore();
 
     const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
     const [isLoadingCurrencies, setIsLoadingCurrencies] = useState(true);
@@ -35,14 +36,14 @@ export function WithdrawalForm() {
     const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
     const [errors, setErrors] = useState<{ address?: string; amount?: string }>({});
 
-const fetchCurrenciesAndBalances = async () => {
+    const fetchCurrenciesAndBalances = async () => {
         setIsLoadingCurrencies(true);
         setCurrencyError(null);
 
         try {
-            const [currencyData, balanceData] = await Promise.all([getCurrencies(), getBalances()]);
+            const [currencyData] = await Promise.all([getCurrencies(), fetchBalances()]);
             const balanceMap: Record<string, string> = {};
-            for (const b of balanceData) {
+            for (const b of balances) {
                 balanceMap[b.currency] = b.balance;
             }
             setCurrencies(
@@ -64,10 +65,10 @@ const fetchCurrenciesAndBalances = async () => {
             setCurrencyError(null);
 
             try {
-                const [currencyData, balanceData] = await Promise.all([getCurrencies(), getBalances()]);
+                const [currencyData] = await Promise.all([getCurrencies(), fetchBalances()]);
                 if (cancelled) return;
                 const balanceMap: Record<string, string> = {};
-                for (const b of balanceData) {
+                for (const b of balances) {
                     balanceMap[b.currency] = b.balance;
                 }
                 setCurrencies(
@@ -87,7 +88,20 @@ const fetchCurrenciesAndBalances = async () => {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [fetchBalances]);
+
+    // Update currencies when balances change from the store
+    useEffect(() => {
+        if (currencies.length > 0) {
+            const balanceMap: Record<string, string> = {};
+            for (const b of balances) {
+                balanceMap[b.currency] = b.balance;
+            }
+            setCurrencies(prev => 
+                prev.map(c => ({ ...c, balance: balanceMap[c.id] ?? "0.00" }))
+            );
+        }
+    }, [balances, currencies.length]);
 
     const selectedCurrency = currencies.find(c => c.id === currency) || currencies[0];
 

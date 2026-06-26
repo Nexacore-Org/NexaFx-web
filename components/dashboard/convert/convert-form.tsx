@@ -3,8 +3,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { ChevronDown, AlertCircle, ArrowDownUp, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getBalances } from "@/lib/api/wallet";
-import { createSwap } from "@/lib/api/transactions";
+import { createSwap, Transaction } from "@/lib/api/transactions";
+import { useWalletStore } from "@/lib/store/wallet-store";
+import { useTransactionStore } from "@/lib/store/transaction-store";
 
 interface CurrencyOption {
     id: string;
@@ -28,27 +29,28 @@ export function ConvertForm() {
     const [showFromDropdown, setShowFromDropdown] = useState(false);
     const [showToDropdown, setShowToDropdown] = useState(false);
     const [errors, setErrors] = useState<{ amount?: string }>({});
-    
-    const [balances, setBalances] = useState<Record<string, string>>({});
     const [exchangeRate, setExchangeRate] = useState<number>(0);
     const [isLoadingRate, setIsLoadingRate] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [rateError, setRateError] = useState<string | null>(null);
+    
+    const { balances, fetchBalances, refreshBalances } = useWalletStore();
+    const { appendTransaction } = useTransactionStore();
+
+    const balancesMap = useMemo(() => {
+        const map: Record<string, string> = {};
+        balances.forEach(b => {
+            map[b.currency] = b.balance;
+        });
+        return map;
+    }, [balances]);
 
     const fromCurrencyData = CURRENCIES.find(c => c.id === fromCurrency) || CURRENCIES[0];
     const toCurrencyData = CURRENCIES.find(c => c.id === toCurrency) || CURRENCIES[1];
 
     useEffect(() => {
-        getBalances().then((res) => {
-            const newBalances: Record<string, string> = {};
-            res.forEach(b => {
-                newBalances[b.currency] = b.balance;
-            });
-            setBalances(newBalances);
-        }).catch((err) => {
-            console.error("Failed to fetch balances", err);
-        });
-    }, []);
+        fetchBalances();
+    }, [fetchBalances]);
 
     useEffect(() => {
         if (!fromCurrency || !toCurrency) return;
@@ -96,7 +98,7 @@ export function ConvertForm() {
         setShowToDropdown(false);
     };
 
-    const fromBalanceStr = balances[fromCurrency] || "0.00";
+    const fromBalanceStr = balancesMap[fromCurrency] || "0.00";
     const handleMaxClick = () => {
         const balanceStr = fromBalanceStr.replace(/,/g, "");
         setAmount(parseFloat(balanceStr).toString());
@@ -133,13 +135,28 @@ export function ConvertForm() {
             } else {
                 // Success
                 setAmount("");
-                // Refresh balances
-                const bals = await getBalances();
-                const newBalances: Record<string, string> = {};
-                bals.forEach(b => {
-                    newBalances[b.currency] = b.balance;
-                });
-                setBalances(newBalances);
+                // Create optimistic transaction
+                const optimisticTx: Transaction = {
+                    id: res.transactionId || Date.now().toString(),
+                    type: "Convert",
+                    currency: fromCurrency,
+                    toCurrency: toCurrency,
+                    amount: parseFloat(amount),
+                    amountString: `-${parseFloat(amount).toLocaleString()} ${fromCurrency}`,
+                    date: new Date().toLocaleString('en-GB', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    }),
+                    status: res.status === 'success' ? "Success" : "Pending",
+                    reference: res.transactionId || Date.now().toString(),
+                    toAmount: res.toAmount,
+                    exchangeRate: res.exchangeRate,
+                };
+                appendTransaction(optimisticTx);
+                await refreshBalances();
             }
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : "An error occurred during conversion";
@@ -228,7 +245,7 @@ export function ConvertForm() {
                                                 </div>
                                             </div>
                                             <span className="text-sm text-muted-foreground">
-                                                {balances[curr.id] || "0.00"}
+                                                {balancesMap[curr.id] || "0.00"
                                             </span>
                                         </button>
                                     ))}
@@ -359,7 +376,7 @@ export function ConvertForm() {
                                                 </div>
                                             </div>
                                             <span className="text-sm text-muted-foreground">
-                                                {balances[curr.id] || "0.00"}
+                                                {balancesMap[curr.id] || "0.00"
                                             </span>
                                         </button>
                                     ))}

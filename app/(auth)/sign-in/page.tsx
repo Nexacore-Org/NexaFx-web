@@ -3,8 +3,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { login } from '@/lib/api/auth';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -15,12 +13,10 @@ export default function SignInPage() {
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
     setError('');
 
     if (!email || !password) {
       setError('Please fill in all fields');
-      return;
     }
 
     setIsLoading(true);
@@ -36,11 +32,7 @@ export default function SignInPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-linear-to-br from-[#A0C3FD] to-[#FFE79C]">
-      {/* Desktop Header */}
-      <div className="hidden md:block">
-        <div className="flex justify-between items-center px-8 py-6 backdrop-blur-sm bg-white/10">
+      setError(err instanceof Error ? err.message : 'Login failed');
           <Image
             src="/logo.png"
             alt="NexaFX"
@@ -84,13 +76,6 @@ export default function SignInPage() {
               <input
                 type="text"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter email address or phone"
-                title="Email address or mobile number"
-                className="w-full px-4 py-2.5 bg-muted border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm text-foreground"
-                disabled={isLoading}
-              />
-            </div>
 
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1.5">
@@ -177,7 +162,7 @@ export default function SignInPage() {
             >
               Sign up
             </Link>
-          </div>
+              disabled={isLoading}
         </div>
       </div>
 
@@ -222,13 +207,6 @@ export default function SignInPage() {
                 disabled={isLoading}
               />
             </div>
-
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
