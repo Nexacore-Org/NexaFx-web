@@ -6,9 +6,10 @@ import { Transaction } from "@/lib/api/transactions";
 
 interface TransactionTableProps {
   transactions: Transaction[];
+  onTransactionClick?: (transaction: Transaction) => void;
 }
 
-export function TransactionTable({ transactions }: TransactionTableProps) {
+export function TransactionTable({ transactions, onTransactionClick }: TransactionTableProps) {
   return (
     <div className="rounded-md border bg-card text-card-foreground shadow-sm overflow-x-auto">
       <table className="w-full min-w-[600px] text-left">
@@ -23,7 +24,11 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
         </thead>
         <tbody className="divide-y border-border">
           {transactions.map((tx) => (
-            <tr key={tx.id} className="hover:bg-muted/50 transition-colors">
+            <tr 
+              key={tx.id} 
+              className="hover:bg-muted/50 transition-colors cursor-pointer"
+              onClick={() => onTransactionClick?.(tx)}
+            >
               <td className="px-6 py-4">
                 <div className="flex items-center gap-3">
                   <div

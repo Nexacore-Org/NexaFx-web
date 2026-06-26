@@ -6,3 +6,16 @@ export function formatCurrency(amount: number, currency: string): string {
     currency: upperCurrency,
   }).format(amount);
 }
+
+export function formatDateTime(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleString('en-US', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true,
+    timeZoneName: 'short',
+  });
+}
