@@ -5,6 +5,7 @@ import { ChevronDown, AlertCircle, ArrowDownUp, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBalances } from "@/lib/api/wallet";
 import { createSwap } from "@/lib/api/transactions";
+import { ConversionSummary } from "./conversion-summary";
 
 interface CurrencyOption {
     id: string;
@@ -34,6 +35,7 @@ export function ConvertForm() {
     const [isLoadingRate, setIsLoadingRate] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [rateError, setRateError] = useState<string | null>(null);
+    const [showPreview, setShowPreview] = useState(false);
 
     const fromCurrencyData = CURRENCIES.find(c => c.id === fromCurrency) || CURRENCIES[0];
     const toCurrencyData = CURRENCIES.find(c => c.id === toCurrency) || CURRENCIES[1];
@@ -109,7 +111,7 @@ export function ConvertForm() {
         if (errors.amount) setErrors(prev => ({ ...prev, amount: undefined }));
     };
 
-    const handleSubmit = async () => {
+    const handlePreview = () => {
         if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
             setErrors({ amount: "Enter a valid amount" });
             return;
@@ -119,7 +121,11 @@ export function ConvertForm() {
             setErrors({ amount: "Insufficient balance" });
             return;
         }
-        
+        setErrors({});
+        setShowPreview(true);
+    };
+
+    const handleConfirm = async () => {
         setIsSubmitting(true);
         setErrors({});
         try {
@@ -131,9 +137,8 @@ export function ConvertForm() {
             if (res.status === "failed") {
                 setErrors({ amount: res.message || "Swap failed" });
             } else {
-                // Success
                 setAmount("");
-                // Refresh balances
+                setShowPreview(false);
                 const bals = await getBalances();
                 const newBalances: Record<string, string> = {};
                 bals.forEach(b => {
@@ -149,7 +154,38 @@ export function ConvertForm() {
         }
     };
 
-    const isButtonDisabled = !amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0 || exchangeRate === 0 || !!rateError || isLoadingRate || isSubmitting;
+    const handleCancelPreview = () => {
+        setShowPreview(false);
+    };
+
+    const handleGetNewRate = () => {
+        setShowPreview(false);
+        setIsLoadingRate(true);
+        setRateError(null);
+        fetch(`/api/exchange-rates?from=${fromCurrency}&to=${toCurrency}`)
+            .then(res => {
+                if (!res.ok) throw new Error("Failed to fetch rate");
+                return res.json();
+            })
+            .then(data => {
+                if (data.rate) {
+                    setExchangeRate(Number(data.rate));
+                } else {
+                    setExchangeRate(0);
+                    setRateError("Rates unavailable");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                setExchangeRate(0);
+                setRateError("Rates unavailable");
+            })
+            .finally(() => {
+                setIsLoadingRate(false);
+            });
+    };
+
+    const isButtonDisabled = !amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0 || exchangeRate === 0 || !!rateError || isLoadingRate;
 
     return (
         <div className="w-full max-w-md mx-auto px-4 py-6">
@@ -418,11 +454,11 @@ export function ConvertForm() {
                     </p>
                 </div>
 
-                {/* Convert Button */}
+                {/* Preview Conversion Button */}
                 <div className="space-y-3">
                     <button
                         type="button"
-                        onClick={handleSubmit}
+                        onClick={handlePreview}
                         disabled={isButtonDisabled}
                         title={rateError ? "Rates unavailable" : undefined}
                         className={cn(
@@ -433,14 +469,7 @@ export function ConvertForm() {
                             isButtonDisabled && "opacity-60 cursor-not-allowed hover:bg-primary"
                         )}
                     >
-                        {isSubmitting ? (
-                            <>
-                                <Loader2 className="h-5 w-5 animate-spin" />
-                                Converting...
-                            </>
-                        ) : (
-                            "Convert Now"
-                        )}
+                        Preview Conversion
                     </button>
                     {rateError && (
                         <p className="text-xs text-center text-destructive">
@@ -449,6 +478,23 @@ export function ConvertForm() {
                     )}
                 </div>
             </div>
+
+            {showPreview && (
+                <ConversionSummary
+                    fromAmount={amount}
+                    fromCurrency={fromCurrency}
+                    toAmount={convertedAmount}
+                    toCurrency={toCurrency}
+                    rate={exchangeRate}
+                    fee={0.5}
+                    fromSymbol={fromCurrencyData.symbol}
+                    toSymbol={toCurrencyData.symbol}
+                    isSubmitting={isSubmitting}
+                    onConfirm={handleConfirm}
+                    onCancel={handleCancelPreview}
+                    onGetNewRate={handleGetNewRate}
+                />
+            )}
         </div>
     );
 }
