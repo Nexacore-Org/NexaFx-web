@@ -1,13 +1,14 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-import { Sidebar } from '../../components/dashboard/sidebar';
-import { Topbar } from '../../components/dashboard/topbar';
-import { cn } from '../../lib/utils';
-import { useAuthStore } from '../../hooks/use-auth-store';
-import { useRouter } from 'next/navigation';
-import { useSidebarStore } from '../../hooks/use-sidebar-store';
+import { Sidebar } from "../../components/dashboard/sidebar";
+import { Topbar } from "../../components/dashboard/topbar";
+import { NetworkStatusBanner } from "@/components/shared/network-status-banner";
+import { cn } from "../../lib/utils";
+import { useAuthStore } from "../../hooks/use-auth-store";
+import { useRouter } from "next/navigation";
+import { useSidebarStore } from "../../hooks/use-sidebar-store";
 
 export default function DashboardLayout({
   children,
@@ -21,7 +22,7 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
-      router.replace('/sign-in');
+      router.replace("/sign-in");
     }
   }, [isAuthenticated, accessToken, router]);
 
@@ -34,8 +35,8 @@ export default function DashboardLayout({
       {/* Sidebar - Desktop */}
       <aside
         className={cn(
-          'hidden md:block transition-all duration-300',
-          isSidebarCollapsed ? 'w-20' : 'w-64',
+          "hidden md:block transition-all duration-300",
+          isSidebarCollapsed ? "w-20" : "w-64",
         )}
       >
         <Sidebar
@@ -55,14 +56,15 @@ export default function DashboardLayout({
       {/* Sidebar - Mobile Drawer */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-70 transform transition-transform duration-300 ease-in-out md:hidden bg-white dark:bg-black',
-          isOpen ? 'translate-x-0' : '-translate-x-full',
+          "fixed inset-y-0 left-0 z-50 w-70 transform transition-transform duration-300 ease-in-out md:hidden bg-white dark:bg-black",
+          isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <Sidebar />
       </aside>
 
       <div className="flex flex-1 flex-col overflow-hidden">
+        <NetworkStatusBanner />
         <div className="p-4 md:px-8">
           <Topbar />
         </div>

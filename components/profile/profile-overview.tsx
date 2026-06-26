@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import { UserProfile, getProfile } from '@/lib/api/users';
-import { useEffect, useState } from 'react';
+import { UserProfile, getProfile } from "@/lib/api/users";
+import { useEffect, useState } from "react";
 
-import { Copy } from 'lucide-react';
-import Image from 'next/image';
-import { useAuthStore } from '@/hooks/use-auth-store';
+import { Copy } from "lucide-react";
+import Image from "next/image";
+import { useAuthStore } from "@/hooks/use-auth-store";
+import { getRequestErrorMessage } from "@/lib/api-client";
 
 export function ProfileOverview() {
   const [loading, setLoading] = useState(true);
@@ -28,14 +29,21 @@ export function ProfileOverview() {
               lastName: data.lastName,
               name: `${data.firstName} ${data.lastName}`,
               email: data.email,
-              role: 'USER',
+              role: "USER",
             },
-            localStorage.getItem('access_token') || '',
-            localStorage.getItem('refresh_token') || '',
+            localStorage.getItem("access_token") || "",
+            localStorage.getItem("refresh_token") || "",
           );
         }
       } catch (e) {
-        if (mounted) setError(e instanceof Error ? e.message : 'Failed to load profile');
+        if (mounted) {
+          setError(
+            getRequestErrorMessage(e, {
+              fallback: "Failed to load profile",
+              hasCachedData: Boolean(useAuthStore.getState().user),
+            }),
+          );
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -58,7 +66,7 @@ export function ProfileOverview() {
   if (error || !profile) {
     return (
       <div className="text-red-500 text-center">
-        {error || 'No profile data'}
+        {error || "No profile data"}
       </div>
     );
   }
@@ -67,7 +75,15 @@ export function ProfileOverview() {
     <div className="bg-white dark:bg-card rounded-xl p-8 border border-border/50 shadow-sm flex flex-col items-center text-center space-y-4 h-full min-h-[300px] justify-center">
       <div className="relative">
         <div className="h-24 w-24 rounded-2xl bg-[#5E5699] flex items-center justify-center overflow-hidden shadow-lg">
-          <Image src={profile.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.firstName}`} alt="Avatar" fill className="object-cover" />
+          <Image
+            src={
+              profile.avatarUrl ||
+              `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.firstName}`
+            }
+            alt="Avatar"
+            fill
+            className="object-cover"
+          />
         </div>
       </div>
 
@@ -86,9 +102,9 @@ export function ProfileOverview() {
 
       <div className="pt-2">
         <span
-          className={`inline-flex items-center rounded-full px-6 py-1.5 text-sm font-medium border ${profile.isVerified ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' : 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800'}`}
+          className={`inline-flex items-center rounded-full px-6 py-1.5 text-sm font-medium border ${profile.isVerified ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800" : "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800"}`}
         >
-          {profile.isVerified ? 'Verified' : 'Unverified'}
+          {profile.isVerified ? "Verified" : "Unverified"}
         </span>
       </div>
     </div>

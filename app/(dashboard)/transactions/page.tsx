@@ -8,175 +8,201 @@ import { TransactionList } from "@/components/transactions/transaction-list";
 import { TransactionPagination } from "@/components/transactions/pagination";
 import { TransactionEmptyState } from "@/components/transactions/empty-state";
 import { TransactionDetails } from "@/components/transactions/transaction-details";
-import { exportTransactionsToCSV, generateCSVFilename } from "@/app/lib/utils/csv-export";
+import {
+  exportTransactionsToCSV,
+  generateCSVFilename,
+} from "@/app/lib/utils/csv-export";
+import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
 
 const ITEMS_PER_PAGE = 10;
 
 export default function TransactionsPage() {
-    const [searchQuery, setSearchQuery] = useState("");
-    const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [activeFilter, setActiveFilter] = useState("All");
-    const [currentPage, setCurrentPage] = useState(1);
-    const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-    const [detailsOpen, setDetailsOpen] = useState(false);
-    const [dateFrom, setDateFrom] = useState<string>("");
-    const [dateTo, setDateTo] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<Transaction | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
 
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [totalItems, setTotalItems] = useState(0);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [offlineNotice, setOfflineNotice] = useState<string | null>(null);
 
-    const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cachedTransactionsRef = useRef<Transaction[]>([]);
 
-    const handleSearchChange = (q: string) => {
-        setSearchQuery(q);
-        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-        searchTimeoutRef.current = setTimeout(() => {
-            setDebouncedSearch(q);
-            setCurrentPage(1);
-        }, 400);
-    };
+  const handleSearchChange = (q: string) => {
+    setSearchQuery(q);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearch(q);
+      setCurrentPage(1);
+    }, 400);
+  };
 
-    const handleFilterChange = (f: string) => {
-        setActiveFilter(f);
-        setCurrentPage(1);
-    };
+  const handleFilterChange = (f: string) => {
+    setActiveFilter(f);
+    setCurrentPage(1);
+  };
 
-    const handleDateFromChange = (date: string) => {
-        setDateFrom(date);
-        setCurrentPage(1);
-    };
+  const handleDateFromChange = (date: string) => {
+    setDateFrom(date);
+    setCurrentPage(1);
+  };
 
-    const handleDateToChange = (date: string) => {
-        setDateTo(date);
-        setCurrentPage(1);
-    };
+  const handleDateToChange = (date: string) => {
+    setDateTo(date);
+    setCurrentPage(1);
+  };
 
-    const handleClearDateRange = () => {
-        setDateFrom("");
-        setDateTo("");
-        setCurrentPage(1);
-    };
+  const handleClearDateRange = () => {
+    setDateFrom("");
+    setDateTo("");
+    setCurrentPage(1);
+  };
 
-    const handleExportCSV = () => {
-        if (transactions.length > 0) {
-            const filename = generateCSVFilename(dateFrom, dateTo);
-            exportTransactionsToCSV(transactions, filename);
+  const handleExportCSV = () => {
+    if (transactions.length > 0) {
+      const filename = generateCSVFilename(dateFrom, dateTo);
+      exportTransactionsToCSV(transactions, filename);
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchTransactions = async () => {
+      const typeParam =
+        activeFilter === "Withdrawal"
+          ? "Withdraw"
+          : activeFilter !== "All"
+            ? activeFilter
+            : undefined;
+
+      try {
+        const result = await getTransactions({
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+          search: debouncedSearch || undefined,
+          type: typeParam,
+          from: dateFrom || undefined,
+          to: dateTo || undefined,
+        });
+        if (!cancelled) {
+          cachedTransactionsRef.current = result.data;
+          setError(null);
+          setOfflineNotice(null);
+          setTransactions(result.data);
+          setTotalItems(result.total);
         }
+      } catch (err) {
+        if (!cancelled) {
+          const hasCachedData = cachedTransactionsRef.current.length > 0;
+          const message = getRequestErrorMessage(err, {
+            fallback: "Failed to load transactions",
+            hasCachedData,
+          });
+
+          if (isOfflineError(err) && hasCachedData) {
+            setOfflineNotice(message);
+            setError(null);
+          } else {
+            setOfflineNotice(null);
+            setError(message);
+          }
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
     };
 
-useEffect(() => {
-        let cancelled = false;
+    fetchTransactions();
 
-        const fetchTransactions = async () => {
-            const typeParam =
-                activeFilter === 'Withdrawal'
-                    ? 'Withdraw'
-                    : activeFilter !== 'All'
-                    ? activeFilter
-                    : undefined;
-
-            try {
-                const result = await getTransactions({
-                    page: currentPage,
-                    limit: ITEMS_PER_PAGE,
-                    search: debouncedSearch || undefined,
-                    type: typeParam,
-                    from: dateFrom || undefined,
-                    to: dateTo || undefined,
-                });
-                if (!cancelled) {
-                    setTransactions(result.data);
-                    setTotalItems(result.total);
-                }
-            } catch (err) {
-                if (!cancelled) {
-                    setError(
-                        err instanceof Error ? err.message : 'Failed to load transactions'
-                    );
-                }
-            } finally {
-                if (!cancelled) setIsLoading(false);
-            }
-        };
-
-        fetchTransactions();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [currentPage, debouncedSearch, activeFilter, dateFrom, dateTo]);
-
-    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-
-    const handleTransactionClick = (tx: Transaction) => {
-        setSelectedTransaction(tx);
-        setDetailsOpen(true);
+    return () => {
+      cancelled = true;
     };
+  }, [currentPage, debouncedSearch, activeFilter, dateFrom, dateTo]);
 
-    return (
-        <div className="flex flex-col h-full space-y-4 md:space-y-6 max-w-7xl mx-auto w-full">
-            <div className="bg-card rounded-xl p-4 md:p-6 shadow-sm border border-border/50">
-                <TransactionFilters
-                    searchQuery={searchQuery}
-                    onSearchChange={handleSearchChange}
-                    activeFilter={activeFilter}
-                    onFilterChange={handleFilterChange}
-                    totalCount={totalItems}
-                    dateFrom={dateFrom}
-                    dateTo={dateTo}
-                    onDateFromChange={handleDateFromChange}
-                    onDateToChange={handleDateToChange}
-                    onClearDateRange={handleClearDateRange}
-                    onExportCSV={handleExportCSV}
-                />
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
 
-                {isLoading ? (
-                    <div className="flex items-center justify-center py-20">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                    </div>
-                ) : error ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-3">
-                        <p className="text-sm text-muted-foreground">{error}</p>
-                        <button
-                            onClick={() => {
-                                setError(null);
-                                setIsLoading(true);
-                            }}
-                            className="text-sm font-medium text-primary hover:underline"
-                        >
-                            Retry
-                        </button>
-                    </div>
-                ) : transactions.length > 0 ? (
-                    <>
-                        <TransactionTable
-                            transactions={transactions}
-                            onSelectTransaction={handleTransactionClick}
-                        />
-                        <TransactionList
-                            transactions={transactions}
-                            onSelectTransaction={handleTransactionClick}
-                        />
-                        <TransactionPagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={setCurrentPage}
-                            totalItems={totalItems}
-                            itemsPerPage={ITEMS_PER_PAGE}
-                        />
-                    </>
-                ) : (
-                    <TransactionEmptyState />
-                )}
-            </div>
+  const handleTransactionClick = (tx: Transaction) => {
+    setSelectedTransaction(tx);
+    setDetailsOpen(true);
+  };
 
-            <TransactionDetails
-                transaction={selectedTransaction}
-                open={detailsOpen}
-                onClose={() => setDetailsOpen(false)}
+  return (
+    <div className="flex flex-col h-full space-y-4 md:space-y-6 max-w-7xl mx-auto w-full">
+      <div className="bg-card rounded-xl p-4 md:p-6 shadow-sm border border-border/50">
+        <TransactionFilters
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+          activeFilter={activeFilter}
+          onFilterChange={handleFilterChange}
+          totalCount={totalItems}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onDateFromChange={handleDateFromChange}
+          onDateToChange={handleDateToChange}
+          onClearDateRange={handleClearDateRange}
+          onExportCSV={handleExportCSV}
+        />
+
+        {offlineNotice && transactions.length > 0 && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {offlineNotice}
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <p className="text-sm text-muted-foreground">{error}</p>
+            <button
+              onClick={() => {
+                setError(null);
+                setIsLoading(true);
+              }}
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              Retry
+            </button>
+          </div>
+        ) : transactions.length > 0 ? (
+          <>
+            <TransactionTable
+              transactions={transactions}
+              onSelectTransaction={handleTransactionClick}
             />
-        </div>
-    );
+            <TransactionList
+              transactions={transactions}
+              onSelectTransaction={handleTransactionClick}
+            />
+            <TransactionPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={totalItems}
+              itemsPerPage={ITEMS_PER_PAGE}
+            />
+          </>
+        ) : (
+          <TransactionEmptyState />
+        )}
+      </div>
+
+      <TransactionDetails
+        transaction={selectedTransaction}
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+      />
+    </div>
+  );
 }
