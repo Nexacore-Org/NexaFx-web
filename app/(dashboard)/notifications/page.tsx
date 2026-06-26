@@ -48,7 +48,7 @@ export default function NotificationsPage() {
               <NotificationSkeleton key={i} />
             ))}
           </div>
-        ) : error ? (
+        ) : error && notifications.length === 0 ? (
           <div className="p-8 text-center text-destructive">
             <p>{error}</p>
           </div>
@@ -57,16 +57,23 @@ export default function NotificationsPage() {
             <p>No notifications yet</p>
           </div>
         ) : (
-          <div className="divide-y divide-border">
-            {notifications.map((notification) => (
-              <SwipeableNotificationItem
-                key={notification.id}
-                notification={notification}
-                onClick={() => handleNotificationClick(notification.id)}
-                onDelete={() => handleDelete(notification.id)}
-              />
-            ))}
-          </div>
+          <>
+            {error && (
+              <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <p>{error}</p>
+              </div>
+            )}
+            <div className="divide-y divide-border">
+              {notifications.map((notification) => (
+                <SwipeableNotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onClick={() => handleNotificationClick(notification.id)}
+                  onDelete={() => handleDelete(notification.id)}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

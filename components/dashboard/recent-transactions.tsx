@@ -9,10 +9,11 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Transaction, getTransactions } from "@/lib/api/transactions";
 import { TransactionEmptyState } from "@/components/transactions/empty-state";
+import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
 export function RecentTransactions() {
   type State =
     | { status: "loading" }
@@ -21,17 +22,36 @@ export function RecentTransactions() {
 
   const [state, setState] = useState<State>({ status: "loading" });
   const [retryCount, setRetryCount] = useState(0);
+  const [offlineNotice, setOfflineNotice] = useState<string | null>(null);
+  const cachedTransactionsRef = useRef<Transaction[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     getTransactions({ page: 1, limit: 5 })
       .then((result) => {
-        if (!cancelled)
+        if (!cancelled) {
+          cachedTransactionsRef.current = result.data;
+          setOfflineNotice(null);
           setState({ status: "success", transactions: result.data });
+        }
       })
-      .catch(() => {
-        if (!cancelled)
-          setState({ status: "error", message: "Failed to load transactions" });
+      .catch((error) => {
+        if (cancelled) return;
+
+        const cachedTransactions = cachedTransactionsRef.current;
+        const message = getRequestErrorMessage(error, {
+          fallback: "Failed to load transactions",
+          hasCachedData: cachedTransactions.length > 0,
+        });
+
+        if (isOfflineError(error) && cachedTransactions.length > 0) {
+          setOfflineNotice(message);
+          setState({ status: "success", transactions: cachedTransactions });
+          return;
+        }
+
+        setOfflineNotice(null);
+        setState({ status: "error", message });
       });
     return () => {
       cancelled = true;
@@ -58,6 +78,11 @@ export function RecentTransactions() {
       </div>
 
       <div className="rounded-xl md:rounded-sm bg-card md:border md:border-border md:shadow-sm overflow-hidden p-2 md:p-0">
+        {offlineNotice && state.status === "success" && (
+          <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {offlineNotice}
+          </div>
+        )}
         {state.status === "loading" ? (
           /* Skeleton rows — matches the shape of real transaction rows */
           <div className="space-y-3 p-4 animate-pulse">
@@ -125,8 +150,8 @@ export function RecentTransactions() {
                               tx.type === "Deposit"
                                 ? "bg-green-500/10 text-green-500"
                                 : tx.type === "Withdraw"
-                                ? "bg-red-500/10 text-red-500"
-                                : "bg-orange-500/10 text-orange-500"
+                                  ? "bg-red-500/10 text-red-500"
+                                  : "bg-orange-500/10 text-orange-500",
                             )}
                           >
                             {tx.type === "Convert" ? (
@@ -161,8 +186,8 @@ export function RecentTransactions() {
                             tx.status === "Success"
                               ? "bg-green-500/10 text-green-500"
                               : tx.status === "Pending"
-                              ? "bg-yellow-500/10 text-yellow-500"
-                              : "bg-red-500/10 text-red-500"
+                                ? "bg-yellow-500/10 text-yellow-500"
+                                : "bg-red-500/10 text-red-500",
                           )}
                         >
                           {tx.status}
@@ -173,7 +198,7 @@ export function RecentTransactions() {
                           "px-6 py-4 text-sm font-bold text-right",
                           tx.type === "Deposit"
                             ? "text-green-500"
-                            : "text-foreground"
+                            : "text-foreground",
                         )}
                       >
                         {tx.amountString}
@@ -195,8 +220,8 @@ export function RecentTransactions() {
                         tx.type === "Convert"
                           ? "bg-orange-500/10 border-orange-200 text-orange-500"
                           : tx.type === "Deposit"
-                          ? "bg-green-500/10 border-green-200 text-green-500"
-                          : "bg-red-500/10 border-red-200 text-red-500"
+                            ? "bg-green-500/10 border-green-200 text-green-500"
+                            : "bg-red-500/10 border-red-200 text-red-500",
                       )}
                     >
                       {tx.type === "Convert" ? (
@@ -220,8 +245,8 @@ export function RecentTransactions() {
                       tx.status === "Success"
                         ? "bg-green-500/10 text-green-600 border border-green-200"
                         : tx.status === "Pending"
-                        ? "bg-yellow-500/10 text-yellow-600 border border-yellow-200"
-                        : "bg-red-500/10 text-red-600 border border-red-200"
+                          ? "bg-yellow-500/10 text-yellow-600 border border-yellow-200"
+                          : "bg-red-500/10 text-red-600 border border-red-200",
                     )}
                   >
                     {tx.status === "Success" && <Check className="h-3 w-3" />}
