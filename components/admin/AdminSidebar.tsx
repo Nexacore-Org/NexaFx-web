@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useState } from "react";
 
-import { BarChart3, Bell, Users } from "lucide-react";
+import { BarChart3, Bell, Users, AlertTriangle, FileText, Megaphone, ShieldCheck, Activity } from "lucide-react";
 
 type Props = {
     isOpen: boolean;
@@ -19,6 +19,11 @@ const adminMenuItems = [
     { icon: null, label: "Transaction", href: "/admin/transactions", lucide: ArrowUpDown },
     { icon: null, label: "Push Notification", href: "/admin/push-notifications", lucide: Bell },
     { icon: null, label: "User list", href: "/admin/users", lucide: Users },
+    { icon: null, label: "KYC Review", href: "/admin/kyc-review", lucide: ShieldCheck },
+    { icon: null, label: "Announcements", href: "/admin/announcements", lucide: Megaphone },
+    { icon: null, label: "System Health", href: "/admin/system-health", lucide: Activity },
+    { icon: null, label: "Disputes", href: "/admin/disputes", lucide: AlertTriangle },
+    { icon: null, label: "Reports", href: "/admin/reports", lucide: FileText },
 ];
 
 export function AdminSidebar({ isOpen, onClose }: Props) {

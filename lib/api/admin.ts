@@ -157,6 +157,41 @@ export async function updateUserKyc(id: string, status: 'Verified' | 'Unverified
     });
 }
 
+export interface KycSubmission {
+  id: string;
+  userName: string;
+  email: string;
+  documentType: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  submittedAt: string;
+  reviewedAt?: string;
+}
+
+export async function getAdminKycSubmissions(): Promise<KycSubmission[]> {
+  const response = await apiClient<any>('/admin/kyc', {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  const data = response?.data ?? response?.submissions ?? response ?? [];
+  return (Array.isArray(data) ? data : []).map((item: any) => ({
+    id: item.id ?? item._id ?? '',
+    userName: item.userName ?? item.username ?? item.user?.name ?? '',
+    email: item.email ?? item.user?.email ?? '',
+    documentType: item.documentType ?? item.document_type ?? 'Unknown',
+    status: item.status ?? 'Pending',
+    submittedAt: item.submittedAt ?? item.createdAt ?? new Date().toISOString(),
+    reviewedAt: item.reviewedAt ?? undefined,
+  }));
+}
+
+export async function updateKycStatus(id: string, status: 'Approved' | 'Rejected'): Promise<void> {
+  await apiClient<void>(`/admin/kyc/${id}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ status }),
+  });
+}
+
 export async function getAdminTransactions(query: AdminTransactionsQuery = {}): Promise<{ data: AdminTransaction[]; total: number }> {
     const params: Record<string, string> = {};
     if (query.page) params.page = String(query.page);
@@ -200,4 +235,199 @@ export async function getAdminTransactions(query: AdminTransactionsQuery = {}): 
     });
 
     return { data: mappedData, total };
+}
+
+export interface Dispute {
+  id: string;
+  transactionId: string;
+  userId: string;
+  username: string;
+  amount: number;
+  currency: string;
+  flagReason: string;
+  status: 'open' | 'resolved';
+  resolution: 'refunded' | 'cancelled' | 'approved' | null;
+  date: string;
+  notes: DisputeNote[];
+}
+
+interface DisputeNote {
+  id: string;
+  author: string;
+  content: string;
+  createdAt: string;
+}
+
+export async function getDisputes(params: { status?: string } = {}): Promise<Dispute[]> {
+  const queryParams: Record<string, string> = {};
+  if (params.status && params.status !== 'All') queryParams.status = params.status.toLowerCase();
+
+  const response = await apiClient<any>('/admin/disputes', {
+    method: 'GET',
+    headers: getAuthHeaders(),
+    params: queryParams,
+  });
+
+  const data = response?.data ?? response?.disputes ?? response ?? [];
+  return (Array.isArray(data) ? data : []).map((d: any) => ({
+    id: d.id ?? d._id ?? '',
+    transactionId: d.transactionId ?? d.transaction_id ?? '',
+    userId: d.userId ?? d.user_id ?? '',
+    username: d.username ?? d.user?.email ?? '',
+    amount: Number(d.amount) || 0,
+    currency: d.currency ?? '',
+    flagReason: d.flagReason ?? d.reason ?? '',
+    status: (d.status === 'resolved' ? 'resolved' : 'open') as 'open' | 'resolved',
+    resolution: d.resolution ?? null,
+    date: d.createdAt ?? d.date ?? new Date().toISOString(),
+    notes: (d.notes ?? []).map((n: any) => ({
+      id: n.id ?? n._id ?? '',
+      author: n.author ?? '',
+      content: n.content ?? '',
+      createdAt: n.createdAt ?? '',
+    })),
+  }));
+}
+
+export async function addDisputeNote(disputeId: string, content: string): Promise<void> {
+  await apiClient<void>(`/admin/disputes/${disputeId}/notes`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ content }),
+  });
+}
+
+export async function resolveDispute(disputeId: string, resolution: string): Promise<void> {
+  await apiClient<void>(`/admin/disputes/${disputeId}/resolve`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ resolution }),
+  });
+}
+
+export interface Announcement {
+    id: string;
+    title: string;
+    message: string;
+    status: 'Active' | 'Inactive';
+    colorTheme: string;
+    targetPage: string;
+    createdAt: string;
+}
+
+export async function getAnnouncements(): Promise<Announcement[]> {
+    const response = await apiClient<any>('/admin/announcements', {
+        method: 'GET',
+        headers: getAuthHeaders(),
+    });
+    const data = response?.data ?? response?.announcements ?? (Array.isArray(response) ? response : []);
+    return data.map((item: any) => ({
+        id: item.id ?? item._id ?? '',
+        title: item.title ?? '',
+        message: item.message ?? '',
+        status: item.status === 'Active' || item.status === 'active' ? 'Active' as const : 'Inactive' as const,
+        colorTheme: item.colorTheme ?? 'yellow',
+        targetPage: item.targetPage ?? 'all',
+        createdAt: item.createdAt
+            ? new Date(item.createdAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+              })
+            : '',
+    }));
+}
+
+export async function createAnnouncement(data: {
+    title: string;
+    message: string;
+    colorTheme: string;
+    targetPage: string;
+}): Promise<Announcement> {
+    const response = await apiClient<any>('/admin/announcements', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+    });
+    const item = response?.data ?? response;
+    return {
+        id: item.id ?? item._id ?? '',
+        title: item.title ?? data.title,
+        message: item.message ?? data.message,
+        status: 'Active',
+        colorTheme: item.colorTheme ?? data.colorTheme,
+        targetPage: item.targetPage ?? data.targetPage,
+        createdAt: item.createdAt
+            ? new Date(item.createdAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+              })
+            : new Date().toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+              }),
+    };
+}
+
+export async function toggleAnnouncement(id: string, status: 'Active' | 'Inactive'): Promise<void> {
+    await apiClient<void>(`/admin/announcements/${id}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ status }),
+    });
+}
+
+export async function deleteAnnouncement(id: string): Promise<void> {
+    await apiClient<void>(`/admin/announcements/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+    });
+}
+
+export interface Report {
+  id: string;
+  title: string;
+  type: string;
+  format: string;
+  createdAt: string;
+  url?: string;
+}
+
+export async function generateReport(params: {
+  type: string;
+  format: string;
+  startDate: string;
+  endDate: string;
+}): Promise<Report> {
+  const response = await apiClient<any>('/admin/reports/generate', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(params),
+  });
+  return {
+    id: response.id ?? response._id ?? '',
+    title: response.title ?? `${params.type} Report`,
+    type: response.type ?? params.type,
+    format: response.format ?? params.format,
+    createdAt: response.createdAt ?? new Date().toISOString(),
+    url: response.url ?? null,
+  };
+}
+
+export async function getReports(): Promise<Report[]> {
+  const response = await apiClient<any>('/admin/reports', {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  const data = response?.data ?? response?.reports ?? response ?? [];
+  return (Array.isArray(data) ? data : []).map((r: any) => ({
+    id: r.id ?? r._id ?? '',
+    title: r.title ?? 'Report',
+    type: r.type ?? '',
+    format: r.format ?? 'CSV',
+    createdAt: r.createdAt ?? '',
+    url: r.url ?? null,
+  }));
 }

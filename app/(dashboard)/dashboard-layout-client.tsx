@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { Loader2, ArrowDown } from "lucide-react";
 
 import { Sidebar } from "../../components/dashboard/sidebar";
 import { Topbar } from "../../components/dashboard/topbar";
@@ -9,6 +10,9 @@ import { cn } from "../../lib/utils";
 import { useAuthStore } from "../../hooks/use-auth-store";
 import { useRouter } from "next/navigation";
 import { useSidebarStore } from "../../hooks/use-sidebar-store";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { KeyboardShortcutsModal } from "@/components/shared/keyboard-shortcuts-modal";
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 
 export default function DashboardLayoutClient({
   children,
@@ -19,6 +23,29 @@ export default function DashboardLayoutClient({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { isAuthenticated, accessToken } = useAuthStore();
   const router = useRouter();
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [refreshingKey, setRefreshingKey] = useState(0);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshingKey((k) => k + 1);
+  }, []);
+
+  const { pullDistance, isRefreshing } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
+
+  const shortcutActions = useCallback(() => [
+    { keys: ["g+d"], description: "Go to Dashboard", action: () => router.push("/dashboard") },
+    { keys: ["g+t"], description: "Go to Transactions", action: () => router.push("/transactions") },
+    { keys: ["g+s"], description: "Go to Settings", action: () => router.push("/settings") },
+    { keys: ["g+h"], description: "Go to Home", action: () => router.push("/") },
+  ], [router]);
+
+  useKeyboardShortcuts(
+    shortcutActions(),
+    () => setShowShortcuts(true),
+    () => setShowShortcuts(false),
+  );
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
@@ -63,15 +90,49 @@ export default function DashboardLayoutClient({
         <Sidebar />
       </aside>
 
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden relative">
+        {pullDistance > 0 && (
+          <div
+            className="absolute top-0 left-0 right-0 z-30 flex items-center justify-center transition-all"
+            style={{
+              height: pullDistance,
+              transform: `translateY(${isRefreshing ? 0 : -pullDistance}px)`,
+            }}
+          >
+            <div
+              className={`flex items-center justify-center gap-2 text-sm font-medium ${
+                pullDistance >= 80 ? "text-yellow-500" : "text-muted-foreground"
+              }`}
+            >
+              {isRefreshing ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <ArrowDown
+                  className={`w-5 h-5 transition-transform ${
+                    pullDistance >= 80 ? "rotate-180" : ""
+                  }`}
+                />
+              )}
+              {isRefreshing
+                ? "Refreshing..."
+                : pullDistance >= 80
+                  ? "Release to refresh"
+                  : "Pull to refresh"}
+            </div>
+          </div>
+        )}
         <NetworkStatusBanner />
         <div className="p-4 md:px-8">
           <Topbar />
         </div>
         <main className="flex-1 overflow-y-auto px-4 md:px-8 pb-4">
-          {children}
+          <div key={refreshingKey}>{children}</div>
         </main>
       </div>
+      <KeyboardShortcutsModal
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
     </div>
   );
 }

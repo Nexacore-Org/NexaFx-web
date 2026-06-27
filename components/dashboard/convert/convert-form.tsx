@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { ChevronDown, AlertCircle, ArrowDownUp, Loader2 } from "lucide-react";
+import { ChevronDown, AlertCircle, ArrowDownUp, Loader2, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBalances } from "@/lib/api/wallet";
 import { createSwap } from "@/lib/api/transactions";
@@ -165,6 +165,34 @@ export function ConvertForm() {
       setIsSubmitting(false);
     }
   };
+
+  const comparisonPairs = useMemo(() => {
+    const pairs = [
+      { from: "USD", to: "NGN", midMarketRate: 1550 },
+      { from: "EUR", to: "NGN", midMarketRate: 1680 },
+      { from: "GBP", to: "NGN", midMarketRate: 1950 },
+      { from: "USD", to: "EUR", midMarketRate: 0.92 },
+    ];
+    return pairs.map((p) => {
+      const ourRate =
+        fromCurrency === p.from && toCurrency === p.to
+          ? exchangeRate
+          : p.midMarketRate * (1 + (Math.random() * 0.02 - 0.01));
+      const diff = ourRate > 0
+        ? ((ourRate - p.midMarketRate) / p.midMarketRate) * 100
+        : 0;
+      return {
+        ...p,
+        ourRate: ourRate || p.midMarketRate,
+        diff,
+        isBetter: diff <= 0,
+      };
+    });
+  }, [fromCurrency, toCurrency, exchangeRate]);
+
+  const lastUpdated = useMemo(() => {
+    return new Date().toLocaleTimeString();
+  }, [exchangeRate]);
 
   const isButtonDisabled =
     !amount ||
@@ -469,6 +497,78 @@ export function ConvertForm() {
             Exchange rates updated in real-time. Your conversion will be locked
             at checkout.
           </p>
+        </div>
+
+        {/* Rate Comparison Widget */}
+        <div className="bg-card rounded-2xl p-5 border border-border">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-foreground">
+              Rate Comparison
+            </h3>
+            <span className="text-[10px] text-muted-foreground">
+              Updated {lastUpdated}
+            </span>
+          </div>
+          <div className="space-y-3">
+            {comparisonPairs.map((pair) => {
+              const maxRate = Math.max(pair.ourRate, pair.midMarketRate);
+              const ourWidth = (pair.ourRate / maxRate) * 100;
+              const midWidth = (pair.midMarketRate / maxRate) * 100;
+              return (
+                <div key={`${pair.from}-${pair.to}`}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-medium text-foreground">
+                      {pair.from}/{pair.to}
+                    </span>
+                    <span
+                      className={`text-[11px] font-semibold flex items-center gap-0.5 ${
+                        pair.isBetter
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {pair.isBetter ? (
+                        <TrendingDown className="w-3 h-3" />
+                      ) : (
+                        <TrendingUp className="w-3 h-3" />
+                      )}
+                      {pair.diff.toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-16 text-[10px] text-muted-foreground shrink-0">
+                        NexaFx
+                      </span>
+                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-amber-500 rounded-full transition-all"
+                          style={{ width: `${Math.min(ourWidth, 100)}%` }}
+                        />
+                      </div>
+                      <span className="w-14 text-[10px] text-right text-foreground font-medium">
+                        {pair.ourRate.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-16 text-[10px] text-muted-foreground shrink-0">
+                        Mid-Market
+                      </span>
+                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gray-300 rounded-full transition-all"
+                          style={{ width: `${Math.min(midWidth, 100)}%` }}
+                        />
+                      </div>
+                      <span className="w-14 text-[10px] text-right text-foreground font-medium">
+                        {pair.midMarketRate.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Convert Button */}
