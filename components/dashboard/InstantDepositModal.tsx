@@ -8,20 +8,23 @@ import { useFocusTrap } from '@/hooks/use-focus-trap';
 type InstantDepositModalType = {
   onClose: () => void;
   isMobile: boolean;
+  walletAddress: string | null;
 };
 
 const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
   onClose,
+  walletAddress,
 }) => {
   const [copied, setCopied] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
   useFocusTrap(true, onClose, modalRef);
 
-  const walletAddress = '0x5A08FcdBEA516Cf086572157791dB12CA3beF1B32';
+  const address = walletAddress ?? '';
 
   const handleCopyAddress = () => {
-    navigator.clipboard.writeText(walletAddress);
+    if (!address) return;
+    navigator.clipboard.writeText(address);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -83,7 +86,7 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
             </label>
             <div className='flex items-center gap-2 p-2 md:p-3 '>
               <span className='text-sm md:text-[18px] font-semibold text-foreground break-all flex-1'>
-                {walletAddress}
+                {address || 'No wallet address available'}
               </span>
               <button
                 onClick={handleCopyAddress}
@@ -98,7 +101,8 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
           <div className='flex gap-3  md:flex-row flex-col'>
             <button
               onClick={handleCopyAddress}
-              className='flex-1 py-3 bg-yellow-400 hover:bg-yellow-500 text-black font-medium rounded-lg transition-colors md:text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2'
+              disabled={!address}
+              className='flex-1 py-3 bg-yellow-400 hover:bg-yellow-500 text-black font-medium rounded-lg transition-colors md:text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed'
               aria-label='Copy wallet address button'
             >
               {copied ? 'Copied!' : 'Copy Address'}
