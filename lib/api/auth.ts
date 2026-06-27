@@ -28,6 +28,15 @@ export function signUp(payload: {
   });
 }
 
+export function refreshTokens(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+  return apiClient("/auth/refresh", {
+    method: "POST",
+    body: JSON.stringify({ refreshToken }),
+    useProxy: false,
+    skipAuth: true,
+  });
+}
+
 export function verifySignupOtp(payload: { email: string; otp: string }) {
   return apiClient("/auth/verify-signup-otp", {
     method: "POST",
