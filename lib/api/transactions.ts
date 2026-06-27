@@ -273,6 +273,47 @@ export interface SwapResponse {
     message?: string;
 }
 
+// ==================== Email & Statement ====================
+
+export interface ResendConfirmationResponse {
+  success: boolean;
+  message?: string;
+}
+
+export async function resendConfirmationEmail(transactionId: string): Promise<ResendConfirmationResponse> {
+  const json = await apiClient<any>(`/transactions/${transactionId}/resend-confirmation`, {
+    method: 'POST',
+  });
+  return {
+    success: json.success ?? json.status === 'success',
+    message: json.message as string | undefined,
+  };
+}
+
+export interface RequestStatementDto {
+  format: 'pdf' | 'csv';
+}
+
+export interface RequestStatementResponse {
+  success: boolean;
+  message?: string;
+  previewUrl?: string;
+}
+
+export async function requestStatement(data: RequestStatementDto): Promise<RequestStatementResponse> {
+  const json = await apiClient<any>('/transactions/statement', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return {
+    success: json.success ?? json.status === 'success',
+    message: json.message as string | undefined,
+    previewUrl: json.previewUrl as string | undefined,
+  };
+}
+
+// ==================== Swap ====================
+
 export async function createSwap(data: CreateSwapDto): Promise<SwapResponse> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const json = await apiClient<any>('/transactions/swap', {

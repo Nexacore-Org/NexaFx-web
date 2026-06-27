@@ -1,102 +1,27 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Wallet, Building2 } from "lucide-react";
 import { WalletAddressCard } from "@/components/dashboard/deposit/wallet-address-card";
 import { MoonPayButton } from "@/components/dashboard/deposit/moonpay-button";
+import { BankTransferCard } from "@/components/dashboard/deposit/bank-transfer-card";
 import { getUserProfile, type UserProfile } from "@/lib/api/users";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import Link from "next/link";
-import { Info, Loader2 } from "lucide-react";
 
-type DepositLimits = {
-  minDeposit: number;
-  maxDepositPerTx: number;
-  dailyLimit: number;
-  feePercentage: number;
-  estimatedArrival: string;
-};
+const TABS = [
+  { id: "crypto", label: "Crypto Deposit", icon: Wallet },
+  { id: "bank", label: "Bank Transfer", icon: Building2 },
+] as const;
 
-const defaultLimits: DepositLimits = {
-  minDeposit: 1000,
-  maxDepositPerTx: 10000000,
-  dailyLimit: 50000000,
-  feePercentage: 0,
-  estimatedArrival: "10-30 minutes",
-};
-
-function DepositLimitsCard() {
-  const [limits, setLimits] = useState<DepositLimits | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLimits(defaultLimits);
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, []);
-
-  return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-      <div className="flex items-center gap-2">
-        <Info className="w-4 h-4 text-muted-foreground" />
-        <h3 className="text-sm font-semibold text-foreground">
-          Deposit Limits & Fees
-        </h3>
-      </div>
-
-      {loading ? (
-        <div className="space-y-3 animate-pulse">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center justify-between">
-              <div className="h-3 w-28 bg-muted rounded" />
-              <div className="h-3 w-20 bg-muted rounded" />
-            </div>
-          ))}
-        </div>
-      ) : limits ? (
-        <div className="space-y-2.5 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Minimum Deposit</span>
-            <span className="font-medium text-foreground">
-              ₦{limits.minDeposit.toLocaleString()}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Max per Transaction</span>
-            <span className="font-medium text-foreground">
-              ₦{limits.maxDepositPerTx.toLocaleString()}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Daily Deposit Limit</span>
-            <span className="font-medium text-foreground">
-              ₦{limits.dailyLimit.toLocaleString()}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Deposit Fee</span>
-            <span className="font-medium text-foreground">
-              {limits.feePercentage}%
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Estimated Arrival</span>
-            <span className="font-medium text-foreground">
-              {limits.estimatedArrival}
-            </span>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
+type TabId = (typeof TABS)[number]["id"];
 
 export default function DepositPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [activeTab, setActiveTab] = useState<TabId>("crypto");
 
   const handleRetry = () => {
     setRetryCount((c) => c + 1);
@@ -163,24 +88,54 @@ export default function DepositPage() {
         Deposit
       </h1>
 
-      <ErrorBoundary sectionName="Deposit - Wallet Address">
-        <WalletAddressCard
-          walletAddress={profile?.walletAddress ?? null}
-          isLoading={isLoading}
-          error={error}
-          onRetry={handleRetry}
-        />
-      </ErrorBoundary>
+      {/* Tabs */}
+      <div className="flex gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100"
+                  : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-      <ErrorBoundary sectionName="Deposit - Limits & Fees">
-        <DepositLimitsCard />
-      </ErrorBoundary>
+      {/* Crypto Deposit Tab */}
+      {activeTab === "crypto" && (
+        <>
+          <ErrorBoundary sectionName="Deposit - Wallet Address">
+            <WalletAddressCard
+              walletAddress={profile?.walletAddress ?? null}
+              isLoading={isLoading}
+              error={error}
+              onRetry={handleRetry}
+            />
+          </ErrorBoundary>
 
-      <ErrorBoundary sectionName="Deposit - MoonPay">
-        <MoonPayButton
-          walletAddress={profile?.walletAddress ?? null}
-        />
-      </ErrorBoundary>
+          <ErrorBoundary sectionName="Deposit - MoonPay">
+            <MoonPayButton
+              walletAddress={profile?.walletAddress ?? null}
+            />
+          </ErrorBoundary>
+        </>
+      )}
+
+      {/* Bank Transfer Tab */}
+      {activeTab === "bank" && (
+        <ErrorBoundary sectionName="Deposit - Bank Transfer">
+          <BankTransferCard />
+        </ErrorBoundary>
+      )}
     </div>
   );
 }
