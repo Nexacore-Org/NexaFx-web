@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { login } from '@/lib/api/auth';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useWebAuthn } from '@/hooks/use-webauthn';
 
 export default function SignInPageClient() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function SignInPageClient() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { isWebAuthnSupported, isAuthenticating, authenticateWithPasskey, error: webauthnError } = useWebAuthn();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,6 +180,45 @@ export default function SignInPageClient() {
               Sign up
             </Link>
           </div>
+
+          {isWebAuthnSupported && (
+            <div className="mt-4">
+              <div className="relative mb-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-card px-2 text-muted-foreground">or</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  const credential = await authenticateWithPasskey({ challenge: new Uint8Array(32) });
+                  if (credential) {
+                    // Passkey authenticated — proceed with login
+                    router.push('/verify-otp');
+                  }
+                }}
+                disabled={isAuthenticating}
+                className="w-full py-2.5 border border-border hover:bg-muted text-foreground font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
+              >
+                {isAuthenticating ? (
+                  'Authenticating...'
+                ) : (
+                  <>
+                    <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Sign in with Passkey
+                  </>
+                )}
+              </button>
+              {webauthnError && (
+                <p className="mt-2 text-xs text-red-600 text-center">{webauthnError}</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -309,6 +350,44 @@ export default function SignInPageClient() {
               Sign up
             </Link>
           </div>
+
+          {isWebAuthnSupported && (
+            <div className="mt-4">
+              <div className="relative mb-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-card px-2 text-muted-foreground">or</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  const credential = await authenticateWithPasskey({ challenge: new Uint8Array(32) });
+                  if (credential) {
+                    router.push('/verify-otp');
+                  }
+                }}
+                disabled={isAuthenticating}
+                className="w-full py-2.5 border border-border hover:bg-muted text-foreground font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
+              >
+                {isAuthenticating ? (
+                  'Authenticating...'
+                ) : (
+                  <>
+                    <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Sign in with Passkey
+                  </>
+                )}
+              </button>
+              {webauthnError && (
+                <p className="mt-2 text-xs text-red-600 text-center">{webauthnError}</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

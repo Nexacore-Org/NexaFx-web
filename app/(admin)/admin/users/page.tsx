@@ -2,10 +2,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, Loader2 } from 'lucide-react';
+import { Search, Filter, Loader2, Mail } from 'lucide-react';
 import { AdminUser, getAdminUsers } from '@/lib/api/admin';
 import { AdminUserTable } from '@/components/admin/AdminUserTable';
 import { UserDetailPanel } from '@/components/admin/UserDetailPanel';
+import { SendEmailModal } from '@/components/admin/send-email-modal';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -14,6 +15,7 @@ export default function UsersPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [emailTarget, setEmailTarget] = useState<AdminUser | null>(null);
   
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -186,14 +188,25 @@ export default function UsersPage() {
               users.map((user) => (
                 <div
                   key={user.id}
-                  onClick={() => setSelectedUser(user)}
-                  className="border-b border-gray-100 px-4 py-4 flex items-center justify-between hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer"
+                  className="border-b border-gray-100 px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
                 >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${user.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                    <span className="text-sm text-gray-900 truncate">{user.email}</span>
+                  <div
+                    className="flex items-center justify-between cursor-pointer"
+                    onClick={() => setSelectedUser(user)}
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${user.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                      <span className="text-sm text-gray-900 truncate">{user.email}</span>
+                    </div>
+                    <span className="text-sm text-gray-600 ml-4 shrink-0">{user.createdAt}</span>
                   </div>
-                  <span className="text-sm text-gray-600 ml-4 shrink-0">{user.createdAt}</span>
+                  <button
+                    onClick={() => setEmailTarget(user)}
+                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-yellow-100 hover:text-gray-900 rounded-lg transition-colors"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    Send Email
+                  </button>
                 </div>
               ))
             )}
@@ -230,6 +243,15 @@ export default function UsersPage() {
           user={selectedUser} 
           onClose={() => setSelectedUser(null)}
           onSuccess={loadUsers}
+        />
+      )}
+
+      {/* Send Email Modal */}
+      {emailTarget && (
+        <SendEmailModal
+          user={emailTarget}
+          onClose={() => setEmailTarget(null)}
+          onSuccess={() => {}}
         />
       )}
     </div>

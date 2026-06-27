@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 import { Sidebar } from "../../components/dashboard/sidebar";
 import { Topbar } from "../../components/dashboard/topbar";
 import { NetworkStatusBanner } from "@/components/shared/network-status-banner";
+import { LiveSupportChat } from "@/components/shared/live-support-chat";
 import { cn } from "../../lib/utils";
 import { useAuthStore } from "../../hooks/use-auth-store";
 import { useRouter } from "next/navigation";
 import { useSidebarStore } from "../../hooks/use-sidebar-store";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { KeyboardShortcutsModal } from "@/components/shared/keyboard-shortcuts-modal";
 
 export default function DashboardLayoutClient({
   children,
@@ -19,6 +22,20 @@ export default function DashboardLayoutClient({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { isAuthenticated, accessToken } = useAuthStore();
   const router = useRouter();
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  const shortcutActions = useCallback(() => [
+    { keys: ["g+d"], description: "Go to Dashboard", action: () => router.push("/dashboard") },
+    { keys: ["g+t"], description: "Go to Transactions", action: () => router.push("/transactions") },
+    { keys: ["g+s"], description: "Go to Settings", action: () => router.push("/settings") },
+    { keys: ["g+h"], description: "Go to Home", action: () => router.push("/") },
+  ], [router]);
+
+  useKeyboardShortcuts(
+    shortcutActions(),
+    () => setShowShortcuts(true),
+    () => setShowShortcuts(false),
+  );
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
@@ -72,6 +89,11 @@ export default function DashboardLayoutClient({
           {children}
         </main>
       </div>
+      <LiveSupportChat />
+      <KeyboardShortcutsModal
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
     </div>
   );
 }

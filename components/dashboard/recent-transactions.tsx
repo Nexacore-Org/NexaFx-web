@@ -15,6 +15,8 @@ import { Transaction, getTransactions } from "@/lib/api/transactions";
 import { TransactionEmptyState } from "@/components/transactions/empty-state";
 import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
 import { TransactionDetailModal } from "./transaction-detail-modal";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { useAuthStore } from "@/hooks/use-auth-store";
 export function RecentTransactions() {
   type State =
     | { status: "loading" }
@@ -27,6 +29,22 @@ export function RecentTransactions() {
   const cachedTransactionsRef = useRef<Transaction[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const wsTransactions = useWebSocket((s) => s.transactions);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const subscribe = useWebSocket((s) => s.subscribe);
+
+  useEffect(() => {
+    if (accessToken) {
+      subscribe(accessToken);
+    }
+  }, [accessToken, subscribe]);
+
+  useEffect(() => {
+    if (wsTransactions.length > 0) {
+      setState({ status: "success", transactions: wsTransactions.slice(0, 5) });
+    }
+  }, [wsTransactions]);
 
   useEffect(() => {
     let cancelled = false;

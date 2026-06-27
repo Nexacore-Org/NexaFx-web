@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, KeyRound, Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { deleteProfile } from "@/lib/api/users";
+import { useWebAuthn } from "@/hooks/use-webauthn";
 
 export function Security() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export function Security() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [confirmText, setConfirmText] = useState("");
+  const { isWebAuthnSupported, isRegistering, registerPasskey, error: webauthnError } = useWebAuthn();
 
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
@@ -36,6 +38,53 @@ export function Security() {
 
   return (
     <div>
+      {isWebAuthnSupported && (
+        <div className="rounded-2xl border-[#8C8C8C] border-[0.25px] bg-card mb-6">
+          <h3 className="text-muted-foreground mb-4.5 font-semibold text-base mx-5 pt-6.25 pb-4.5 dark:text-white dark:border-slate-300 border-[#00000026] border-b">
+            Passkey
+          </h3>
+          <div className="space-y-6 pb-5">
+            <div className="flex max-sm:flex-col max-sm:items-start justify-between items-center gap-6 px-5">
+              <div className="max-w-124.25">
+                <h4 className="text-foreground font-semibold text-[15px] sm:text-lg">
+                  Security Key / Passkey
+                </h4>
+                <p className="text-[12px] text-muted-foreground font-normal">
+                  Use your device&apos;s biometric or PIN to sign in quickly and securely
+                </p>
+              </div>
+              <button
+                onClick={async () => {
+                  await registerPasskey({
+                    rp: { name: 'NexaFX' },
+                    user: {
+                      id: new Uint8Array(16),
+                      name: 'user@nexafx.com',
+                      displayName: 'User',
+                    },
+                    challenge: new Uint8Array(32),
+                    pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
+                  });
+                }}
+                disabled={isRegistering}
+                className="flex shrink-0 text-sm w-23.5 justify-center items-center gap-1.5 cursor-pointer border h-8 border-border hover:bg-muted text-foreground font-semibold transition-colors"
+              >
+                {isRegistering ? (
+                  'Registering...'
+                ) : (
+                  <>
+                    <Plus className="size-4" /> Register
+                  </>
+                )}
+              </button>
+            </div>
+            {webauthnError && (
+              <p className="text-xs text-destructive text-center px-5">{webauthnError}</p>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="rounded-2xl border-[#8C8C8C] border-[0.25px] bg-card">
         <h3 className="text-muted-foreground mb-4.5 font-semibold text-base mx-5 pt-6.25 pb-4.5 dark:text-white dark:border-slate-300 border-[#00000026] border-b">
           General

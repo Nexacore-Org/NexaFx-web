@@ -11,6 +11,8 @@ import { useEffect, useState } from "react";
 import { getBalances, type WalletBalance } from "@/lib/api/wallet";
 import { getProfile } from "@/lib/api/users";
 import { formatCurrency } from "@/lib/utils/format";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { useAuthStore } from "@/hooks/use-auth-store";
 
 const truncateAddress = (addr: string) => {
   if (!addr) return "";
@@ -35,6 +37,39 @@ export function AccountOverview({
   const [walletAddress, setWalletAddress] = useState("");
   const [balance, setBalance] = useState("");
   const [balances, setBalances] = useState<WalletBalance[]>([]);
+
+  const wsBalance = useWebSocket((s) => s.balance);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const subscribe = useWebSocket((s) => s.subscribe);
+
+  useEffect(() => {
+    if (accessToken) {
+      subscribe(accessToken);
+    }
+  }, [accessToken, subscribe]);
+
+  useEffect(() => {
+    if (wsBalance && wsBalance.length > 0) {
+      setBalances(wsBalance);
+      setError(null);
+
+      const ngnItem = wsBalance.find(
+        (b) => b.currency.toUpperCase() === "NGN"
+      );
+      const usdItem = wsBalance.find(
+        (b) => b.currency.toUpperCase() === "USD"
+      );
+      const firstItem = wsBalance[0];
+
+      if (ngnItem) {
+        setBalance(formatCurrency(ngnItem.amount, "NGN"));
+      } else if (usdItem) {
+        setBalance(formatCurrency(usdItem.amount, "USD"));
+      } else {
+        setBalance(formatCurrency(firstItem.amount, firstItem.currency));
+      }
+    }
+  }, [wsBalance]);
 
   useEffect(() => {
     let cancelled = false;

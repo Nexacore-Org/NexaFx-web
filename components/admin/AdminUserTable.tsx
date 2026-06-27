@@ -5,14 +5,47 @@ import { AdminUser } from '@/lib/api/admin';
 interface AdminUserTableProps {
   users: AdminUser[];
   onUserClick: (user: AdminUser) => void;
+  selectedIds: string[];
+  onSelectedIdsChange: (ids: string[]) => void;
 }
 
-export function AdminUserTable({ users, onUserClick }: AdminUserTableProps) {
+export function AdminUserTable({ users, onUserClick, selectedIds, onSelectedIdsChange }: AdminUserTableProps) {
+  const allSelected = users.length > 0 && selectedIds.length === users.length;
+  const someSelected = selectedIds.length > 0 && !allSelected;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      onSelectedIdsChange([]);
+    } else {
+      onSelectedIdsChange(users.map((u) => u.id));
+    }
+  };
+
+  const toggleSelect = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedIds.includes(id)) {
+      onSelectedIdsChange(selectedIds.filter((sid) => sid !== id));
+    } else {
+      onSelectedIdsChange([...selectedIds, id]);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg overflow-x-auto w-full max-w-[100vw]">
       <table className="w-full min-w-[800px] text-left">
         <thead>
           <tr className="border-b border-gray-200">
+            <th className="py-4 px-4 w-12">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                ref={(el) => {
+                  if (el) el.indeterminate = someSelected;
+                }}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-400 cursor-pointer"
+              />
+            </th>
             <th className="text-left py-4 px-6 text-sm font-medium text-gray-600 uppercase tracking-wider">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-gray-400"></span>
@@ -33,7 +66,7 @@ export function AdminUserTable({ users, onUserClick }: AdminUserTableProps) {
         <tbody>
           {users.length === 0 ? (
             <tr>
-              <td colSpan={4} className="py-10 text-center text-gray-500">
+              <td colSpan={5} className="py-10 text-center text-gray-500">
                 No users found.
               </td>
             </tr>
@@ -44,6 +77,15 @@ export function AdminUserTable({ users, onUserClick }: AdminUserTableProps) {
                 onClick={() => onUserClick(user)}
                 className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
               >
+                <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(user.id)}
+                    onChange={() => {}}
+                    onClick={(e) => toggleSelect(user.id, e)}
+                    className="w-4 h-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-400 cursor-pointer"
+                  />
+                </td>
                 <td className="py-4 px-6">
                   <div className="flex items-center gap-3">
                     <span className={`w-2 h-2 rounded-full ${user.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
