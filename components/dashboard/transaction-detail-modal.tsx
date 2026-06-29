@@ -3,6 +3,8 @@ import { X, Copy, Check, ExternalLink, Wallet, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Transaction } from "@/lib/api/transactions";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { DisputeFormModal } from "./dispute-form-modal";
+import { AlertCircle } from "lucide-react";
 
 interface TransactionDetailModalProps {
   transaction: Transaction;
@@ -13,6 +15,7 @@ interface TransactionDetailModalProps {
 export function TransactionDetailModal({ transaction, isOpen, onClose }: TransactionDetailModalProps) {
   const [copied, setCopied] = useState(false);
   const [copiedTxId, setCopiedTxId] = useState(false);
+  const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
   useFocusTrap(isOpen, onClose, modalRef);
@@ -91,7 +94,10 @@ export function TransactionDetailModal({ transaction, isOpen, onClose }: Transac
     return transaction.reference || "N/A";
   };
 
+  const canRaiseDispute = (transaction.status === "Success" || transaction.status === "Failed") && !transaction.hasDispute;
+
   return (
+    <>
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div
         ref={modalRef}
@@ -160,6 +166,20 @@ export function TransactionDetailModal({ transaction, isOpen, onClose }: Transac
                   {transaction.status}
                 </span>
               </div>
+
+              {transaction.hasDispute && (
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Dispute Status</p>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border bg-red-500/10 text-red-600 border-red-200"
+                    )}
+                  >
+                    <AlertCircle className="h-3 w-3" />
+                    {transaction.disputeStatus || "Open"}
+                  </span>
+                </div>
+              )}
 
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Date & Time</p>
@@ -241,7 +261,15 @@ export function TransactionDetailModal({ transaction, isOpen, onClose }: Transac
             )}
           </div>
 
-          <div className="mt-8 flex justify-end">
+          <div className="mt-8 flex justify-end gap-3">
+            {canRaiseDispute && (
+              <button
+                onClick={() => setIsDisputeModalOpen(true)}
+                className="px-6 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
+              >
+                Raise a dispute
+              </button>
+            )}
             <button
               onClick={onClose}
               className="px-6 py-2.5 bg-muted hover:bg-muted/80 text-foreground font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
@@ -252,5 +280,19 @@ export function TransactionDetailModal({ transaction, isOpen, onClose }: Transac
         </div>
       </div>
     </div>
+    
+    {isDisputeModalOpen && (
+      <DisputeFormModal
+        transaction={transaction}
+        isOpen={isDisputeModalOpen}
+        onClose={() => setIsDisputeModalOpen(false)}
+        onSuccess={() => {
+          setIsDisputeModalOpen(false);
+          // Optional: We can close the detail modal entirely or let the user see the dispute badge.
+          // For now, closing the dispute modal brings them back to the detail modal.
+        }}
+      />
+    )}
+    </>
   );
 }

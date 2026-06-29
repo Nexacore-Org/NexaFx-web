@@ -27,6 +27,8 @@ export interface Transaction {
     exchangeRate?: number;
     toAmount?: number;
     walletAddress?: string;
+    hasDispute?: boolean;
+    disputeStatus?: string;
 }
 
 export interface TransactionQueryDto {
@@ -101,6 +103,8 @@ function mapTransaction(dto: Record<string, any>): Transaction {
         exchangeRate: (dto.exchangeRate ?? dto.exchange_rate) as number | undefined,
         toAmount: (dto.toAmount ?? dto.to_amount) as number | undefined,
         walletAddress: (dto.walletAddress ?? dto.wallet_address ?? dto.address) as string | undefined,
+        hasDispute: (dto.hasDispute ?? dto.has_dispute) as boolean | undefined,
+        disputeStatus: (dto.disputeStatus ?? dto.dispute_status) as string | undefined,
     };
 }
 
@@ -301,4 +305,13 @@ export async function createSwap(data: CreateSwapDto): Promise<SwapResponse> {
         exchangeRate: json.exchangeRate ?? json.exchange_rate,
         message: json.message as string | undefined,
     };
+}
+
+// ==================== Dispute ====================
+
+export async function raiseDispute(transactionId: string, description: string): Promise<void> {
+    await apiClient(`/transactions/${transactionId}/dispute`, {
+        method: 'POST',
+        body: JSON.stringify({ description }),
+    });
 }
