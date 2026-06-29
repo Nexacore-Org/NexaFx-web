@@ -16,9 +16,10 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
     headers.set("Content-Type", "application/json");
 
     // Use token from client cookie/header if present
-    const token =
-        req.headers.get("x-client-token") ?? req.cookies.get("access_token")?.value;
-    if (token) headers.set("Authorization", `Bearer ${token}`);
+    const token = req.headers.get("x-client-token") ?? req.cookies.get("access_token")?.value;
+    if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+    }
 
     const backendRes = await fetch(targetUrl.toString(), {
         method: req.method,

@@ -51,6 +51,54 @@ Apply for an Issue
 
 
 ---
+### Important Note Before Applying 📝
+
+⚠️ **Avoid Generic Comments:** Comments such as 🚫
+"Can I help with this?" 🚫
+"I’d love to contribute!" 🚫
+"Check out my profile!" or 🚫
+"Can I work on this?"... these will not be considered.
+
+Instead, provide a **clear explanation of your approach**, which includes:
+
+- A brief introduction about yourself.
+- A concise plan outlining how you will address the issue (3–6 lines max).
+- Your estimated completion time (ETA).
+
+---
+
+How to Contribute🤝
+
+## Pull Request Template
+
+To ensure consistency and improve the review process, we've implemented a PR template. When creating a pull request, please:
+
+1. Follow the PR template that automatically loads when you create a new PR.
+
+2. Fill out all relevant sections of the template.
+
+3. Ensure your PR description clearly communicates the changes you've made.
+
+4. Include screenshots or recordings when applicable.
+
+5. Link to any related issues using keywords like "Closes #123" or "Fixes #123"
+
+The template location is at [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md) and provides a structured format to help maintainers understand and review your contribution more efficiently.
+
+---
+
+## Steps to apply
+
+Apply for an Issue
+   - Look for an open issue and comment expressing your interest in working on it.
+   - Wait for the maintainer to assign the issue to you.
+   - Remember to apply only if you can solve the issue.
+   Again, In the comment, Add a quick introduction about yourself, The ETA, and how you plan to tackle the issue.
+
+
+
+
+---
 
 ## Setting Up the Development Environment
 ### Prerequisites

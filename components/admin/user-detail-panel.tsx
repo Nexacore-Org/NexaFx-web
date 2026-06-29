@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { type AdminUser, getAdminUserById } from '@/lib/api/admin';
 import { X, Copy, Mail, Phone, User, Shield, Calendar, Landmark, Hash, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { haptics } from '@/lib/utils/haptics';
 
 interface UserDetailPanelProps {
   userId: string;
@@ -47,6 +48,7 @@ export function UserDetailPanel({ userId, onClose }: UserDetailPanelProps) {
   const handleCopy = (text: string, field: string) => {
     if (!text) return;
     navigator.clipboard.writeText(text);
+    haptics.light();
     setCopiedField(field);
     setTimeout(() => setCopiedField(null), 2000);
   };

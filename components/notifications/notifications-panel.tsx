@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { Settings } from "lucide-react";
+import { Settings, Bell } from "lucide-react";
 import Link from "next/link";
 import { useNotificationsStore } from "@/hooks/use-notifications-store";
 import { NotificationItem } from "./notification-item";
 import { Checkbox } from "@/components/ui/checkbox";
+import { EmptyState } from "@/components/shared/empty-state";
 
 function PanelSkeleton() {
   return (
@@ -33,13 +34,14 @@ export function NotificationsPanel() {
     markAllAsRead,
     fetchNotifications,
     unreadCount,
+    removeNotification,
   } = useNotificationsStore();
-
   useEffect(() => {
     if (isOpen) {
       fetchNotifications();
     }
   }, [isOpen, fetchNotifications]);
+
 
   if (!isOpen) return null;
 
@@ -51,6 +53,9 @@ export function NotificationsPanel() {
     markAllAsRead();
   };
 
+  const handleDelete = (id: string) => {
+    removeNotification(id);
+  };
   return (
     <>
       {/* Backdrop */}
@@ -89,9 +94,11 @@ export function NotificationsPanel() {
           {isLoading ? (
             <PanelSkeleton />
           ) : notifications.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              <p>No notifications yet</p>
-            </div>
+            <EmptyState
+              icon={<Bell className="h-12 w-12" />}
+              title="You're all caught up"
+              description="You'll see notifications here when there's activity on your account."
+            />
           ) : (
             <div className="divide-y divide-border">
               {notifications.map((notification) => (
@@ -99,6 +106,7 @@ export function NotificationsPanel() {
                   key={notification.id}
                   notification={notification}
                   onClick={() => handleNotificationClick(notification.id)}
+                  onDelete={handleDelete}
                 />
               ))}
             </div>

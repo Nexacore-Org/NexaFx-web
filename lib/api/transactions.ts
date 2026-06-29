@@ -168,6 +168,41 @@ export async function getTransactionById(id: string): Promise<Transaction> {
   return mapTransaction(dto);
 }
 
+// ==================== Conversion Summary ====================
+
+export interface ConversionSummary {
+  period: string
+  fromCurrency: string
+  toCurrency: string
+  totalAmount: number
+  transactionCount: number
+}
+
+export const getConversionSummary = (transactions: Transaction[]): ConversionSummary[] => {
+  const convertTxs = transactions.filter(t => t.type === 'Convert')
+  const grouped: Record<string, ConversionSummary> = {}
+
+  convertTxs.forEach(tx => {
+    const date = new Date(tx.date)
+    const period = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    const key = `${period}-${tx.currency}-${tx.toCurrency || ''}`
+
+    if (!grouped[key]) {
+      grouped[key] = {
+        period,
+        fromCurrency: tx.currency,
+        toCurrency: tx.toCurrency || '',
+        totalAmount: 0,
+        transactionCount: 0,
+      }
+    }
+    grouped[key].totalAmount += tx.amount
+    grouped[key].transactionCount += 1
+  })
+
+  return Object.values(grouped).sort((a, b) => a.period.localeCompare(b.period))
+}
+
 // ==================== Withdrawal ====================
 
 // Confirmed against backend src/transactions/dtos/transaction.dto.ts:
@@ -300,5 +335,106 @@ export async function createSwap(data: CreateSwapDto): Promise<SwapResponse> {
         toAmount: json.toAmount ?? json.to_amount,
         exchangeRate: json.exchangeRate ?? json.exchange_rate,
         message: json.message as string | undefined,
+    };
+}
+
+// ==================== Withdrawal ====================
+
+export interface CreateWithdrawalDto {
+    currency: string;
+    amount: string;
+    walletAddress: string;
+}
+
+export interface WithdrawalResponse {
+    transactionId: string;
+    status: "pending" | "success" | "failed";
+    message?: string;
+}
+
+export async function createWithdrawal(
+    data: CreateWithdrawalDto
+): Promise<WithdrawalResponse> {
+    const res = await fetch(`${BASE_URL}/transactions/withdraw`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+        const errorMessage =
+            json.message ?? json.error ?? `Withdrawal failed: ${res.status}`;
+        throw new Error(errorMessage);
+    }
+
+    // Normalize response - backend may use different field names
+    const transactionId = (json.transactionId ??
+        json.transaction_id ??
+        json.id ??
+        json.data?.id ??
+        json.data?.transactionId) as string;
+
+    const status = (json.status ?? json.data?.status ?? "pending") as
+        | "pending"
+        | "success"
+        | "failed";
+
+    return {
+        transactionId,
+        status,
+        message: json.message,
+    };
+}
+
+// ==================== Deposit ====================
+
+export interface CreateDepositDto {
+    amount: string;
+    currency: string;
+}
+
+export interface DepositResponse {
+    transactionId: string;
+    status: "pending" | "success" | "failed";
+    walletAddress?: string;
+    message?: string;
+}
+
+export async function createDeposit(
+    data: CreateDepositDto
+): Promise<DepositResponse> {
+    const res = await fetch(`${BASE_URL}/transactions/deposit`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+        const errorMessage =
+            json.message ?? json.error ?? `Deposit failed: ${res.status}`;
+        throw new Error(errorMessage);
+    }
+
+    // Normalize response - backend may use different field names
+    const transactionId = (json.transactionId ??
+        json.transaction_id ??
+        json.id ??
+        json.data?.id ??
+        json.data?.transactionId) as string;
+
+    const status = (json.status ?? json.data?.status ?? "pending") as
+        | "pending"
+        | "success"
+        | "failed";
+
+    return {
+        transactionId,
+        status,
+        walletAddress: json.walletAddress ?? json.wallet_address ?? json.address,
+        message: json.message,
     };
 }

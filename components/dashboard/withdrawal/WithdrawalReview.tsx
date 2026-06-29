@@ -49,6 +49,12 @@ export function WithdrawalReview() {
         setTimeout(() => reset(), 300);
     };
 
+    const handleCancel = () => {
+        if (isProcessing) return;
+        close();
+        setTimeout(() => reset(), 300);
+    };
+
     return (
         <div className="p-6 space-y-6">
             {/* Header */}
@@ -65,7 +71,7 @@ export function WithdrawalReview() {
                     <ChevronLeft className="size-5 text-muted-foreground" />
                 </button>
                 <div>
-                    <h2 className="text-xl font-bold text-foreground">Review Withdrawal</h2>
+                    <h2 id="withdrawal-modal-title" className="text-xl font-bold text-foreground">Review Withdrawal</h2>
                     <p className="text-sm text-muted-foreground">Confirm your withdrawal details</p>
                 </div>
             </div>

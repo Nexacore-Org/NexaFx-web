@@ -7,6 +7,7 @@ import {
   PoundSterling,
   Euro,
 } from "lucide-react";
+import { InfoIcon } from "@/components/ui/info-icon";
 import { useEffect, useState } from "react";
 import { getExchangeRate } from "@/lib/api/exchange-rates";
 
@@ -105,7 +106,10 @@ export function MarketOverview() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm md:text-lg font-semibold">Exchange Rates</h3>
+        <h3 className="text-sm md:text-lg font-semibold">
+          Exchange Rates
+          <InfoIcon tooltip="Live market rates from the Stellar decentralized exchange. Rates are updated every 60 seconds." />
+        </h3>
         <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-2">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>

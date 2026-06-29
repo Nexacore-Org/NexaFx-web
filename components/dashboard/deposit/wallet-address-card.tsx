@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { ApiErrorState } from "@/components/shared/api-error-state";
+import { haptics } from "@/lib/utils/haptics";
 
 function CopyIcon() {
   return (
@@ -63,10 +64,10 @@ export function WalletAddressCard({
     try {
       await navigator.clipboard.writeText(walletAddress);
     } catch {
-      // Clipboard API failed silently — nothing we can recover from
       return;
     }
     setCopied(true);
+    haptics.light();
     setTimeout(() => setCopied(false), 2000);
   };
 

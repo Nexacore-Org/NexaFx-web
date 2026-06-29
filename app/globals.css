@@ -61,7 +61,7 @@
   --secondary: #FFFFFF;
   --secondary-foreground: #0A0A0A;
   --muted: #F1F1F1;
-  --muted-foreground: #666666;
+  --muted-foreground: #525252;
   --accent: #FFD552;
   --accent-foreground: #0A0A0A;
   --destructive: #FF4D4F;
@@ -141,29 +141,30 @@
   #print-receipt { position: absolute; left: 0; top: 0; }
 }
 
+.exchange-rates::-webkit-scrollbar {
+  display: none !important;
+}
+
 .account-overview-bg {
   background: var(--overview-gradient);
 }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
-/* Hide scrollbar for IE, Edge and Firefox */
 .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-/* Global scrollbar hide as requested */
 ::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 * {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .button-verify {

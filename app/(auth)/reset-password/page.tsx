@@ -1,10 +1,12 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { resetPassword } from "@/lib/api/auth";
+import { toast } from "@/hooks/use-toast-store";
 
 import Image from "next/image";
+import Link from "next/link";
 
 export default function ResetPasswordPage() {
   return (
@@ -16,8 +18,7 @@ export default function ResetPasswordPage() {
 
 function ResetPasswordContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const email = searchParams.get("email") || "";
+  const [email, setEmail] = useState("");
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [newPassword, setNewPassword] = useState("");
@@ -30,6 +31,10 @@ function ResetPasswordContent() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
+    const storedEmail = sessionStorage.getItem("reset-password-email");
+    if (storedEmail) {
+      setEmail(storedEmail);
+    }
     inputRefs.current[0]?.focus();
   }, []);
 
@@ -109,11 +114,11 @@ function ResetPasswordContent() {
         password: newPassword,
       });
 
-      router.push("/sign-in?reset=success");
-    } catch (err) {
-      setApiError(
-        err instanceof Error ? err.message : "Invalid or expired OTP",
-      );
+      sessionStorage.removeItem("reset-password-email");
+      toast("Password reset successful", "success");
+      router.push("/login");
+    } catch {
+      setApiError("Invalid or expired code");
     } finally {
       setIsLoading(false);
     }
@@ -153,8 +158,15 @@ function ResetPasswordContent() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="">
-              <div className="flex gap-2.5 justify-between">
+            <div>
+              <label id="otp-label-desktop" className="block text-xs font-medium text-gray-700 mb-1.5">
+                Reset Code
+              </label>
+              <div
+                className="flex gap-2.5 justify-between"
+                role="group"
+                aria-labelledby="otp-label-desktop"
+              >
                 {otp.map((digit, index) => (
                   <input
                     key={index}
@@ -168,6 +180,7 @@ function ResetPasswordContent() {
                     onChange={(e) => handleChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     onPaste={handlePaste}
+                    aria-label={`Digit ${index + 1} of 6`}
                     className="w-12 h-12 text-center text-xl font-semibold bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all"
                     disabled={isLoading}
                   />
@@ -178,16 +191,16 @@ function ResetPasswordContent() {
               )}
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+              <label htmlFor="new-password-desktop" className="block text-xs font-medium text-gray-700 mb-1.5">
                 New Password
               </label>
 
               <div className="relative">
                 <input
+                  id="new-password-desktop"
                   type={showPassword ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder=""
                   className="w-full px-4 py-2.5 bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm"
                   disabled={isLoading}
                 />
@@ -200,15 +213,15 @@ function ResetPasswordContent() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+              <label htmlFor="confirm-password-desktop" className="block text-xs font-medium text-gray-700 mb-1.5">
                 Confirm Password
               </label>
               <div className="relative">
                 <input
+                  id="confirm-password-desktop"
                   type={showPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder=""
                   className="w-full px-4 py-2.5 bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm"
                   disabled={isLoading}
                 />
@@ -221,6 +234,7 @@ function ResetPasswordContent() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <svg
@@ -301,7 +315,14 @@ function ResetPasswordContent() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <div className="flex gap-1 justify-between">
+              <label id="otp-label-mobile" className="block text-xs font-medium text-gray-700 mb-1.5">
+                Reset Code
+              </label>
+              <div
+                className="flex gap-1 justify-between"
+                role="group"
+                aria-labelledby="otp-label-mobile"
+              >
                 {otp.map((digit, index) => (
                   <input
                     key={index}
@@ -315,6 +336,7 @@ function ResetPasswordContent() {
                     onChange={(e) => handleChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     onPaste={handlePaste}
+                    aria-label={`Digit ${index + 1} of 6`}
                     className="w-10 h-11 text-center text-lg font-semibold bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all"
                     disabled={isLoading}
                   />
@@ -325,14 +347,14 @@ function ResetPasswordContent() {
               )}
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+              <label htmlFor="new-password-mobile" className="block text-xs font-medium text-gray-700 mb-1.5">
                 New Password
               </label>
               <input
+                id="new-password-mobile"
                 type={showPassword ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder=""
                 className="w-full px-4 py-2.5 bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm"
                 disabled={isLoading}
               />
@@ -344,15 +366,15 @@ function ResetPasswordContent() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+              <label htmlFor="confirm-password-mobile" className="block text-xs font-medium text-gray-700 mb-1.5">
                 Confirm Password
               </label>
               <div className="relative">
                 <input
+                  id="confirm-password-mobile"
                   type={showPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder=""
                   className="w-full px-4 py-2.5 bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm"
                   disabled={isLoading}
                 />
@@ -365,6 +387,7 @@ function ResetPasswordContent() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <svg

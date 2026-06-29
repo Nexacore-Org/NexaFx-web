@@ -1,4 +1,15 @@
 import { useAuthStore } from "@/hooks/use-auth-store";
+import { parseRetryAfter } from "./utils/retry-after";
+
+export class RateLimitError extends Error {
+  retryAfterSeconds: number;
+
+  constructor(retryAfterSeconds: number) {
+    super("Rate limit exceeded");
+    this.name = "RateLimitError";
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const PROXY_URL = "/api/proxy";
@@ -200,6 +211,12 @@ export async function apiClient<T>(
     }
 
     response = await executeRequest();
+  }
+
+  if (response.status === 429) {
+    const retryAfterHeader = response.headers.get('Retry-After');
+    const retryAfterSeconds = parseRetryAfter(retryAfterHeader);
+    throw new RateLimitError(retryAfterSeconds);
   }
 
   if (!response.ok) {

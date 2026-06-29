@@ -2,10 +2,11 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ListFilter } from "lucide-react";
 import { TableTransaction } from "@/components/admin/transaction/TableTransaction";
 import { TransactionFilters } from "@/components/admin/transaction/TransactionFilters";
 import { getAdminTransactions, AdminTransaction } from "@/lib/api/admin";
+import { EmptyState } from "@/components/shared/empty-state";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -98,6 +99,19 @@ export default function TransactionPage() {
         <div className="flex justify-center items-center py-20 bg-white rounded-2xl border border-gray-100">
           <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
         </div>
+      ) : transactions.length === 0 && (searchQuery || activeFilter !== "All") ? (
+        <EmptyState
+          icon={<ListFilter className="h-16 w-16" />}
+          title="No transactions found"
+          description="No transactions match the current filters."
+          action={{ label: "Clear filters", onClick: handleSeeAll }}
+        />
+      ) : transactions.length === 0 ? (
+        <EmptyState
+          icon={<ListFilter className="h-16 w-16" />}
+          title="No transactions yet"
+          description="Transactions will appear here once users start making deposits and conversions."
+        />
       ) : (
         <>
           <TableTransaction transactions={transactions} />

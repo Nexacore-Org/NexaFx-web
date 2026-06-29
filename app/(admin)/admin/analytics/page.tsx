@@ -5,12 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { ChevronDown, UserPlus, ArrowUpDown, Clock, Coins, Loader2 } from "lucide-react";
 import { AdminMetricCard } from "@/components/admin/AdminMetricCard";
 import { RevenueChart } from "@/components/admin/RevenueChart";
-import {
-  getAdminMetrics,
-  getAdminUsers,
-  type AdminMetrics,
-  type AdminUser,
-} from "@/lib/api/admin";
+import { getAdminMetrics, getAdminUsers, AdminMetrics, AdminUser } from "@/lib/api/admin";
 import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
 
 export default function AnalyticsPage() {
@@ -22,26 +17,25 @@ export default function AnalyticsPage() {
   const hasCachedAnalyticsRef = useRef(false);
 
   useEffect(() => {
-    async function fetchAnalyticsData() {
+    async function loadData() {
       try {
         setLoading(true);
-        setError(null);
-        const [fetchedMetrics, fetchedUsersData] = await Promise.all([
+        const [metricsData, usersData] = await Promise.all([
           getAdminMetrics(),
           getAdminUsers({ page: 1, limit: 5 }),
         ]);
         hasCachedAnalyticsRef.current = true;
         setOfflineNotice(null);
-        setMetrics(fetchedMetrics);
-        setRecentUsers(fetchedUsersData.data || []);
-      } catch (err: unknown) {
-        console.error("Error fetching analytics data:", err);
+        setMetrics(metricsData);
+        setRecentUsers(usersData.data);
+        setError(null);
+      } catch (err: any) {
+        console.error("Failed to load admin analytics data", err);
         const hasCachedData = hasCachedAnalyticsRef.current;
         const message = getRequestErrorMessage(err, {
           fallback: "Failed to load analytics data.",
           hasCachedData,
         });
-
         if (isOfflineError(err) && hasCachedData) {
           setOfflineNotice(message);
         } else {
@@ -52,7 +46,7 @@ export default function AnalyticsPage() {
         setLoading(false);
       }
     }
-    fetchAnalyticsData();
+    loadData();
   }, []);
 
   if (loading) {
@@ -87,6 +81,14 @@ export default function AnalyticsPage() {
         </div>
       )}
 
+      {/* Metric cards */}
+      <div className="flex flex-wrap gap-4">
+        <AdminMetricCard label="Registered Users" value={metrics.registeredUsers} icon={UserPlus} />
+        <AdminMetricCard label="Total Transaction" value={metrics.totalTransactions} icon={ArrowUpDown} />
+        <AdminMetricCard label="Pending KYC" value={metrics.pendingKyc} icon={Clock} />
+        <AdminMetricCard label="Currency" value={metrics.currencies} icon={Coins} />
+      </div>
+
       {/* Overview section header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900">Overview</h2>
@@ -97,30 +99,6 @@ export default function AnalyticsPage() {
         </button>
       </div>
 
-      {/* Metric cards */}
-      <div className="flex flex-wrap gap-4">
-        <AdminMetricCard
-          label="Registered Users"
-          value={metrics.registeredUsers}
-          icon={UserPlus}
-        />
-        <AdminMetricCard
-          label="Total Transaction"
-          value={metrics.totalTransactions}
-          icon={ArrowUpDown}
-        />
-        <AdminMetricCard
-          label="Pending KYC"
-          value={metrics.pendingKyc}
-          icon={Clock}
-        />
-        <AdminMetricCard
-          label="Currency"
-          value={metrics.currencies}
-          icon={Coins}
-        />
-      </div>
-
       {/* Revenue chart + deposits/withdrawals */}
       <div className="flex gap-4 overflow-x-auto">
         <RevenueChart />
@@ -129,21 +107,17 @@ export default function AnalyticsPage() {
         <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 w-[43%] shrink-0">
           <div className="h-[126px] flex items-center pl-6 border-b border-gray-200">
             <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium leading-none text-gray-500">
-                Total Deposits
-              </p>
+              <p className="text-xs font-medium leading-none text-gray-500">Total Deposits</p>
               <p className="text-[32px] font-semibold leading-none text-gray-900">
-                {(metrics.totalDeposits ?? 0).toLocaleString()}
+                {metrics.totalDeposits.toLocaleString()}
               </p>
             </div>
           </div>
           <div className="h-[126px] flex items-center pl-6">
             <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium leading-none text-gray-500">
-                Total Withdrawals
-              </p>
+              <p className="text-xs font-medium leading-none text-gray-500">Total Withdrawals</p>
               <p className="text-[32px] font-semibold leading-none text-gray-900">
-                {(metrics.totalWithdrawals ?? 0).toLocaleString()}
+                {metrics.totalWithdrawals.toLocaleString()}
               </p>
             </div>
           </div>
@@ -152,69 +126,41 @@ export default function AnalyticsPage() {
 
       {/* Recent users table */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px] text-sm">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="px-6 py-4 text-left">
-                  <span className="inline-block h-3 w-3 rounded-full bg-gray-800" />
-                </th>
-                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">
-                  User Email
-                </th>
-                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">
-                  Full Name
-                </th>
-                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">
-                  Phone Number
-                </th>
-                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">
-                  Added On
-                </th>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-100">
+              <th className="px-6 py-4 text-left">
+                <span className="inline-block h-3 w-3 rounded-full bg-gray-800" />
+              </th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">User Email</th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">Full Name</th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">Phone Number</th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">Added On</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentUsers.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-10 text-center text-gray-500">No recent users found.</td>
               </tr>
-            </thead>
-            <tbody>
-              {recentUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-gray-500">
-                    No recent users found.
-                  </td>
-                </tr>
-              ) : (
-                recentUsers.map((user) => {
-                  const fullName =
-                    user.firstName && user.lastName
-                      ? `${user.firstName} ${user.lastName}`
-                      : null;
-                  return (
-                    <tr
-                      key={user.id}
-                      className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-block h-2.5 w-2.5 rounded-full ${
-                            user.isActive ? "bg-green-500" : "bg-gray-300"
-                          }`}
-                        />
-                      </td>
-                      <td className="px-4 py-4 text-gray-900">{user.email}</td>
-                      <td className="px-4 py-4 text-gray-400">
-                        {fullName ?? "No name"}
-                      </td>
-                      <td className="px-4 py-4 text-gray-400">
-                        {user.phone ?? "No Phone number"}
-                      </td>
-                      <td className="px-4 py-4 font-semibold text-gray-900">
-                        {user.createdAt}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+            ) : (
+              recentUsers.map((user) => {
+                const fullName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : null;
+                return (
+                  <tr key={user.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <span className={`inline-block h-2.5 w-2.5 rounded-full ${user.isActive ? "bg-green-500" : "bg-gray-300"}`} />
+                    </td>
+                    <td className="px-4 py-4 text-gray-900">{user.email}</td>
+                    <td className="px-4 py-4 text-gray-400">{fullName ?? "No name"}</td>
+                    <td className="px-4 py-4 text-gray-400">{user.phone ?? "No Phone number"}</td>
+                    <td className="px-4 py-4 font-semibold text-gray-900">{user.createdAt}</td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

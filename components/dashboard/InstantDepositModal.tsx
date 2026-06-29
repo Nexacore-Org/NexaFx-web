@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { X, Copy, ChevronRight } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
+import { haptics } from '@/lib/utils/haptics';
 
 type InstantDepositModalType = {
   onClose: () => void;
@@ -23,6 +24,7 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
   const handleCopyAddress = () => {
     navigator.clipboard.writeText(walletAddress);
     setCopied(true);
+    haptics.light();
     setTimeout(() => setCopied(false), 2000);
   };
 

@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter, Manrope } from "next/font/google";
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { PwaInstallPrompt } from "@/components/shared/pwa-install-prompt";
+import { LanguageSwitcher } from "@/components/shared/language-switcher";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -96,6 +99,7 @@ export default async function RootLayout({
       <body
         className={`${inter.variable} ${manrope.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider
             attribute="class"
@@ -110,7 +114,16 @@ export default async function RootLayout({
             <SessionTimeoutWarning />
           </ThemeProvider>
         </NextIntlClientProvider>
+
+        <TooltipProvider>
+          <LanguageSwitcher />
+          {children}
+          <PwaInstallPrompt />
+          <Toaster />
+        </TooltipProvider>
+
       </body>
     </html>
   );
 }
+
