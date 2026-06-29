@@ -32,14 +32,16 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
-    domains: ["lh3.googleusercontent.com"],
     remotePatterns: [
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
       },
     ],
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60,
   },
+  compress: true,
   async redirects() {
     return [
       { source: "/sign-in", destination: "/login", permanent: true },
