@@ -14,6 +14,7 @@ export interface Transaction {
     status: TransactionStatus;
     reference: string;
     description?: string;
+    destinationAddress?: string;
     fee?: number;
     exchangeRate?: number;
     toAmount?: number;
