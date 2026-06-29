@@ -260,3 +260,22 @@ export async function createAdminPushNotification(payload: { title: string; mess
     }) : 'N/A',
   };
 }
+
+export async function deactivateUser(id: string): Promise<void> {
+  await apiClient(`/admin/users/${id}/deactivate`, {
+    method: 'POST',
+  });
+}
+
+export async function reactivateUser(id: string): Promise<void> {
+  await apiClient(`/admin/users/${id}/reactivate`, {
+    method: 'POST',
+  });
+}
+
+export async function updateUserKyc(id: string, status: 'Verified' | 'Unverified'): Promise<void> {
+  await apiClient(`/admin/users/${id}/kyc`, {
+    method: 'PATCH',
+    body: JSON.stringify({ kycStatus: status }),
+  });
+}

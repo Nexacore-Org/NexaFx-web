@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { type AdminUser, getAdminUserById } from '@/lib/api/admin';
-import { X, Eye, EyeOff, Copy, MoreVertical, Trash2 } from 'lucide-react';
+import { type AdminUser, getAdminUserById, deactivateUser, reactivateUser, updateUserKyc } from '@/lib/api/admin';
+import { X, Eye, EyeOff, Copy, Trash2, Power, ShieldCheck, ShieldX } from 'lucide-react';
 
 interface UserDetailPanelProps {
   user: AdminUser;
@@ -14,6 +14,12 @@ export function UserDetailPanel({ user, onClose }: UserDetailPanelProps) {
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [showSensitiveInfo, setShowSensitiveInfo] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+  const [showReactivateConfirm, setShowReactivateConfirm] = useState(false);
+  const [showKycConfirm, setShowKycConfirm] = useState(false);
+  const [pendingKycStatus, setPendingKycStatus] = useState<'Verified' | 'Unverified' | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     setCurrentUser(user); // Reset when user prop changes
@@ -47,6 +53,64 @@ export function UserDetailPanel({ user, onClose }: UserDetailPanelProps) {
     console.log('User deleted:', currentUser.id);
     setShowDeleteConfirm(false);
     onClose();
+  };
+
+  const handleDeactivate = () => {
+    setShowDeactivateConfirm(true);
+  };
+
+  const confirmDeactivate = async () => {
+    try {
+      setActionLoading(true);
+      setActionError(null);
+      await deactivateUser(currentUser.id);
+      setCurrentUser({ ...currentUser, isActive: false });
+      setShowDeactivateConfirm(false);
+    } catch {
+      setActionError('Failed to deactivate user. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReactivate = () => {
+    setShowReactivateConfirm(true);
+  };
+
+  const confirmReactivate = async () => {
+    try {
+      setActionLoading(true);
+      setActionError(null);
+      await reactivateUser(currentUser.id);
+      setCurrentUser({ ...currentUser, isActive: true });
+      setShowReactivateConfirm(false);
+    } catch {
+      setActionError('Failed to reactivate user. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleKycToggle = (newStatus: 'Verified' | 'Unverified') => {
+    setPendingKycStatus(newStatus);
+    setShowKycConfirm(true);
+  };
+
+  const confirmKycChange = async () => {
+    if (!pendingKycStatus) return;
+
+    try {
+      setActionLoading(true);
+      setActionError(null);
+      await updateUserKyc(currentUser.id, pendingKycStatus);
+      setCurrentUser({ ...currentUser, kycStatus: pendingKycStatus });
+      setShowKycConfirm(false);
+      setPendingKycStatus(null);
+    } catch {
+      setActionError('Failed to update KYC status. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const getInitials = () => {
@@ -145,9 +209,60 @@ export function UserDetailPanel({ user, onClose }: UserDetailPanelProps) {
               {/* KYC */}
               <div className="bg-white lg:rounded-lg lg:border lg:border-gray-200 lg:p-5">
                 <h3 className="text-xs font-medium text-gray-400 uppercase mb-3 tracking-wider">KYC Verification</h3>
-                <div className="bg-orange-50 rounded-lg px-4 py-3 flex items-center justify-between">
-                  <span className="text-base font-medium text-orange-700">{currentUser.kycStatus}</span>
-                  <button className="text-gray-400 hover:text-gray-600"><MoreVertical className="w-5 h-5" /></button>
+                <div className={`${currentUser.kycStatus === 'Verified' ? 'bg-green-50' : 'bg-orange-50'} rounded-lg px-4 py-3 flex items-center justify-between`}>
+                  <span className={`text-base font-medium ${currentUser.kycStatus === 'Verified' ? 'text-green-700' : 'text-orange-700'}`}>
+                    {currentUser.kycStatus}
+                  </span>
+                  <div className="flex gap-2">
+                    {currentUser.kycStatus === 'Verified' ? (
+                      <button
+                        onClick={() => handleKycToggle('Unverified')}
+                        disabled={actionLoading}
+                        className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                        title="Mark as Unverified"
+                      >
+                        <ShieldX className="w-5 h-5" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleKycToggle('Verified')}
+                        disabled={actionLoading}
+                        className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                        title="Mark as Verified"
+                      >
+                        <ShieldCheck className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Account Status */}
+              <div className="bg-white lg:rounded-lg lg:border lg:border-gray-200 lg:p-5">
+                <h3 className="text-xs font-medium text-gray-400 uppercase mb-3 tracking-wider">Account Status</h3>
+                <div className={`${currentUser.isActive ? 'bg-green-50' : 'bg-red-50'} rounded-lg px-4 py-3 flex items-center justify-between`}>
+                  <span className={`text-base font-medium ${currentUser.isActive ? 'text-green-700' : 'text-red-700'}`}>
+                    {currentUser.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                  {currentUser.isActive ? (
+                    <button
+                      onClick={handleDeactivate}
+                      disabled={actionLoading}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium disabled:opacity-50"
+                    >
+                      <Power className="w-4 h-4" />
+                      Deactivate
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleReactivate}
+                      disabled={actionLoading}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium disabled:opacity-50"
+                    >
+                      <Power className="w-4 h-4" />
+                      Reactivate
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -191,6 +306,77 @@ export function UserDetailPanel({ user, onClose }: UserDetailPanelProps) {
             <div className="flex gap-3 justify-end">
               <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
               <button onClick={confirmDelete} className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">Confirm</button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Deactivate Confirmation */}
+      {showDeactivateConfirm && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-[60]" onClick={() => setShowDeactivateConfirm(false)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl p-6 z-[70] w-full max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Deactivate Account</h3>
+            <p className="text-sm text-gray-600 mb-6">This will prevent the user from logging in. Are you sure?</p>
+            {actionError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+                {actionError}
+              </div>
+            )}
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setShowDeactivateConfirm(false)} disabled={actionLoading} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">Cancel</button>
+              <button onClick={confirmDeactivate} disabled={actionLoading} className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center gap-2">
+                {actionLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                Confirm
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Reactivate Confirmation */}
+      {showReactivateConfirm && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-[60]" onClick={() => setShowReactivateConfirm(false)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl p-6 z-[70] w-full max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Reactivate Account</h3>
+            <p className="text-sm text-gray-600 mb-6">This will allow the user to log in again. Are you sure?</p>
+            {actionError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+                {actionError}
+              </div>
+            )}
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setShowReactivateConfirm(false)} disabled={actionLoading} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">Cancel</button>
+              <button onClick={confirmReactivate} disabled={actionLoading} className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center gap-2">
+                {actionLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                Confirm
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* KYC Status Change Confirmation */}
+      {showKycConfirm && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-[60]" onClick={() => setShowKycConfirm(false)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl p-6 z-[70] w-full max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Change KYC Status</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              This will change the user&apos;s KYC status to {pendingKycStatus}. Are you sure?
+            </p>
+            {actionError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+                {actionError}
+              </div>
+            )}
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => { setShowKycConfirm(false); setPendingKycStatus(null); }} disabled={actionLoading} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">Cancel</button>
+              <button onClick={confirmKycChange} disabled={actionLoading} className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-2">
+                {actionLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                Confirm
+              </button>
             </div>
           </div>
         </>
