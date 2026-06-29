@@ -6,8 +6,9 @@ import { ArrowUpDown, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useState } from "react";
+import { useAuthStore } from "@/hooks/use-auth-store";
 
-import { BarChart3, Bell, Users } from "lucide-react";
+import { BarChart3, Bell, Users, ClipboardList } from "lucide-react";
 
 type Props = {
     isOpen: boolean;
@@ -24,6 +25,7 @@ const adminMenuItems = [
 export function AdminSidebar({ isOpen, onClose }: Props) {
     const pathname = usePathname();
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const { user } = useAuthStore();
 
     return (
         <>
@@ -115,6 +117,31 @@ export function AdminSidebar({ isOpen, onClose }: Props) {
                             </Link>
                         );
                     })}
+                    
+                    {user?.role === "SUPER_ADMIN" && (
+                        <Link
+                            href="/admin/audit-log"
+                            onClick={onClose}
+                            className={cn(
+                                "flex items-center gap-3 py-3 rounded-xl transition-all",
+                                isCollapsed ? "justify-center px-0" : "px-4",
+                                pathname === "/admin/audit-log"
+                                    ? "bg-[#FFD552] text-black font-semibold shadow-sm"
+                                    : "text-gray-600 hover:bg-gray-50"
+                            )}
+                            title={isCollapsed ? "Audit Log" : ""}
+                        >
+                            <ClipboardList
+                                className={cn(
+                                    "h-5 w-5 shrink-0",
+                                    pathname === "/admin/audit-log" ? "text-black" : "text-gray-400"
+                                )}
+                            />
+                            {!isCollapsed && (
+                                <span className="text-sm">Audit Log</span>
+                            )}
+                        </Link>
+                    )}
                 </nav>
             </div>
         </>

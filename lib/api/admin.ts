@@ -244,3 +244,72 @@ export async function createAdminPushNotification(payload: { title: string; mess
         createdAt: n.createdAt ? new Date(n.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
     };
 }
+
+// ==================== Audit Log ====================
+
+export type AuditAction =
+  | 'user.deactivated'
+  | 'user.reactivated'
+  | 'user.role_changed'
+  | 'user.email_sent'
+  | 'kyc.approved'
+  | 'kyc.rejected'
+  | 'transaction.flagged'
+  | 'transaction.unflagged'
+  | 'dispute.resolved'
+  | 'fee.updated'
+  | 'announcement.created'
+  | 'maintenance.enabled'
+  | 'maintenance.disabled'
+  | 'ip_allowlist.added'
+  | 'ip_allowlist.removed';
+
+export interface AuditLogEntry {
+  id: string;
+  actorEmail: string;
+  action: AuditAction;
+  targetId?: string;
+  targetLabel?: string;
+  metadata?: Record<string, string>;
+  createdAt: string;
+  ipAddress: string;
+}
+
+export async function getAuditLog(filters?: { 
+    action?: AuditAction | string; 
+    actorEmail?: string; 
+    page?: number; 
+    limit?: number; 
+    from?: string; 
+    to?: string; 
+}): Promise<{ data: AuditLogEntry[]; total: number }> {
+    const params: Record<string, string> = {};
+    if (filters?.page) params.page = String(filters.page);
+    if (filters?.limit) params.limit = String(filters.limit);
+    if (filters?.action && filters.action !== 'all') params.action = filters.action;
+    if (filters?.actorEmail) params.actorEmail = filters.actorEmail;
+    if (filters?.from) params.from = filters.from;
+    if (filters?.to) params.to = filters.to;
+
+    const response = await apiClient<any>('/admin/audit-log', {
+        method: 'GET',
+        headers: getAuthHeaders(),
+        params,
+    });
+    
+    const data = (response?.data ?? response?.items ?? (Array.isArray(response) ? response : [])) as any[];
+    const total = response?.total ?? response?.count ?? data.length;
+
+    const mappedData: AuditLogEntry[] = data.map((log: any) => ({
+        id: log.id ?? log._id ?? '',
+        actorEmail: log.actorEmail ?? log.actor_email ?? '',
+        action: log.action as AuditAction,
+        targetId: log.targetId ?? log.target_id,
+        targetLabel: log.targetLabel ?? log.target_label,
+        metadata: log.metadata,
+        createdAt: log.createdAt ?? log.created_at ?? '',
+        ipAddress: log.ipAddress ?? log.ip_address ?? '',
+    }));
+
+    return { data: mappedData, total };
+}

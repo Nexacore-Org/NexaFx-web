@@ -17,7 +17,7 @@ interface User {
   lastName: string;
   name: string; // derived from firstName + lastName
   email: string;
-  role: "USER" | "ADMIN";
+  role: "USER" | "ADMIN" | "SUPER_ADMIN";
   // Optionally add more fields if needed
 }
 

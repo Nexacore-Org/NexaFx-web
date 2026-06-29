@@ -1,4 +1,5 @@
 import { Transaction } from "@/lib/api/transactions";
+import { AuditLogEntry } from "@/lib/api/admin";
 
 export function exportTransactionsToCSV(transactions: Transaction[], filename?: string) {
   // Define CSV headers
@@ -62,5 +63,57 @@ export function generateCSVFilename(dateFrom?: string, dateTo?: string): string 
     return `transactions-to-${dateTo}.csv`;
   } else {
     return `transactions-${today}.csv`;
+  }
+}
+
+export function exportAuditLogToCSV(logs: AuditLogEntry[], filename?: string) {
+  // Define CSV headers
+  const headers = ['Timestamp', 'Actor Email', 'Action', 'Target ID', 'Target Label', 'IP Address', 'Metadata'];
+  
+  // Convert logs to CSV rows
+  const csvRows = logs.map(log => {
+    const date = log.createdAt ? new Date(log.createdAt).toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    }) : '';
+    
+    return [
+      date,
+      log.actorEmail,
+      log.action,
+      log.targetId || '',
+      log.targetLabel || '',
+      log.ipAddress || '',
+      log.metadata ? JSON.stringify(log.metadata) : ''
+    ].map(field => `"${String(field).replace(/"/g, '""')}"`); // Escape quotes and wrap in quotes
+  });
+  
+  // Combine headers and rows
+  const csvContent = [
+    headers.map(header => `"${header}"`).join(','),
+    ...csvRows.map(row => row.join(','))
+  ].join('\n');
+  
+  // Generate filename if not provided
+  const defaultFilename = `audit-log-${new Date().toISOString().split('T')[0]}.csv`;
+  const finalFilename = filename || defaultFilename;
+  
+  // Create and download the file
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  
+  if (link.download !== undefined) {
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', finalFilename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 }

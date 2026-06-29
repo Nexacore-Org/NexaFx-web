@@ -11,7 +11,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/sign-in');
-    } else if (user?.role !== 'ADMIN') {
+    } else if (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN') {
       router.push('/dashboard');
     }
   }, [isAuthenticated, user, router]);
@@ -24,7 +24,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (user?.role === 'ADMIN') {
+  if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
     return <>{children}</>;
   }
 
