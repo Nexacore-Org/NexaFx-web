@@ -15,6 +15,9 @@ import { Transaction, getTransactions } from "@/lib/api/transactions";
 import { TransactionEmptyState } from "@/components/transactions/empty-state";
 import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
 import { TransactionDetailModal } from "./transaction-detail-modal";
+import { TransactionTableSkeleton } from "@/components/shared/page-skeletons";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { useAuthStore } from "@/hooks/use-auth-store";
 export function RecentTransactions() {
   type State =
     | { status: "loading" }
@@ -27,6 +30,22 @@ export function RecentTransactions() {
   const cachedTransactionsRef = useRef<Transaction[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const wsTransactions = useWebSocket((s) => s.transactions);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const subscribe = useWebSocket((s) => s.subscribe);
+
+  useEffect(() => {
+    if (accessToken) {
+      subscribe(accessToken);
+    }
+  }, [accessToken, subscribe]);
+
+  useEffect(() => {
+    if (wsTransactions.length > 0) {
+      setState({ status: "success", transactions: wsTransactions.slice(0, 5) });
+    }
+  }, [wsTransactions]);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,21 +106,7 @@ export function RecentTransactions() {
           </div>
         )}
         {state.status === "loading" ? (
-          /* Skeleton rows — matches the shape of real transaction rows */
-          <div className="space-y-3 p-4 animate-pulse">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-muted" />
-                  <div className="space-y-1.5">
-                    <div className="h-3 w-24 bg-muted rounded" />
-                    <div className="h-3 w-16 bg-muted rounded" />
-                  </div>
-                </div>
-                <div className="h-3 w-16 bg-muted rounded" />
-              </div>
-            ))}
-          </div>
+          <TransactionTableSkeleton rows={5} />
         ) : state.status === "error" ? (
           <div className="flex flex-col items-center justify-center py-10 gap-3">
             <p className="text-sm text-red-500">{state.message}</p>

@@ -115,13 +115,13 @@ export async function getTransactions(
   if (query.page) params.page = String(query.page);
   if (query.limit) params.limit = String(query.limit);
   if (query.search) params.search = query.search;
-  
+
   const typeValue = query.type && query.type !== "All" ? query.type : undefined;
   if (typeValue) {
     const typeParam = typeValue === "Withdraw" ? "withdrawal" : typeValue.toLowerCase();
     params.type = typeParam;
   }
-  
+
   const statusValue = query.status && query.status !== "All" ? query.status : undefined;
   if (statusValue) {
     params.status = statusValue.toLowerCase();
@@ -129,7 +129,7 @@ export async function getTransactions(
 
   const from = query.from || query.startDate;
   if (from) params.from = from;
-  
+
   const to = query.to || query.endDate;
   if (to) params.to = to;
 
@@ -155,10 +155,10 @@ export async function getTransactions(
 
   const totalPages = Math.ceil(total / limit);
 
-  return { 
-    data: dataList.map(mapTransaction), 
-    total, 
-    page, 
+  return {
+    data: dataList.map(mapTransaction),
+    total,
+    page,
     limit,
     totalPages
   };
@@ -170,6 +170,41 @@ export async function getTransactionById(id: string): Promise<Transaction> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dto = (json.data ?? json) as Record<string, any>;
   return mapTransaction(dto);
+}
+
+// ==================== Conversion Summary ====================
+
+export interface ConversionSummary {
+  period: string
+  fromCurrency: string
+  toCurrency: string
+  totalAmount: number
+  transactionCount: number
+}
+
+export const getConversionSummary = (transactions: Transaction[]): ConversionSummary[] => {
+  const convertTxs = transactions.filter(t => t.type === 'Convert')
+  const grouped: Record<string, ConversionSummary> = {}
+
+  convertTxs.forEach(tx => {
+    const date = new Date(tx.date)
+    const period = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    const key = `${period}-${tx.currency}-${tx.toCurrency || ''}`
+
+    if (!grouped[key]) {
+      grouped[key] = {
+        period,
+        fromCurrency: tx.currency,
+        toCurrency: tx.toCurrency || '',
+        totalAmount: 0,
+        transactionCount: 0,
+      }
+    }
+    grouped[key].totalAmount += tx.amount
+    grouped[key].transactionCount += 1
+  })
+
+  return Object.values(grouped).sort((a, b) => a.period.localeCompare(b.period))
 }
 
 // ==================== Withdrawal ====================
@@ -272,39 +307,16 @@ export interface CreateSwapDto {
     lockId?: string;
 }
 
-export interface SwapResponse {
-    transactionId: string;
-    status: 'pending' | 'success' | 'failed';
-    toAmount?: number;
-    exchangeRate?: number;
-    message?: string;
-}
-
-export async function createSwap(data: CreateSwapDto): Promise<SwapResponse> {
+export async function createSwap(data: CreateSwapDto): Promise<Transaction> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const json = await apiClient<any>('/transactions/swap', {
         method: 'POST',
         body: JSON.stringify(data),
     });
 
-    const transactionId = (json.transactionId ??
-        json.transaction_id ??
-        json.id ??
-        json.data?.id ??
-        json.data?.transactionId) as string;
-
-    const status = (json.status ?? json.data?.status ?? 'pending') as
-        | 'pending'
-        | 'success'
-        | 'failed';
-
-    return {
-        transactionId,
-        status,
-        toAmount: json.toAmount ?? json.to_amount,
-        exchangeRate: json.exchangeRate ?? json.exchange_rate,
-        message: json.message as string | undefined,
-    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dto = (json.data ?? json) as Record<string, any>;
+    return mapTransaction(dto);
 }
 
 // ==================== Dispute ====================

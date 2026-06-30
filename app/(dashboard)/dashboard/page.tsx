@@ -3,18 +3,17 @@ import { AccountOverview } from "@/components/dashboard/account-overview";
 import DepositMethods from "@/components/dashboard/deposit";
 import { MarketOverview } from "@/components/dashboard/market-overview";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
-import { WithdrawalModal } from "@/components/dashboard/withdrawal/WithdrawalModal";
-import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import { Download, Upload } from "lucide-react";
 import { useState } from "react";
-
 import { WidgetCustomizer, useWidgetPreferences } from "@/components/dashboard/widget-customizer";
+import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
+import { WithdrawalModal } from "@/components/dashboard/withdrawal/WithdrawalModal";
 
 export default function DashboardPage() {
   const [openDeposit, setOpenDeposit] = useState(false);
   const openWithdrawal = useWithdrawalStore((state) => state.open);
   const { preferences, updatePreference, mounted } = useWidgetPreferences();
-  
+
   const toggleDeposit = () => {
     setOpenDeposit(!openDeposit);
   };

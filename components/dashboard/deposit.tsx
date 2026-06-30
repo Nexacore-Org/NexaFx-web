@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import InstantModalDeposit from "./InstantDepositModal";
+import { DepositInfoCard } from "./deposit/deposit-info-card";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { MobileNotificationBanner } from "./notification";
 
@@ -210,6 +211,8 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
               ))}
             </div>
           </div>
+
+          <DepositInfoCard />
         </div>
       </div>
 
@@ -257,10 +260,14 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
                       <MethodCard key={method.id} method={method} />
                     ))}
                   </div>
+
+                  <div className="mt-4">
+                    <DepositInfoCard />
+                  </div>
                 </div>
               </div>
             </div>
-          ) : (
+            ) : (
             <div
               ref={mobileQRModalRef}
               role="dialog"

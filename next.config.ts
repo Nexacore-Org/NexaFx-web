@@ -32,6 +32,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
+    domains: ["lh3.googleusercontent.com"],
     remotePatterns: [
       {
         protocol: "https",
@@ -39,20 +40,22 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
-  },
   async redirects() {
     return [
-      {
-        source: "/login",
-        destination: "/sign-in",
-        permanent: true,
-      },
+      { source: "/sign-in", destination: "/login", permanent: true },
+      { source: "/login", destination: "/sign-in", permanent: true },
     ];
+  },
+  async headers() {
+    return [{ source: "/(.*)", headers: securityHeaders }];
   },
 };
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
-export default withNextIntl(nextConfig);
+export default withPWAInit({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === "development",
+})(withNextIntl(nextConfig));

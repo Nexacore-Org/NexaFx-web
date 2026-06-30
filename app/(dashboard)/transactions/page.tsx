@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Transaction, getTransactions } from "@/lib/api/transactions";
 import { TransactionFilters } from "@/components/transactions/transaction-filters";
@@ -9,10 +9,8 @@ import { TransactionList } from "@/components/transactions/transaction-list";
 import { TransactionPagination } from "@/components/transactions/pagination";
 import { TransactionEmptyState } from "@/components/transactions/empty-state";
 import { TransactionDetails } from "@/components/transactions/transaction-details";
-import {
-  exportTransactionsToCSV,
-  generateCSVFilename,
-} from "@/app/lib/utils/csv-export";
+import { exportTransactionsToCSV, generateCSVFilename } from "@/app/lib/utils/csv-export";
+import { TransactionTableSkeleton } from "@/components/shared/page-skeletons";
 import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
 
 const ITEMS_PER_PAGE = 10;
@@ -118,16 +116,15 @@ function TransactionsContent() {
         if (!cancelled) {
           const hasCachedData = cachedTransactionsRef.current.length > 0;
           const message = getRequestErrorMessage(err, {
-            fallback: "Failed to load transactions",
+            fallback: "Failed to load transactions.",
             hasCachedData,
           });
-
           if (isOfflineError(err) && hasCachedData) {
             setOfflineNotice(message);
-            setError(null);
           } else {
-            setOfflineNotice(null);
-            setError(message);
+            setError(
+              err instanceof Error ? err.message : "Failed to load transactions"
+            );
           }
         }
       } finally {
@@ -177,9 +174,7 @@ function TransactionsContent() {
         )}
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          </div>
+          <TransactionTableSkeleton rows={5} />
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <p className="text-sm text-muted-foreground">{error}</p>

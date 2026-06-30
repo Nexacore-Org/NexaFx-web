@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, UserPlus, ArrowUpDown, Clock, Coins, Loader2 } from "lucide-react";
+import { ChevronDown, UserPlus, ArrowUpDown, Clock, Coins } from "lucide-react";
 import { AdminMetricCard } from "@/components/admin/AdminMetricCard";
 import { RevenueChart } from "@/components/admin/RevenueChart";
 import {
@@ -12,6 +12,7 @@ import {
   type AdminUser,
 } from "@/lib/api/admin";
 import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
+import { AdminMetricCardsSkeleton } from "@/components/shared/page-skeletons";
 
 export default function AnalyticsPage() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
@@ -22,7 +23,7 @@ export default function AnalyticsPage() {
   const hasCachedAnalyticsRef = useRef(false);
 
   useEffect(() => {
-    async function fetchAnalyticsData() {
+    async function loadData() {
       try {
         setLoading(true);
         setError(null);
@@ -34,14 +35,13 @@ export default function AnalyticsPage() {
         setOfflineNotice(null);
         setMetrics(fetchedMetrics);
         setRecentUsers(fetchedUsersData.data || []);
-      } catch (err: unknown) {
-        console.error("Error fetching analytics data:", err);
+      } catch (err: any) {
+        console.error("Failed to load admin analytics data", err);
         const hasCachedData = hasCachedAnalyticsRef.current;
         const message = getRequestErrorMessage(err, {
           fallback: "Failed to load analytics data.",
           hasCachedData,
         });
-
         if (isOfflineError(err) && hasCachedData) {
           setOfflineNotice(message);
         } else {
@@ -52,16 +52,11 @@ export default function AnalyticsPage() {
         setLoading(false);
       }
     }
-    fetchAnalyticsData();
+    loadData();
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-2">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
-        <p className="text-sm text-gray-500">Loading analytics...</p>
-      </div>
-    );
+    return <AdminMetricCardsSkeleton />;
   }
 
   if (error || !metrics) {
@@ -87,6 +82,14 @@ export default function AnalyticsPage() {
         </div>
       )}
 
+      {/* Metric cards */}
+      <div className="flex flex-wrap gap-4">
+        <AdminMetricCard label="Registered Users" value={metrics.registeredUsers} icon={UserPlus} />
+        <AdminMetricCard label="Total Transaction" value={metrics.totalTransactions} icon={ArrowUpDown} />
+        <AdminMetricCard label="Pending KYC" value={metrics.pendingKyc} icon={Clock} />
+        <AdminMetricCard label="Currency" value={metrics.currencies} icon={Coins} />
+      </div>
+
       {/* Overview section header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900">Overview</h2>
@@ -97,30 +100,6 @@ export default function AnalyticsPage() {
         </button>
       </div>
 
-      {/* Metric cards */}
-      <div className="flex flex-wrap gap-4">
-        <AdminMetricCard
-          label="Registered Users"
-          value={metrics.registeredUsers}
-          icon={UserPlus}
-        />
-        <AdminMetricCard
-          label="Total Transaction"
-          value={metrics.totalTransactions}
-          icon={ArrowUpDown}
-        />
-        <AdminMetricCard
-          label="Pending KYC"
-          value={metrics.pendingKyc}
-          icon={Clock}
-        />
-        <AdminMetricCard
-          label="Currency"
-          value={metrics.currencies}
-          icon={Coins}
-        />
-      </div>
-
       {/* Revenue chart + deposits/withdrawals */}
       <div className="flex gap-4 overflow-x-auto">
         <RevenueChart />
@@ -129,9 +108,7 @@ export default function AnalyticsPage() {
         <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 w-[43%] shrink-0">
           <div className="h-[126px] flex items-center pl-6 border-b border-gray-200">
             <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium leading-none text-gray-500">
-                Total Deposits
-              </p>
+              <p className="text-xs font-medium leading-none text-gray-500">Total Deposits</p>
               <p className="text-[32px] font-semibold leading-none text-gray-900">
                 {(metrics.totalDeposits ?? 0).toLocaleString()}
               </p>
@@ -139,9 +116,7 @@ export default function AnalyticsPage() {
           </div>
           <div className="h-[126px] flex items-center pl-6">
             <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium leading-none text-gray-500">
-                Total Withdrawals
-              </p>
+              <p className="text-xs font-medium leading-none text-gray-500">Total Withdrawals</p>
               <p className="text-[32px] font-semibold leading-none text-gray-900">
                 {(metrics.totalWithdrawals ?? 0).toLocaleString()}
               </p>

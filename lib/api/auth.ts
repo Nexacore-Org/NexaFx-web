@@ -16,7 +16,7 @@ export function verifyLoginOtp(payload: { email: string; otp: string }) {
   });
 }
 
-export function signUp(payload: {
+export function signup(payload: {
   email: string;
   phone: string;
   password: string;
@@ -35,6 +35,8 @@ export function verifySignupOtp(payload: { email: string; otp: string }) {
     useProxy: false,
   });
 }
+
+export const signUp = signup;
 
 export function resendSignupOtp(payload: { email: string }) {
   return apiClient("/auth/resend-signup-otp", {

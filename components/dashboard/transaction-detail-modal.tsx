@@ -1,10 +1,10 @@
 import { useState, useRef } from "react";
-import { X, Copy, Check, ExternalLink, Wallet, RefreshCw } from "lucide-react";
+import { X, Copy, Check, ExternalLink, Wallet, RefreshCw, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Transaction } from "@/lib/api/transactions";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { DisputeFormModal } from "./dispute-form-modal";
-import { AlertCircle } from "lucide-react";
+import { haptics } from "@/lib/utils/haptics";
 
 interface TransactionDetailModalProps {
   transaction: Transaction;
@@ -22,6 +22,7 @@ export function TransactionDetailModal({ transaction, isOpen, onClose }: Transac
 
   const handleCopy = (text: string, type: 'address' | 'txId') => {
     navigator.clipboard.writeText(text);
+    haptics.light();
     setCopied(type === 'address' ? true : copied);
     setCopiedTxId(type === 'txId' ? true : copiedTxId);
     setTimeout(() => {
@@ -280,7 +281,7 @@ export function TransactionDetailModal({ transaction, isOpen, onClose }: Transac
         </div>
       </div>
     </div>
-    
+
     {isDisputeModalOpen && (
       <DisputeFormModal
         transaction={transaction}

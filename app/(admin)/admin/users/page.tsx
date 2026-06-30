@@ -1,11 +1,14 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps, @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Search, Filter, Loader2 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Search, Filter, Loader2, UserX } from 'lucide-react';
 import { AdminUser, getAdminUsers } from '@/lib/api/admin';
 import { AdminUserTable } from '@/components/admin/AdminUserTable';
+import { BulkActionBar } from '@/components/admin/bulk-action-bar';
 import { UserDetailPanel } from '@/components/admin/UserDetailPanel';
+import { EmptyState } from '@/components/shared/empty-state';
+import { AdminTableRowSkeleton } from '@/components/shared/page-skeletons';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -14,17 +17,19 @@ export default function UsersPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
-  
+
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Debounce search query
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchQuery);
-      setCurrentPage(1); // Reset to page 1 on new search
+      setCurrentPage(1);
     }, 300);
 
     return () => {
@@ -43,6 +48,7 @@ export default function UsersPage() {
       setUsers(res.data);
       setTotalCount(res.total);
       setError(null);
+      setSelectedIds([]);
     } catch (err: any) {
       console.error('Failed to load admin users', err);
       setError(err?.message || 'Failed to fetch users. Please try again.');
@@ -58,24 +64,6 @@ export default function UsersPage() {
     return () => clearTimeout(timer);
   }, [loadUsers]);
 
-  // Filter users based on search query
-  const filteredUsers = useMemo(() => {
-    if (!searchQuery.trim()) return users;
-    
-    const query = searchQuery.toLowerCase();
-    return users.filter(user => 
-      user.email.toLowerCase().includes(query) ||
-      (user.username && user.username.toLowerCase().includes(query))
-    );
-  }, [users, searchQuery]);
-
-  // Paginate filtered users
-  const paginatedUsers = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    return filteredUsers.slice(startIndex, endIndex);
-  }, [filteredUsers, currentPage]);
-
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
   const startEntry = totalCount === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
   const endEntry = Math.min(currentPage * ITEMS_PER_PAGE, totalCount);
@@ -89,6 +77,26 @@ export default function UsersPage() {
   const handleSeeAll = () => {
     setCurrentPage(1);
     setSearchQuery('');
+  };
+
+  const handleBulkActivate = () => {
+    setUsers((prev) =>
+      prev.map((u) => (selectedIds.includes(u.id) ? { ...u, isActive: true } : u)),
+    );
+    setSelectedIds([]);
+  };
+
+  const handleBulkDeactivate = () => {
+    setUsers((prev) =>
+      prev.map((u) => (selectedIds.includes(u.id) ? { ...u, isActive: false } : u)),
+    );
+    setSelectedIds([]);
+  };
+
+  const handleBulkDelete = () => {
+    setUsers((prev) => prev.filter((u) => !selectedIds.includes(u.id)));
+    setSelectedIds([]);
+    setConfirmDelete(false);
   };
 
   return (
@@ -113,10 +121,9 @@ export default function UsersPage() {
       {/* Desktop Header */}
       <div className="hidden lg:block">
         <h1 className="text-2xl font-semibold text-gray-900 mb-6">User-list</h1>
-        
+
         {/* Top Bar */}
         <div className="flex items-center justify-between gap-4">
-          {/* Search */}
           <div className="flex-1 max-w-md relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
@@ -128,14 +135,10 @@ export default function UsersPage() {
             />
           </div>
 
-          {/* Right Side */}
           <div className="flex items-center gap-3">
-            {/* Count Badge */}
             <div className="bg-[#FFD552] text-gray-900 px-4 py-2 rounded-full text-sm font-medium">
               All {totalCount}
             </div>
-
-            {/* Filter Button */}
             <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
               <Filter className="w-4 h-4" />
               <span className="text-sm font-medium">FILTER</span>
@@ -164,28 +167,41 @@ export default function UsersPage() {
         </button>
       </div>
 
-      {/* Loader / Error / Table Content */}
-      {error ? (
+      {/* Empty state for search with no results */}
+      {!loading && !error && users.length === 0 && searchQuery ? (
+        <EmptyState
+          icon={<UserX className="h-16 w-16" />}
+          title="No users found"
+          description="No users match your search. Try a different email or username."
+          action={{ label: "Clear search", onClick: () => { setSearchQuery(""); loadUsers(); } }}
+        />
+      ) : !loading && !error && users.length === 0 && !searchQuery ? (
+        <EmptyState
+          icon={<UserX className="h-16 w-16" />}
+          title="No users yet"
+          description="Users will appear here once they sign up."
+        />
+      ) : error ? (
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center text-red-600">
           <p className="font-semibold">{error}</p>
-          <button 
-            onClick={loadUsers} 
+          <button
+            onClick={loadUsers}
             className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
           >
             Retry
           </button>
         </div>
       ) : loading ? (
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
-        </div>
+        <AdminTableRowSkeleton rows={5} columns={5} />
       ) : (
         <>
           {/* Desktop Table */}
           <div className="hidden lg:block">
-            <AdminUserTable 
-              users={users} 
+            <AdminUserTable
+              users={users}
               onUserClick={setSelectedUser}
+              selectedIds={selectedIds}
+              onSelectionChange={setSelectedIds}
             />
           </div>
 
@@ -198,7 +214,7 @@ export default function UsersPage() {
               </div>
               <span className="text-xs font-medium text-gray-600 uppercase">Added On</span>
             </div>
-            
+
             {users.length === 0 ? (
               <div className="px-4 py-10 text-center text-gray-500">
                 No users found.
@@ -225,7 +241,7 @@ export default function UsersPage() {
             <p className="text-sm text-gray-600">
               Showing {startEntry} to {endEntry} of {totalCount} entries
             </p>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={handleSeeAll}
@@ -245,10 +261,17 @@ export default function UsersPage() {
         </>
       )}
 
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedIds={selectedIds}
+        onClear={() => setSelectedIds([])}
+        onSuccess={loadUsers}
+      />
+
       {/* User Detail Panel */}
       {selectedUser && (
-        <UserDetailPanel 
-          user={selectedUser} 
+        <UserDetailPanel
+          user={selectedUser}
           onClose={() => setSelectedUser(null)}
           onSuccess={loadUsers}
         />

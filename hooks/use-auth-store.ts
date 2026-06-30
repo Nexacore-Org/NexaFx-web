@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { setTokens as storeTokens, clearTokens as removeTokens } from "@/lib/utils/token";
 
 export interface UserProfileStore {
   id: string;
@@ -42,24 +43,15 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       isAuthenticated: false,
       setAuth: (user, accessToken, refreshToken) => {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("access_token", accessToken);
-          localStorage.setItem("refresh_token", refreshToken);
-        }
+        storeTokens(accessToken, refreshToken);
         set({ user, accessToken, refreshToken, isAuthenticated: true });
       },
       setTokens: (accessToken, refreshToken) => {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("access_token", accessToken);
-          localStorage.setItem("refresh_token", refreshToken);
-        }
+        storeTokens(accessToken, refreshToken);
         set({ accessToken, refreshToken });
       },
       logout: () => {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("refresh_token");
-        }
+        removeTokens();
         set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
       },   
       setProfile: (profile) => set({ profile }),

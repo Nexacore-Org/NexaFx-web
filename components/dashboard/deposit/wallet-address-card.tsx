@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DepositWalletSkeleton } from "@/components/shared/page-skeletons";
 import { ApiErrorState } from "@/components/shared/api-error-state";
+import { haptics } from "@/lib/utils/haptics";
 
 function CopyIcon() {
   return (
@@ -63,24 +66,15 @@ export function WalletAddressCard({
     try {
       await navigator.clipboard.writeText(walletAddress);
     } catch {
-      // Clipboard API failed silently — nothing we can recover from
       return;
     }
     setCopied(true);
+    haptics.light();
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Loading skeleton
   if (isLoading) {
-    return (
-      <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="flex flex-col items-center gap-4 animate-pulse">
-          <div className="h-40 w-40 rounded-lg bg-zinc-200 dark:bg-zinc-700" />
-          <div className="h-5 w-3/4 rounded bg-zinc-200 dark:bg-zinc-700" />
-          <div className="h-4 w-1/2 rounded bg-zinc-200 dark:bg-zinc-700" />
-        </div>
-      </div>
-    );
+    return <DepositWalletSkeleton />;
   }
 
   // Error state
