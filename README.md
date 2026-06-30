@@ -6,6 +6,8 @@ NexaFX is a cutting-edge currency exchange platform that bridges traditional fin
 
 ## 🌟 Key Features
 
+
+
 - **Multi-Currency Support**: Convert between Naira, USD, EUR, GBP, Bitcoin, Ethereum, and popular stablecoins
 - **Real-Time Exchange Rates**: Access accurate, up-to-the-minute conversion rates
 - **Blockchain Security**: Enjoy enhanced protection through distributed ledger technology
