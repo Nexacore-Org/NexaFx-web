@@ -4,7 +4,7 @@ import { Loader2, Mail, Phone, Save, User as UserIcon } from 'lucide-react';
 import { getProfile, updateProfile } from '@/lib/api/users';
 import { useEffect, useState } from 'react';
 
-import { useAuthStore } from '@/hooks/use-auth-store';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 export function ProfileEditForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -50,7 +50,6 @@ export function ProfileEditForm() {
           id: updated.id,
           firstName: updated.firstName,
           lastName: updated.lastName,
-          name: `${updated.firstName} ${updated.lastName}`,
           email: updated.email,
           role: 'USER',
         },

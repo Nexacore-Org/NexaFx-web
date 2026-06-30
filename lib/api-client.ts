@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/hooks/use-auth-store';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 const PROXY_URL = '/api/proxy';
@@ -39,13 +39,13 @@ async function refreshToken(): Promise<string | null> {
     const { accessToken, refreshToken: newRefreshToken } = data;
 
     if (accessToken && newRefreshToken) {
-      useAuthStore.getState().setTokens(accessToken, newRefreshToken);
+      useAuthStore.getState().updateTokens(accessToken, newRefreshToken);
       return accessToken;
     }
     return null;
   } catch (error) {
     console.error('Refresh token error:', error);
-    useAuthStore.getState().logout();
+    useAuthStore.getState().clearAuth();
     return null;
   }
 }

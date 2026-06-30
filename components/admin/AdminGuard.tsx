@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/hooks/use-auth-store';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();

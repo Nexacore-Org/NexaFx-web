@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Sidebar } from '../../components/dashboard/sidebar';
 import { Topbar } from '../../components/dashboard/topbar';
 import { cn } from '../../lib/utils';
-import { useAuthStore } from '../../hooks/use-auth-store';
-import { useRouter } from 'next/navigation';
+import { AuthGuard } from '../../components/shared/auth-guard';
 import { useSidebarStore } from '../../hooks/use-sidebar-store';
 
 export default function DashboardLayout({
@@ -16,20 +15,9 @@ export default function DashboardLayout({
 }) {
   const { isOpen, close } = useSidebarStore();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const { isAuthenticated, accessToken } = useAuthStore();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      router.replace('/sign-in');
-    }
-  }, [isAuthenticated, accessToken, router]);
-
-  if (!isAuthenticated || !accessToken) {
-    return null;
-  }
 
   return (
+    <AuthGuard>
     <div className="flex min-h-screen bg-background text-foreground transition-all duration-300">
       {/* Sidebar - Desktop */}
       <aside
@@ -71,5 +59,6 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+    </AuthGuard>
   );
 }

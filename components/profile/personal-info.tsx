@@ -4,7 +4,7 @@ import { UserProfile, getProfile } from '@/lib/api/users';
 import { useEffect, useState } from 'react';
 
 import { Eye } from 'lucide-react';
-import { useAuthStore } from '@/hooks/use-auth-store';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 export function PersonalInfo() {
   const user = useAuthStore((s) => s.user);
@@ -34,7 +34,7 @@ export function PersonalInfo() {
   }, [user]);
 
   const name =
-    user?.name || (profile ? `${profile.firstName} ${profile.lastName}` : '');
+    user ? `${user.firstName} ${user.lastName}` : (profile ? `${profile.firstName} ${profile.lastName}` : '');
   const email = user?.email || profile?.email || '';
   const phone = profile?.phone || '';
 

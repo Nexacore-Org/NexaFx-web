@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/hooks/use-auth-store";
+import { useAuthStore } from "@/lib/store/auth-store";
 
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";

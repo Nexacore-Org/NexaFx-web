@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { Copy } from 'lucide-react';
 import Image from 'next/image';
-import { useAuthStore } from '@/hooks/use-auth-store';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 export function ProfileOverview() {
   const [loading, setLoading] = useState(true);
@@ -26,7 +26,6 @@ export function ProfileOverview() {
               id: data.id,
               firstName: data.firstName,
               lastName: data.lastName,
-              name: `${data.firstName} ${data.lastName}`,
               email: data.email,
               role: 'USER',
             },

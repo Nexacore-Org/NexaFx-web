@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useAuthStore } from '@/hooks/use-auth-store';
+import { useAuthStore } from '@/lib/store/auth-store';
 import { useRouter } from 'next/navigation';
 
 export default function VerifyOtpPage() {
@@ -73,8 +73,7 @@ export default function VerifyOtpPage() {
     setError('');
     try {
       const res = await verifyLoginOtp({ email: storedEmail, otp: otpCode }) as { user: { id: string; firstName: string; lastName: string; email: string; role: 'USER' | 'ADMIN' }; accessToken: string; refreshToken: string };
-      const fullName = [res.user.firstName, res.user.lastName].filter(Boolean).join(' ');
-      setAuth({ ...res.user, name: fullName }, res.accessToken, res.refreshToken);
+      setAuth(res.user, res.accessToken, res.refreshToken);
       setIsLoading(false);
       router.push('/dashboard');
     } catch (err: unknown) {
