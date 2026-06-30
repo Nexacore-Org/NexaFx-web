@@ -7,6 +7,7 @@ import { AdminMetricCard } from "@/components/admin/AdminMetricCard";
 import { RevenueChart } from "@/components/admin/RevenueChart";
 import { getAdminMetrics, getAdminUsers, AdminMetrics, AdminUser } from "@/lib/api/admin";
 import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
+import { AdminMetricCardsSkeleton } from "@/components/shared/page-skeletons";
 
 export default function AnalyticsPage() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
@@ -50,12 +51,7 @@ export default function AnalyticsPage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-2">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
-        <p className="text-sm text-gray-500">Loading analytics...</p>
-      </div>
-    );
+    return <AdminMetricCardsSkeleton />;
   }
 
   if (error || !metrics) {

@@ -9,6 +9,7 @@ import { TransactionPagination } from "@/components/transactions/pagination";
 import { TransactionEmptyState } from "@/components/transactions/empty-state";
 import { TransactionDetails } from "@/components/transactions/transaction-details";
 import { exportTransactionsToCSV, generateCSVFilename } from "@/app/lib/utils/csv-export";
+import { TransactionTableSkeleton } from "@/components/shared/page-skeletons";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -133,9 +134,7 @@ useEffect(() => {
                 />
 
                 {isLoading ? (
-                    <div className="flex items-center justify-center py-20">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                    </div>
+                    <TransactionTableSkeleton rows={5} />
                 ) : error ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-3">
                         <p className="text-sm text-muted-foreground">{error}</p>

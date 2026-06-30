@@ -7,6 +7,7 @@ import { TableTransaction } from "@/components/admin/transaction/TableTransactio
 import { TransactionFilters } from "@/components/admin/transaction/TransactionFilters";
 import { getAdminTransactions, AdminTransaction } from "@/lib/api/admin";
 import { EmptyState } from "@/components/shared/empty-state";
+import { AdminTableRowSkeleton } from "@/components/shared/page-skeletons";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -96,9 +97,7 @@ export default function TransactionPage() {
           </button>
         </div>
       ) : loading ? (
-        <div className="flex justify-center items-center py-20 bg-white rounded-2xl border border-gray-100">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
-        </div>
+        <AdminTableRowSkeleton rows={5} columns={6} />
       ) : transactions.length === 0 && (searchQuery || activeFilter !== "All") ? (
         <EmptyState
           icon={<ListFilter className="h-16 w-16" />}

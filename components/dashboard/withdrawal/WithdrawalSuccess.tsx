@@ -1,5 +1,9 @@
 "use client";
 
+import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
+import { CheckCircle2, XCircle, ExternalLink, Coins, CircleDollarSign, BadgeDollarSign } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { CopyButton } from "@/components/ui/copy-button";
 import { useEffect } from "react";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import { CheckCircle2, XCircle, Copy, ExternalLink, Coins, CircleDollarSign, BadgeDollarSign } from "lucide-react";
@@ -14,6 +18,7 @@ const currencies = [
 ];
 
 export function WithdrawalSuccess() {
+    const { currency, amount, transactionId, transactionStatus, errorMessage, close, reset, setStep } = useWithdrawalStore();
     const { currency, amount, transactionId, transactionStatus, errorMessage, close, reset, setStep, setFormData } = useWithdrawalStore();
     const [copied, setCopied] = useState(false);
 
@@ -90,6 +95,11 @@ export function WithdrawalSuccess() {
                     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
                         <div className="space-y-0.5">
                             <p className="text-xs text-muted-foreground">Transaction ID</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-sm font-mono font-medium text-foreground">{transactionId}</p>
+                                <CopyButton value={transactionId} label="Copy transaction ID" size="sm" />
+                            </div>
+                        </div>
                             <p className="text-sm font-mono font-medium text-foreground">{transactionId}</p>
                         </div>
                         <button

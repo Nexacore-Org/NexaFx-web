@@ -10,6 +10,7 @@ import {
 } from "@/lib/api/admin";
 import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
 import { Search, Plus } from "lucide-react";
+import { PushNotificationListSkeleton } from "@/components/shared/page-skeletons";
 
 export default function PushNotificationsPage() {
   const [notifications, setNotifications] = useState<PushNotification[]>([]);
@@ -88,8 +89,8 @@ export default function PushNotificationsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
+      <div className="md:p-6 space-y-6">
+        <PushNotificationListSkeleton rows={5} />
       </div>
     );
   }

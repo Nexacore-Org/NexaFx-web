@@ -8,6 +8,7 @@ import { AdminUserTable } from '@/components/admin/AdminUserTable';
 import { BulkActionBar } from '@/components/admin/bulk-action-bar';
 import { UserDetailPanel } from '@/components/admin/UserDetailPanel';
 import { EmptyState } from '@/components/shared/empty-state';
+import { AdminTableRowSkeleton } from '@/components/shared/page-skeletons';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -212,9 +213,7 @@ export default function UsersPage() {
           </button>
         </div>
       ) : loading ? (
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
-        </div>
+        <AdminTableRowSkeleton rows={5} columns={5} />
       ) : (
         <>
           {/* Desktop Table */}

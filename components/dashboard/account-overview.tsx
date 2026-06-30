@@ -4,11 +4,18 @@ import {
   ChevronDown,
   Download,
   Upload,
+  CircleDollarSign,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { getBalances } from "@/lib/api/wallet";
+import { getProfile } from "@/lib/api/users";
+import { CopyButton } from "@/components/ui/copy-button";
   Copy,
   Check,
   CircleDollarSign,
 } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
 import { getBalances } from "@/lib/api/wallet";
 import { getProfile } from "@/lib/api/users";
@@ -148,9 +155,9 @@ export function AccountOverview({
             {/* Balance row */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               {isLoading ? (
-                <div className="space-y-2.5 animate-pulse">
-                  <div className="h-4 w-24 bg-muted rounded" />
-                  <div className="h-9 w-44 bg-muted rounded" />
+                <div className="space-y-2.5">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-9 w-44" />
                 </div>
               ) : error ? (
                 <p className="text-sm text-red-500">{error}</p>
@@ -167,9 +174,13 @@ export function AccountOverview({
 
               {/* Wallet address pill — desktop only */}
               {isLoading ? (
-                <div className="hidden md:block h-9 w-36 bg-muted rounded animate-pulse" />
+                <Skeleton className="hidden md:block h-9 w-36" />
               ) : !error ? (
                 <div className="hidden md:inline-flex md:items-center gap-2 bg-muted rounded-sm border border-border px-4 py-2">
+                  <p className="text-xs font-medium text-foreground">
+                    {truncateAddress(walletAddress)}
+                  </p>
+                  <CopyButton value={walletAddress} label="Copy wallet address" size="sm" />
                   <Tooltip content={`Stellar wallet: ${walletAddress}`}>
                     <p className="text-xs font-medium text-foreground">
                       {truncateAddress(walletAddress)}
@@ -211,9 +222,9 @@ export function AccountOverview({
 
             {/* Mini balance cards */}
             {isLoading ? (
-              <div className="grid w-full grid-cols-1 md:grid-cols-2 gap-4 animate-pulse">
-                <div className="rounded-sm bg-muted h-20 md:border-[0.43px] border-[#79797966]" />
-                <div className="rounded-sm bg-muted h-20 md:border-[0.43px] border-[#79797966]" />
+              <div className="grid w-full grid-cols-1 md:grid-cols-2 gap-4">
+                <Skeleton className="h-20 rounded-sm" />
+                <Skeleton className="h-20 rounded-sm" />
               </div>
             ) : !error ? (
               <div className="grid w-full grid-cols-1 md:grid-cols-2 gap-4">

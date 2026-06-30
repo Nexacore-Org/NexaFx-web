@@ -7,21 +7,10 @@ import { useNotificationsStore } from "@/hooks/use-notifications-store";
 import { NotificationItem } from "./notification-item";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/shared/empty-state";
+import { NotificationListSkeleton } from "@/components/shared/page-skeletons";
 
 function PanelSkeleton() {
-  return (
-    <div className="divide-y divide-border">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="flex items-start gap-3 p-4 animate-pulse">
-          <div className="h-9 w-9 rounded-full bg-muted shrink-0" />
-          <div className="flex-1 space-y-2">
-            <div className="h-3.5 w-1/3 rounded bg-muted" />
-            <div className="h-3 w-2/3 rounded bg-muted" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  return <NotificationListSkeleton rows={4} />;
 }
 
 export function NotificationsPanel() {

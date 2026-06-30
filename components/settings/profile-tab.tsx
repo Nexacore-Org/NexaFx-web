@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { getProfile, updateProfile, type UpdateProfileDto, type UserProfile } from "@/lib/api/users";
 import { useAuthStore } from "@/hooks/use-auth-store";
 import { toast } from "@/hooks/use-toast-store";
+import { SettingsProfileSkeleton } from "@/components/shared/page-skeletons";
 
 export function ProfileTab() {
   const setAuth = useAuthStore((s) => s.setAuth);
@@ -114,12 +115,7 @@ export function ProfileTab() {
   };
 
   if (isFetching) {
-    return (
-      <div className="flex items-center justify-center py-16 text-muted-foreground">
-        <Loader2 className="size-6 animate-spin mr-2" aria-hidden="true" />
-        <span>Loading profile…</span>
-      </div>
-    );
+    return <SettingsProfileSkeleton />;
   }
 
   return (

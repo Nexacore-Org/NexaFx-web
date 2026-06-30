@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
     "storybook": "storybook dev -p 6006",

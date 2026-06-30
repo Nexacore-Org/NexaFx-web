@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { X, ArrowDownLeft, ArrowUpRight, RefreshCw } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Transaction, getTransactionById } from "@/lib/api/transactions";
+import { CopyButton } from "@/components/ui/copy-button";
 import { Copy, X, ArrowDownLeft, ArrowUpRight, RefreshCw, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Transaction, getTransactionById, resendTransactionConfirmation } from "@/lib/api/transactions";
@@ -30,6 +34,8 @@ export function TransactionDetails({ transaction, open, onClose }: TransactionDe
 
     useEffect(() => {
         if (!open || !transaction?.id) {
+            setDetail(null);
+            return;
             const timer = setTimeout(() => {
                 setDetail(null);
             }, 0);
@@ -258,6 +264,7 @@ function DetailRow({
             <div className="flex items-center gap-2 text-right">
                 <span className="text-sm font-bold text-foreground">{value}</span>
                 {isCopyable && (
+                    <CopyButton value={value} label={`Copy ${label.toLowerCase()}`} size="sm" />
                     <Copy className="h-3 w-3 text-muted-foreground cursor-pointer" />
                 )}
             </div>

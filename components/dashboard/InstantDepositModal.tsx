@@ -1,5 +1,10 @@
 'use client';
 
+import React, { useRef } from 'react';
+import { X, ChevronRight } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { useFocusTrap } from '@/hooks/use-focus-trap';
+import { CopyButton } from '@/components/ui/copy-button';
 import React, { useState, useRef } from 'react';
 import { X, Copy, ChevronRight } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -87,6 +92,7 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
               <span className='text-sm md:text-[18px] font-semibold text-foreground break-all flex-1'>
                 {walletAddress}
               </span>
+              <CopyButton value={walletAddress} label='Copy wallet address' size='sm' />
               <button
                 onClick={handleCopyAddress}
                 className='p-1 hover:bg-background rounded focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1'

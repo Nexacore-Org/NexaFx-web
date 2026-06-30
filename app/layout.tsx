@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter, Manrope } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
+import { ToastViewport } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PwaInstallPrompt } from "@/components/shared/pwa-install-prompt";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
@@ -97,6 +98,10 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
+        className={`${inter.variable} antialiased`}
+      >
+        {children}
+        <ToastViewport />
         className={`${inter.variable} ${manrope.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
 

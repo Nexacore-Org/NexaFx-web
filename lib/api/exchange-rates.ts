@@ -38,7 +38,10 @@ export async function getExchangeRates() {
   return res.json();
 }
 
-export async function getExchangeRate(from: string, to: string) {
+export async function getExchangeRate(
+  from: string,
+  to: string,
+): Promise<{ rate: number }> {
   if (typeof navigator !== "undefined" && !navigator.onLine) {
     throw new OfflineError("No internet connection");
   }
@@ -74,7 +77,8 @@ export async function getExchangeRate(from: string, to: string) {
     );
   }
 
-  return res.json();
+  const data = await res.json();
+  return { rate: Number(data.rate) };
 }
 
 export interface LockedRate {

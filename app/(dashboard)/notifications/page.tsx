@@ -5,18 +5,10 @@ import { Bell } from "lucide-react";
 import { useNotificationsStore } from "@/hooks/use-notifications-store";
 import { SwipeableNotificationItem } from "@/components/notifications";
 import { EmptyState } from "@/components/shared/empty-state";
+import { NotificationListSkeleton } from "@/components/shared/page-skeletons";
 
 function NotificationSkeleton() {
-  return (
-    <div className="flex items-start gap-3 p-4 animate-pulse">
-      <div className="h-9 w-9 rounded-full bg-muted shrink-0" />
-      <div className="flex-1 space-y-2">
-        <div className="h-3.5 w-1/3 rounded bg-muted" />
-        <div className="h-3 w-2/3 rounded bg-muted" />
-        <div className="h-3 w-1/4 rounded bg-muted" />
-      </div>
-    </div>
-  );
+  return <NotificationListSkeleton rows={5} />;
 }
 
 export default function NotificationsPage() {
