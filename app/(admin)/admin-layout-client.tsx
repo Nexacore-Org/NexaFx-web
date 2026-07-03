@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Bell, User, Menu } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AuthGuard } from "@/components/shared/auth-guard";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { NetworkStatusBanner } from "@/components/shared/network-status-banner";
@@ -21,7 +22,8 @@ export default function AdminLayoutClient({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <AdminGuard>
+    <AuthGuard>
+      <AdminGuard>
       <div className="flex h-screen bg-gray-50 overflow-hidden">
         {/* Sidebar */}
         <AdminSidebar
@@ -72,5 +74,6 @@ export default function AdminLayoutClient({
         </div>
       </div>
     </AdminGuard>
+    </AuthGuard>
   );
 }
