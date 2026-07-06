@@ -1,15 +1,20 @@
 'use client';
 
-import React, { useRef } from 'react';
-import { X, ChevronRight } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
-import { useFocusTrap } from '@/hooks/use-focus-trap';
-import { CopyButton } from '@/components/ui/copy-button';
 import React, { useState, useRef } from 'react';
 import { X, Copy, ChevronRight } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import dynamic from 'next/dynamic';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
+import { CopyButton } from '@/components/ui/copy-button';
 import { haptics } from '@/lib/utils/haptics';
+
+const QRCodeSVG = dynamic(() => import('qrcode.react').then(mod => mod.QRCodeSVG), {
+  ssr: false,
+  loading: () => (
+    <div className="w-38 h-38 md:w-58 md:h-58 bg-muted p-4 rounded-lg flex items-center justify-center text-center text-sm text-muted-foreground">
+      Loading QR code...
+    </div>
+  ),
+});
 
 type InstantDepositModalType = {
   onClose: () => void;
@@ -93,13 +98,6 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
                 {walletAddress}
               </span>
               <CopyButton value={walletAddress} label='Copy wallet address' size='sm' />
-              <button
-                onClick={handleCopyAddress}
-                className='p-1 hover:bg-background rounded focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1'
-                aria-label='Copy wallet address'
-              >
-                <Copy className='w-4 h-4 text-muted-foreground' />
-              </button>
             </div>
           </div>
 

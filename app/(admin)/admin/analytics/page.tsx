@@ -3,10 +3,19 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown, UserPlus, ArrowUpDown, Clock, Coins, Loader2 } from "lucide-react";
 import { AdminMetricCard } from "@/components/admin/AdminMetricCard";
-import { RevenueChart } from "@/components/admin/RevenueChart";
-import { getAdminMetrics, getAdminUsers, AdminMetrics, AdminUser } from "@/lib/api/admin";
+import dynamic from "next/dynamic";
+import { getAdminMetrics, getAdminUsers, type AdminMetrics, type AdminUser } from "@/lib/api/admin";
 import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
 import { AdminMetricCardsSkeleton } from "@/components/shared/page-skeletons";
+
+const RevenueChart = dynamic(() => import("@/components/admin/RevenueChart").then(mod => mod.RevenueChart), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-white rounded-2xl flex-1 min-w-0 h-63.25 py-2.5 px-5 border border-gray-200 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
+    </div>
+  ),
+});
 
 export default function AnalyticsPage() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
