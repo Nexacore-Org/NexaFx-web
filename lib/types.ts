@@ -5,3 +5,14 @@ export interface Transaction {
   currency: string;
   date: string;
 }
+
+export interface Invoice {
+  id: string;
+  amount: number;
+  currency: string;
+  description?: string;
+  senderName: string;
+  walletAddress: string;
+  createdAt: string;
+  status: "Pending" | "Paid";
+}
