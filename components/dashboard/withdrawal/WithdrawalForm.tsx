@@ -1,4 +1,6 @@
-"use client";
+import { FeeEstimatorModal } from "@/components/shared/fee-estimator-modal";
+
+("use client");
 
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -8,7 +10,10 @@ import { ChevronDown, ChevronLeft, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCurrencies, type Currency } from "@/lib/api/currencies";
 import { getBalances } from "@/lib/api/wallet";
-import { withdrawalSchema, type WithdrawalFormValues } from "@/lib/validations/transactions";
+import {
+  withdrawalSchema,
+  type WithdrawalFormValues,
+} from "@/lib/validations/transactions";
 import { Input } from "@/components/ui/Input";
 
 interface CurrencyOption {
@@ -17,7 +22,10 @@ interface CurrencyOption {
   balance: string;
 }
 
-function toCurrencyOption(c: Currency, balanceMap: Record<string, string>): CurrencyOption {
+function toCurrencyOption(
+  c: Currency,
+  balanceMap: Record<string, string>,
+): CurrencyOption {
   return { id: c.code, name: c.name, balance: balanceMap[c.code] ?? "0.00" };
 }
 
@@ -44,12 +52,17 @@ export function WithdrawalForm() {
     setIsLoadingCurrencies(true);
     setCurrencyError(null);
     try {
-      const [currencyData, balanceData] = await Promise.all([getCurrencies(), getBalances()]);
+      const [currencyData, balanceData] = await Promise.all([
+        getCurrencies(),
+        getBalances(),
+      ]);
       const balanceMap: Record<string, string> = {};
       for (const b of balanceData) balanceMap[b.currency] = b.balance;
       setCurrencies(currencyData.map((c) => toCurrencyOption(c, balanceMap)));
     } catch {
-      setCurrencyError("Unable to load currencies or balances. Please try again.");
+      setCurrencyError(
+        "Unable to load currencies or balances. Please try again.",
+      );
     } finally {
       setIsLoadingCurrencies(false);
     }
@@ -61,22 +74,31 @@ export function WithdrawalForm() {
       setIsLoadingCurrencies(true);
       setCurrencyError(null);
       try {
-        const [currencyData, balanceData] = await Promise.all([getCurrencies(), getBalances()]);
+        const [currencyData, balanceData] = await Promise.all([
+          getCurrencies(),
+          getBalances(),
+        ]);
         if (cancelled) return;
         const balanceMap: Record<string, string> = {};
         for (const b of balanceData) balanceMap[b.currency] = b.balance;
         setCurrencies(currencyData.map((c) => toCurrencyOption(c, balanceMap)));
       } catch {
-        if (!cancelled) setCurrencyError("Unable to load currencies or balances. Please try again.");
+        if (!cancelled)
+          setCurrencyError(
+            "Unable to load currencies or balances. Please try again.",
+          );
       } finally {
         if (!cancelled) setIsLoadingCurrencies(false);
       }
     };
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const selectedCurrency = currencies.find((c) => c.id === currency) || currencies[0];
+  const selectedCurrency =
+    currencies.find((c) => c.id === currency) || currencies[0];
 
   const onSubmit = (data: WithdrawalFormValues) => {
     if (selectedCurrency) {
@@ -92,7 +114,9 @@ export function WithdrawalForm() {
 
   const handleMaxClick = () => {
     if (!selectedCurrency) return;
-    setValue("amount", selectedCurrency.balance.replace(",", ""), { shouldValidate: true });
+    setValue("amount", selectedCurrency.balance.replace(",", ""), {
+      shouldValidate: true,
+    });
   };
 
   const handleCancel = () => {
@@ -112,15 +136,21 @@ export function WithdrawalForm() {
           <ChevronLeft className="size-5 text-muted-foreground" />
         </button>
         <div>
-          <h2 className="text-xl font-bold text-foreground">Withdraw to Wallet</h2>
-          <p className="text-sm text-muted-foreground">Enter withdrawal details</p>
+          <h2 className="text-xl font-bold text-foreground">
+            Withdraw to Wallet
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Enter withdrawal details
+          </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {/* Wallet Address */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Wallet Address</label>
+          <label className="text-sm font-medium text-foreground">
+            Wallet Address
+          </label>
           <Input
             {...register("walletAddress")}
             type="text"
@@ -128,14 +158,16 @@ export function WithdrawalForm() {
             error={errors.walletAddress?.message}
             className={cn(
               "rounded-xl bg-muted/50 border",
-              errors.walletAddress ? "border-destructive" : "border-border"
+              errors.walletAddress ? "border-destructive" : "border-border",
             )}
           />
         </div>
 
         {/* Currency Selector */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Currency</label>
+          <label className="text-sm font-medium text-foreground">
+            Currency
+          </label>
           <div className="relative">
             {currencyError ? (
               <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-destructive/10 border border-destructive">
@@ -159,15 +191,24 @@ export function WithdrawalForm() {
                 className={cn(
                   "w-full flex items-center justify-between px-4 py-3 rounded-xl",
                   "bg-muted/50 border border-border hover:bg-muted transition-colors",
-                  isLoadingCurrencies && "opacity-60 cursor-wait"
+                  isLoadingCurrencies && "opacity-60 cursor-wait",
                 )}
               >
                 {isLoadingCurrencies ? (
-                  <span className="text-sm text-muted-foreground animate-pulse">Loading currencies…</span>
+                  <span className="text-sm text-muted-foreground animate-pulse">
+                    Loading currencies…
+                  </span>
                 ) : selectedCurrency ? (
-                  <span className="font-medium text-foreground">{selectedCurrency.id}</span>
+                  <span className="font-medium text-foreground">
+                    {selectedCurrency.id}
+                  </span>
                 ) : null}
-                <ChevronDown className={cn("size-5 text-muted-foreground transition-transform", showCurrencyDropdown && "rotate-180")} />
+                <ChevronDown
+                  className={cn(
+                    "size-5 text-muted-foreground transition-transform",
+                    showCurrencyDropdown && "rotate-180",
+                  )}
+                />
               </button>
             )}
 
@@ -177,17 +218,24 @@ export function WithdrawalForm() {
                   <button
                     key={curr.id}
                     type="button"
-                    onClick={() => { setFormData({ currency: curr.id }); setShowCurrencyDropdown(false); }}
+                    onClick={() => {
+                      setFormData({ currency: curr.id });
+                      setShowCurrencyDropdown(false);
+                    }}
                     className={cn(
                       "w-full flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors",
-                      curr.id === currency && "bg-primary/10"
+                      curr.id === currency && "bg-primary/10",
                     )}
                   >
                     <div className="text-left">
                       <p className="font-medium text-foreground">{curr.id}</p>
-                      <p className="text-xs text-muted-foreground">{curr.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {curr.name}
+                      </p>
                     </div>
-                    <span className="text-sm text-muted-foreground">{curr.balance}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {curr.balance}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -198,9 +246,12 @@ export function WithdrawalForm() {
         {/* Amount */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-foreground">Amount</label>
+            <label className="text-sm font-medium text-foreground">
+              Amount
+            </label>
             <span className="text-xs text-muted-foreground">
-              Balance: {selectedCurrency?.balance ?? "—"} {selectedCurrency?.id ?? ""}
+              Balance: {selectedCurrency?.balance ?? "—"}{" "}
+              {selectedCurrency?.id ?? ""}
             </span>
           </div>
           <div className="relative">
@@ -212,7 +263,7 @@ export function WithdrawalForm() {
               error={errors.amount?.message}
               className={cn(
                 "pr-16 rounded-xl bg-muted/50 border",
-                errors.amount ? "border-destructive" : "border-border"
+                errors.amount ? "border-destructive" : "border-border",
               )}
             />
             <button
@@ -225,6 +276,10 @@ export function WithdrawalForm() {
           </div>
         </div>
 
+        <div className="text-center">
+          <FeeEstimatorModal />
+        </div>
+
         <div className="space-y-3 pt-2">
           <button
             type="submit"
@@ -232,7 +287,8 @@ export function WithdrawalForm() {
             className={cn(
               "w-full py-3.5 rounded-xl font-semibold",
               "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all duration-200",
-              (isLoadingCurrencies || currencyError) && "opacity-50 cursor-not-allowed"
+              (isLoadingCurrencies || currencyError) &&
+                "opacity-50 cursor-not-allowed",
             )}
           >
             Withdraw
@@ -246,7 +302,6 @@ export function WithdrawalForm() {
           </button>
         </div>
       </form>
-
     </div>
   );
 }
