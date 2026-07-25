@@ -13,3 +13,21 @@ export const verifyBvn = (
     lastName: "Doe",
   });
 };
+
+export const verifyNin = (
+  nin: string,
+  phoneNumber: string,
+): Promise<{
+  verified: boolean;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+}> => {
+  // TODO: Implement the actual API call
+  return Promise.resolve({
+    verified: true,
+    firstName: "Jane",
+    middleName: "Ife",
+    lastName: "Doe",
+  });
+};
