@@ -1,9 +1,15 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { X, Copy, Check, ExternalLink, Wallet, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Transaction } from "@/lib/api/transactions";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { haptics } from "@/lib/utils/haptics";
+import {
+  getTagsForTransaction,
+  setTagsForTransaction,
+  getAllUsedTags,
+} from "@/lib/utils/transaction-tags";
+import { TagInput } from "./tag-input";
 
 interface TransactionDetailModalProps {
   transaction: Transaction;
@@ -11,20 +17,36 @@ interface TransactionDetailModalProps {
   onClose: () => void;
 }
 
-export function TransactionDetailModal({ transaction, isOpen, onClose }: TransactionDetailModalProps) {
+export function TransactionDetailModal({
+  transaction,
+  isOpen,
+  onClose,
+}: TransactionDetailModalProps) {
   const [copied, setCopied] = useState(false);
   const [copiedTxId, setCopiedTxId] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTags(getTagsForTransaction(transaction.id));
+    }
+  }, [isOpen, transaction.id]);
+
+  const handleSetTags = (newTags: string[]) => {
+    setTags(newTags);
+    setTagsForTransaction(transaction.id, newTags);
+  };
 
   useFocusTrap(isOpen, onClose, modalRef);
 
-  const handleCopy = (text: string, type: 'address' | 'txId') => {
+  const handleCopy = (text: string, type: "address" | "txId") => {
     navigator.clipboard.writeText(text);
     haptics.light();
-    setCopied(type === 'address' ? true : copied);
-    setCopiedTxId(type === 'txId' ? true : copiedTxId);
+    setCopied(type === "address" ? true : copied);
+    setCopiedTxId(type === "txId" ? true : copiedTxId);
     setTimeout(() => {
-      if (type === 'address') {
+      if (type === "address") {
         setCopied(false);
       } else {
         setCopiedTxId(false);
@@ -88,7 +110,9 @@ export function TransactionDetailModal({ transaction, isOpen, onClose }: Transac
 
   const getWalletAddress = () => {
     if (transaction.description?.includes("wallet")) {
-      return transaction.description.split(":")[1]?.trim() || transaction.description;
+      return (
+        transaction.description.split(":")[1]?.trim() || transaction.description
+      );
     }
     return transaction.reference || "N/A";
   };
@@ -118,13 +142,20 @@ export function TransactionDetailModal({ transaction, isOpen, onClose }: Transac
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Transaction ID</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Transaction ID
+                </p>
                 <div className="flex items-center gap-2">
                   <p className="font-mono text-sm break-all">
                     {transaction.reference || transaction.id}
                   </p>
                   <button
-                    onClick={() => handleCopy(transaction.reference || transaction.id, 'txId')}
+                    onClick={() =>
+                      handleCopy(
+                        transaction.reference || transaction.id,
+                        "txId",
+                      )
+                    }
                     className="p-1 rounded hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1"
                     aria-label="Copy transaction ID"
                   >
@@ -138,11 +169,13 @@ export function TransactionDetailModal({ transaction, isOpen, onClose }: Transac
               </div>
 
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Type</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Type
+                </p>
                 <span
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border",
-                    getTypeColor(transaction.type)
+                    getTypeColor(transaction.type),
                   )}
                 >
                   {getTypeIcon(transaction.type)}
@@ -151,11 +184,13 @@ export function TransactionDetailModal({ transaction, isOpen, onClose }: Transac
               </div>
 
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Status</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Status
+                </p>
                 <span
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border",
-                    getStatusColor(transaction.status)
+                    getStatusColor(transaction.status),
                   )}
                 >
                   {getStatusIcon(transaction.status)}
@@ -164,54 +199,75 @@ export function TransactionDetailModal({ transaction, isOpen, onClose }: Transac
               </div>
 
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Date & Time</p>
-                <p className="text-sm">
-                  {transaction.date}
+                <p className="text-sm font-medium text-muted-foreground">
+                  Date & Time
                 </p>
+                <p className="text-sm">{transaction.date}</p>
               </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Amount</p>
-                <p className={cn(
-                  "text-2xl font-bold",
-                  transaction.type === "Deposit" ? "text-green-600" : "text-foreground"
-                )}
+                <p className="text-sm font-medium text-muted-foreground">
+                  Amount
+                </p>
+                <p
+                  className={cn(
+                    "text-2xl font-bold",
+                    transaction.type === "Deposit"
+                      ? "text-green-600"
+                      : "text-foreground",
+                  )}
                 >
                   <span className="mr-1">
-                    {transaction.type === "Deposit" ? "+" : transaction.type === "Withdraw" ? "-" : ""}
+                    {transaction.type === "Deposit"
+                      ? "+"
+                      : transaction.type === "Withdraw"
+                        ? "-"
+                        : ""}
                   </span>
                   {transaction.amount.toLocaleString()} {transaction.currency}
                 </p>
-                {transaction.type === "Convert" && transaction.toAmount != null && transaction.toCurrency && (
-                  <div className="mt-2 p-3 bg-muted/30 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">You received</p>
-                    <p className="text-lg font-semibold">
-                      {transaction.toAmount.toLocaleString()} {transaction.toCurrency}
+                {transaction.type === "Convert" &&
+                  transaction.toAmount != null &&
+                  transaction.toCurrency && (
+                    <div className="mt-2 p-3 bg-muted/30 rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-1">
+                        You received
+                      </p>
+                      <p className="text-lg font-semibold">
+                        {transaction.toAmount.toLocaleString()}{" "}
+                        {transaction.toCurrency}
+                      </p>
+                    </div>
+                  )}
+              </div>
+
+              {transaction.type === "Convert" &&
+                transaction.exchangeRate != null && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Exchange Rate
+                    </p>
+                    <p className="text-sm">
+                      1 {transaction.toCurrency} ={" "}
+                      {transaction.exchangeRate.toLocaleString()}{" "}
+                      {transaction.currency}
                     </p>
                   </div>
                 )}
-              </div>
-
-              {transaction.type === "Convert" && transaction.exchangeRate != null && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Exchange Rate</p>
-                  <p className="text-sm">
-                    1 {transaction.toCurrency} = {transaction.exchangeRate.toLocaleString()} {transaction.currency}
-                  </p>
-                </div>
-              )}
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Wallet Address</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Wallet Address
+              </p>
               <div className="flex items-center gap-2">
                 <p className="font-mono text-sm break-all">
                   {getWalletAddress()}
                 </p>
                 <button
-                  onClick={() => handleCopy(getWalletAddress(), 'address')}
+                  onClick={() => handleCopy(getWalletAddress(), "address")}
                   className="p-1 rounded hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1"
                   aria-label="Copy wallet address"
                 >
@@ -235,12 +291,23 @@ export function TransactionDetailModal({ transaction, isOpen, onClose }: Transac
 
             {transaction.description && (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Description</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Description
+                </p>
                 <p className="text-sm text-muted-foreground">
                   {transaction.description}
                 </p>
               </div>
             )}
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">Tags</p>
+              <TagInput
+                tags={tags}
+                setTags={handleSetTags}
+                allUsedTags={getAllUsedTags()}
+              />
+            </div>
           </div>
 
           <div className="mt-8 flex justify-end">
