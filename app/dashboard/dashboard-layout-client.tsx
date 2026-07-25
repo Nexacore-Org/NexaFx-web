@@ -5,6 +5,7 @@ import { Loader2, ArrowDown } from "lucide-react";
 
 import { Sidebar } from "../../components/dashboard/sidebar";
 import { Topbar } from "../../components/dashboard/topbar";
+import { MobileBottomNav } from "../../components/dashboard/mobile-bottom-nav";
 import { NetworkStatusBanner } from "@/components/shared/network-status-banner";
 import { AnnouncementBanner } from "@/components/shared/announcement-banner";
 import { cn } from "../../lib/utils";
@@ -106,9 +107,17 @@ export default function DashboardLayoutClient({
           </div>
           <RealtimeIndicator />
         </div>
-        <main className="flex-1 overflow-y-auto px-4 md:px-8 pb-4">
+        <main
+          className="flex-1 overflow-y-auto px-4 md:px-8 pb-4"
+          style={{
+            paddingBottom: "calc(1rem + 64px + env(safe-area-inset-bottom))",
+          }}
+        >
           <div key={refreshingKey}>{children}</div>
         </main>
+
+        {/* Mobile Bottom Navigation */}
+        <MobileBottomNav />
       </div>
     </div>
   );
