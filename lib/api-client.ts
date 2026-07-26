@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/hooks/use-auth-store";
+import * as Sentry from "@sentry/nextjs";
 import { parseRetryAfter } from "./utils/retry-after";
 
 export class RateLimitError extends Error {
@@ -75,6 +76,15 @@ function subscribeTokenRefresh(cb: (token: string) => void) {
 function onRefreshed(token: string) {
   refreshSubscribers.map((cb) => cb(token));
   refreshSubscribers = [];
+}
+
+function captureApiError(error: ApiError, endpoint: string) {
+  Sentry.captureException(error, {
+    extra: {
+      endpoint,
+      status: error.status,
+    },
+  });
 }
 
 async function refreshToken(): Promise<string | null> {
@@ -184,7 +194,9 @@ export async function apiClient<T>(
           .clone()
           .json()
           .catch(() => ({}));
-        throw new ApiError(data?.message || "Unauthorized", response.status);
+        const error = new ApiError(data?.message || "Unauthorized", response.status);
+        captureApiError(error, finalUrl);
+        throw error;
       }
     } else {
       return new Promise<T>((resolve, reject) => {
@@ -193,13 +205,13 @@ export async function apiClient<T>(
             const retryResponse = await executeRequest();
             if (!retryResponse.ok) {
               const data = await retryResponse.json().catch(() => ({}));
-              reject(
-                new ApiError(
-                  data?.message ||
-                    `Request failed with status ${retryResponse.status}`,
-                  retryResponse.status,
-                ),
+              const error = new ApiError(
+                data?.message ||
+                  `Request failed with status ${retryResponse.status}`,
+                retryResponse.status,
               );
+              captureApiError(error, finalUrl);
+              reject(error);
               return;
             }
             resolve(await retryResponse.json());
@@ -221,10 +233,12 @@ export async function apiClient<T>(
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new ApiError(
+    const error = new ApiError(
       data?.message || `Request failed with status ${response.status}`,
       response.status,
     );
+    captureApiError(error, finalUrl);
+    throw error;
   }
 
   return response.json();
