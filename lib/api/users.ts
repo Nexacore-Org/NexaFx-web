@@ -1,43 +1,26 @@
-import { apiClient } from "../api-client";
+import { apiClient } from "@/lib/api-client";
 
-export interface UserProfile {
+export interface UserSession {
   id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  avatarUrl?: string;
-  isVerified?: boolean;
-  walletAddress?: string;
+  deviceInfo: string;
+  ipAddress: string;
+  location?: string;
+  lastActiveAt: string;
+  isCurrent: boolean;
 }
 
-export interface UpdateProfileDto {
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-}
+export const getSessions = (): Promise<UserSession[]> => {
+  return apiClient("/users/sessions");
+};
 
-export const sendWeeklyStatement = (): Promise<void> =>
-  apiClient('/users/send-weekly-statement', { method: 'POST', useProxy: false });
-
-export async function deleteProfile (): Promise<void> {
-  return apiClient("/users/profile", {
+export const terminateSession = (id: string): Promise<void> => {
+  return apiClient(`/users/sessions/${id}`, {
     method: "DELETE",
-    useProxy: false,
   });
-}
+};
 
-export async function getProfile (): Promise<UserProfile> {
-  return apiClient("/users/profile", {
-    method: "GET",
-    useProxy: false,
+export const terminateAllOtherSessions = (): Promise<void> => {
+  return apiClient("/users/sessions", {
+    method: "DELETE",
   });
-}
-
-export async function updateProfile (data: UpdateProfileDto): Promise<UserProfile> {
-  return apiClient("/users/profile", {
-    method: "PATCH",
-    useProxy: false,
-    body: JSON.stringify(data),
-  });
-}
+};
