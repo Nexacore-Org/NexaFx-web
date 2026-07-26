@@ -6,10 +6,17 @@ import {
   DollarSign,
   PoundSterling,
   Euro,
+  Star,
 } from "lucide-react";
 import { InfoIcon } from "@/components/ui/info-icon";
 import { useEffect, useState } from "react";
 import { getExchangeRate } from "@/lib/api/exchange-rates";
+import {
+  addToWatchlist,
+  getWatchlist,
+  isInWatchlist,
+  removeFromWatchlist,
+} from "@/lib/utils/watchlist";
 
 interface RateData {
   pair: string;
@@ -44,6 +51,17 @@ export function MarketOverview() {
   const [marketData, setMarketData] = useState<RateData[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setWatchlist(getWatchlist());
+    };
+
+    setWatchlist(getWatchlist());
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const fetchRates = async () => {
     try {
@@ -63,7 +81,10 @@ export function MarketOverview() {
             return {
               pair: p.pair,
               rate: rateValue
-                ? `₦${Number(rateValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                ? `₦${Number(rateValue).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`
                 : "N/A",
               change:
                 changeValue !== null
@@ -102,6 +123,14 @@ export function MarketOverview() {
       clearInterval(interval);
     };
   }, []);
+
+  const toggleWatchlist = (pair: string) => {
+    if (isInWatchlist(pair)) {
+      removeFromWatchlist(pair);
+    } else {
+      addToWatchlist(pair);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -150,8 +179,28 @@ export function MarketOverview() {
                   <p className="text-xs font-medium text-muted-foreground">
                     {item.pair}
                   </p>
-                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs">
-                    {item.icon}
+                  <div className="flex items-center">
+                    <button
+                      onClick={() => toggleWatchlist(item.pair)}
+                      className="p-1 text-muted-foreground hover:text-yellow-400 transition-colors rounded-full -m-1 mr-1"
+                      aria-label={
+                        isInWatchlist(item.pair)
+                          ? "Remove from watchlist"
+                          : "Add to watchlist"
+                      }
+                    >
+                      <Star
+                        className={`h-5 w-5 ${
+                          isInWatchlist(item.pair) ? "text-yellow-400" : ""
+                        }`}
+                        fill={
+                          isInWatchlist(item.pair) ? "currentColor" : "none"
+                        }
+                      />
+                    </button>
+                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs">
+                      {item.icon}
+                    </div>
                   </div>
                 </div>
 
