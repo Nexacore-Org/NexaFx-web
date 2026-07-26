@@ -12,6 +12,8 @@ import { WithdrawalModal } from "@/components/dashboard/withdrawal/WithdrawalMod
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import { PullToRefresh } from "@/components/shared/pull-to-refresh";
 import { useNotificationsStore } from "@/hooks/use-notifications-store";
+import { BudgetTracker } from "@/components/dashboard/budget-tracker";
+import { transactions } from "@/lib/api/transactions";
 import { Watchlist } from "@/components/dashboard/watchlist";
 
 export default function DashboardPage() {
@@ -40,6 +42,9 @@ export default function DashboardPage() {
               onDepositClick={toggleDeposit}
               onWithdrawClick={openWithdrawal}
             />
+            <div className="px-3 md:px-4">
+              <BudgetTracker transactions={transactions} />
+            </div>
             <div className="md:px-4 space-y-4">
               <div className="grid grid-cols-2 gap-4 px-6 pb-6 md:p-0">
                 <button

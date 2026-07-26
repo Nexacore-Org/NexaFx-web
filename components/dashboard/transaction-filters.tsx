@@ -1,18 +1,25 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useState, useEffect } from "react";
+import { getAllUsedTags } from "@/lib/utils/transaction-tags";
 
 export function TransactionFilters() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [allTags, setAllTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    setAllTags(getAllUsedTags());
+  }, []);
 
   // Read current filter state from URL
   const currentType = searchParams.get("type") || "All";
-  const currentStatus = searchParams.get("status") || "All";
+  const currentStatus = search - params.get("status") || "All";
   const currentStartDate = searchParams.get("startDate") || "";
   const currentEndDate = searchParams.get("endDate") || "";
+  const currentTag = searchParams.get("tag") || "All";
 
   // Helper to update the query string
   const createQueryString = useCallback(
@@ -29,7 +36,7 @@ export function TransactionFilters() {
       }
       return params.toString();
     },
-    [searchParams]
+    [searchParams],
   );
 
   const handleFilterChange = (name: string, value: string) => {
@@ -52,7 +59,10 @@ export function TransactionFilters() {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end w-full mb-6 p-4 border rounded-lg bg-card text-card-foreground shadow-sm">
       <div className="flex flex-col gap-2 flex-1">
-        <label htmlFor="type-select" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+        <label
+          htmlFor="type-select"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
           Type
         </label>
         <select
@@ -69,7 +79,10 @@ export function TransactionFilters() {
       </div>
 
       <div className="flex flex-col gap-2 flex-1">
-        <label htmlFor="status-select" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+        <label
+          htmlFor="status-select"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
           Status
         </label>
         <select
@@ -86,7 +99,32 @@ export function TransactionFilters() {
       </div>
 
       <div className="flex flex-col gap-2 flex-1">
-        <label htmlFor="start-date" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+        <label
+          htmlFor="tag-select"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          Tag
+        </label>
+        <select
+          id="tag-select"
+          className={inputClasses}
+          value={currentTag}
+          onChange={(e) => handleFilterChange("tag", e.target.value)}
+        >
+          <option value="All">All Tags</option>
+          {allTags.map((tag) => (
+            <option key={tag} value={tag}>
+              {tag}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="flex flex-col gap-2 flex-1">
+        <label
+          htmlFor="start-date"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
           Start Date
         </label>
         <input
@@ -99,7 +137,10 @@ export function TransactionFilters() {
       </div>
 
       <div className="flex flex-col gap-2 flex-1">
-        <label htmlFor="end-date" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+        <label
+          htmlFor="end-date"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
           End Date
         </label>
         <input
