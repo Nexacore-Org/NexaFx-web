@@ -1,11 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { AlertTriangle, Trash2 } from "lucide-react";
+import { AlertTriangle, KeyRound, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { deleteProfile } from "@/lib/api/users";
 import { clearAuth } from "@/lib/auth";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { Modal } from "@/components/ui/modal";
+import { WalletImport } from "@/components/dashboard/settings/wallet-import";
 
 export function DangerZone() {
   const router = useRouter();
@@ -13,6 +15,7 @@ export function DangerZone() {
   const [confirmText, setConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showWalletImport, setShowWalletImport] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
   const handleClose = () => {
@@ -53,25 +56,55 @@ export function DangerZone() {
         </p>
       </div>
 
-      <div className="flex max-sm:flex-col max-sm:items-start justify-between items-center gap-6 px-5 py-6">
-        <div className="max-w-lg">
-          <h3 className="text-foreground font-semibold text-[15px] sm:text-lg">
+      <div className="divide-y divide-destructive/10">
+        <div className="flex max-sm:flex-col max-sm:items-start justify-between items-center gap-6 px-5 py-6">
+          <div className="max-w-lg">
+            <h3 className="text-foreground font-semibold text-[15px] sm:text-lg">
+              Delete Account
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Permanently delete your account and all associated data. This action
+              cannot be undone.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowConfirm(true)}
+            className="flex shrink-0 text-sm justify-center items-center gap-1.5 cursor-pointer bg-destructive h-9 px-4 text-white font-semibold rounded-xl hover:bg-destructive/90 transition-colors"
+          >
+            <Trash2 className="size-4" aria-hidden="true" />
             Delete Account
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Permanently delete your account and all associated data. This action
-            cannot be undone.
-          </p>
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowConfirm(true)}
-          className="flex shrink-0 text-sm justify-center items-center gap-1.5 cursor-pointer bg-destructive h-9 px-4 text-white font-semibold rounded-xl hover:bg-destructive/90 transition-colors"
-        >
-          <Trash2 className="size-4" aria-hidden="true" />
-          Delete Account
-        </button>
+
+        <div className="flex max-sm:flex-col max-sm:items-start justify-between items-center gap-6 px-5 py-6">
+          <div className="max-w-lg">
+            <h3 className="text-foreground font-semibold text-[15px] sm:text-lg">
+              Import Existing Wallet
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Replace your current NexaFx wallet with an existing Stellar wallet.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowWalletImport(true)}
+            className="flex shrink-0 text-sm justify-center items-center gap-1.5 cursor-pointer border border-destructive text-destructive h-9 px-4 font-semibold rounded-xl hover:bg-destructive/10 transition-colors"
+          >
+            <KeyRound className="size-4" aria-hidden="true" />
+            Import Wallet
+          </button>
+        </div>
       </div>
+
+      <Modal
+        isOpen={showWalletImport}
+        onClose={() => setShowWalletImport(false)}
+        title="Import Existing Wallet"
+        className="max-w-2xl"
+      >
+        <WalletImport onClose={() => setShowWalletImport(false)} />
+      </Modal>
 
       {showConfirm && (
         <>
