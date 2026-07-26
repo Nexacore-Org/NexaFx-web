@@ -27,6 +27,12 @@ export interface AdminMetrics {
     totalWithdrawals: number;
 }
 
+export interface CohortRetentionData {
+    cohortMonth: string;
+    cohortSize: number;
+    retentionByMonth: number[];
+}
+
 export interface AdminTransaction {
     id: string;
     amount: number;
@@ -71,6 +77,23 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
         totalDeposits: response?.totalDeposits ?? response?.totalVolume ?? 0,
         totalWithdrawals: response?.totalWithdrawals ?? 0,
     };
+}
+
+export async function getCohortRetention(): Promise<CohortRetentionData[]> {
+    const response = await apiClient<any>('/admin/analytics/cohort-retention', {
+        method: 'GET',
+        headers: getAuthHeaders(),
+    });
+
+    const data = (response?.data ?? response?.cohorts ?? response?.items ?? (Array.isArray(response) ? response : [])) as any[];
+
+    return data.map((cohort: any) => ({
+        cohortMonth: cohort.cohortMonth ?? cohort.cohort_month ?? cohort.month ?? '',
+        cohortSize: Number(cohort.cohortSize ?? cohort.cohort_size ?? cohort.size) || 0,
+        retentionByMonth: (cohort.retentionByMonth ?? cohort.retention_by_month ?? cohort.retention ?? [])
+            .map((value: unknown) => Number(value))
+            .filter((value: number) => Number.isFinite(value)),
+    }));
 }
 
 export async function getAdminUsers(query: AdminUsersQuery = {}): Promise<{ data: AdminUser[]; total: number }> {
