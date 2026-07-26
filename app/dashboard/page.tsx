@@ -14,6 +14,7 @@ import { PullToRefresh } from "@/components/shared/pull-to-refresh";
 import { useNotificationsStore } from "@/hooks/use-notifications-store";
 import { BudgetTracker } from "@/components/dashboard/budget-tracker";
 import { transactions } from "@/lib/api/transactions";
+import { Watchlist } from "@/components/dashboard/watchlist";
 
 export default function DashboardPage() {
   const [openDeposit, setOpenDeposit] = useState(false);
@@ -35,6 +36,7 @@ export default function DashboardPage() {
           <DepositMethods toggleDeposit={toggleDeposit} />
         ) : (
           <>
+            <Watchlist />
             <AccountOverview
               openDeposit={openDeposit}
               onDepositClick={toggleDeposit}
