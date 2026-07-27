@@ -1,10 +1,18 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, UserPlus, ArrowUpDown, Clock, Coins, Loader2 } from "lucide-react";
+import { ChevronDown, UserPlus, ArrowUpDown, Clock, Coins } from "lucide-react";
 import { AdminMetricCard } from "@/components/admin/AdminMetricCard";
+import { CohortRetentionTable } from "@/components/admin/cohort-retention-table";
 import dynamic from "next/dynamic";
-import { getAdminMetrics, getAdminUsers, type AdminMetrics, type AdminUser } from "@/lib/api/admin";
+import {
+  getAdminMetrics,
+  getAdminUsers,
+  getCohortRetention,
+  type AdminMetrics,
+  type AdminUser,
+  type CohortRetentionData,
+} from "@/lib/api/admin";
 import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
 import { AdminMetricCardsSkeleton } from "@/components/shared/page-skeletons";
 
@@ -20,6 +28,7 @@ const RevenueChart = dynamic(() => import("@/components/admin/RevenueChart").the
 export default function AnalyticsPage() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [recentUsers, setRecentUsers] = useState<AdminUser[]>([]);
+  const [cohortRetention, setCohortRetention] = useState<CohortRetentionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [offlineNotice, setOfflineNotice] = useState<string | null>(null);
@@ -30,14 +39,16 @@ export default function AnalyticsPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [metricsData, usersData] = await Promise.all([
+        const [metricsData, usersData, cohortData] = await Promise.all([
           getAdminMetrics(),
           getAdminUsers({ page: 1, limit: 5 }),
+          getCohortRetention(),
         ]);
         hasCachedAnalyticsRef.current = true;
         setOfflineNotice(null);
         setMetrics(metricsData);
         setRecentUsers(usersData.data);
+        setCohortRetention(cohortData);
         setError(null);
       } catch (err: any) {
         console.error("Failed to load admin analytics data", err);
@@ -131,6 +142,8 @@ export default function AnalyticsPage() {
           </div>
         </div>
       </div>
+
+      <CohortRetentionTable cohorts={cohortRetention} />
 
       {/* Recent users table */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
