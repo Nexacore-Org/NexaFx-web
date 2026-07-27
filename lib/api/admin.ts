@@ -44,6 +44,11 @@ export interface AdminTransaction {
     status: string;
     toAmount?: number;
     toCurrency?: string;
+    whitelisted?: boolean;
+    whitelistedBy?: string;
+    whitelistedByEmail?: string;
+    whitelistedAt?: string;
+    whitelistNotes?: string;
 }
 
 export interface AdminUsersQuery {
@@ -223,6 +228,65 @@ export const flagTransaction = (id: string, reason: string): Promise<void> =>
 export const unflagTransaction = (id: string): Promise<void> =>
   apiClient(`/admin/transactions/${id}/unflag`, { method: 'POST', headers: getAuthHeaders() });
 
+// ─── Flagged Transaction Queue & Whitelist ────────────────────────────────
+
+export interface FlaggedTransaction {
+  id: string;
+  amount: number;
+  currency: string;
+  type: string;
+  username: string;
+  email: string;
+  date: string;
+  txId: string;
+  status: string;
+  flagReason: string;
+  flaggedBy: string;
+  flaggedAt: string;
+  whitelisted: boolean;
+  whitelistedBy?: string;
+  whitelistedByEmail?: string;
+  whitelistedAt?: string;
+  whitelistNotes?: string;
+}
+
+export async function getFlaggedTransactions(): Promise<FlaggedTransaction[]> {
+  const response = await apiClient<any>('/admin/transactions', {
+    method: 'GET',
+    headers: getAuthHeaders(),
+    params: { flagged: 'true' },
+  });
+
+  const data = (response?.data ?? response?.transactions ?? response?.items ?? (Array.isArray(response) ? response : [])) as any[];
+
+  return data.map((tx: any) => ({
+    id: tx.id ?? tx._id ?? '',
+    amount: Number(tx.amount) || 0,
+    currency: tx.currency ?? '',
+    type: tx.type ?? '',
+    username: tx.username ?? tx.user?.email ?? tx.email ?? '',
+    email: tx.email ?? tx.user?.email ?? '',
+    date: tx.createdAt ?? tx.date ?? '',
+    txId: tx.txId ?? tx.reference ?? tx.transactionRef ?? '',
+    status: tx.status ?? 'Pending',
+    flagReason: tx.flagReason ?? tx.flag_reason ?? '',
+    flaggedBy: tx.flaggedBy ?? tx.flagged_by ?? '',
+    flaggedAt: tx.flaggedAt ?? tx.flagged_at ?? '',
+    whitelisted: Boolean(tx.whitelisted),
+    whitelistedBy: tx.whitelistedBy ?? tx.whitelisted_by ?? undefined,
+    whitelistedByEmail: tx.whitelistedByEmail ?? tx.whitelisted_by_email ?? undefined,
+    whitelistedAt: tx.whitelistedAt ?? tx.whitelisted_at ?? undefined,
+    whitelistNotes: tx.whitelistNotes ?? tx.whitelist_notes ?? undefined,
+  }));
+}
+
+export const whitelistTransaction = (id: string, notes: string): Promise<void> =>
+  apiClient(`/admin/transactions/${id}/whitelist`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ notes }),
+  });
+
 export interface Dispute {
   id: string
   userId: string
@@ -292,6 +356,11 @@ export async function getAdminTransactions(query: AdminTransactionsQuery = {}): 
             status: tx.status ?? 'Pending',
             toAmount: Number(tx.toAmount ?? tx.to_amount) || undefined,
             toCurrency: tx.toCurrency ?? tx.to_currency ?? undefined,
+            whitelisted: Boolean(tx.whitelisted),
+            whitelistedBy: tx.whitelistedBy ?? tx.whitelisted_by ?? undefined,
+            whitelistedByEmail: tx.whitelistedByEmail ?? tx.whitelisted_by_email ?? undefined,
+            whitelistedAt: tx.whitelistedAt ?? tx.whitelisted_at ?? undefined,
+            whitelistNotes: tx.whitelistNotes ?? tx.whitelist_notes ?? undefined,
         };
     });
 
