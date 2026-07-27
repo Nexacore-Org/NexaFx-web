@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import * as Sentry from '@sentry/nextjs';
 
 interface UserPayload {
   firstName?: string;
@@ -22,7 +23,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   accessToken: null,
   refreshToken: null,
   isAuthenticated: false,
-  setAuth: (user, accessToken, refreshToken) => set({ user, accessToken, refreshToken, isAuthenticated: true }),
-  clearAuth: () => set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false }),
+  setAuth: (user, accessToken, refreshToken) => {
+    Sentry.setUser({
+      id: typeof user.id === 'string' ? user.id : undefined,
+      email: typeof user.email === 'string' ? user.email : undefined,
+    });
+    set({ user, accessToken, refreshToken, isAuthenticated: true });
+  },
+  clearAuth: () => {
+    Sentry.setUser(null);
+    set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+  },
   updateTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
 }));

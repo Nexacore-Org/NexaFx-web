@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import * as Sentry from "@sentry/nextjs";
 import { setTokens, clearTokens } from "@/lib/utils/token";
 
 export interface User {
@@ -29,6 +30,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       setAuth: (user, accessToken, refreshToken) => {
         setTokens(accessToken, refreshToken);
+        Sentry.setUser({ id: user.id, email: user.email });
         set({ user, accessToken, refreshToken, isAuthenticated: true });
       },
       updateTokens: (accessToken, refreshToken) => {
@@ -37,6 +39,7 @@ export const useAuthStore = create<AuthState>()(
       },
       clearAuth: () => {
         clearTokens();
+        Sentry.setUser(null);
         set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
         if (typeof window !== "undefined") {
           window.location.href = "/login";
