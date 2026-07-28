@@ -35,11 +35,13 @@ export interface CohortRetentionData {
 
 export interface AdminTransaction {
     id: string;
+    userId?: string;
     amount: number;
     currency: string;
     type: string;
     username: string;
     date: string;
+    createdAt?: string;
     txId: string;
     status: string;
     toAmount?: number;
@@ -350,8 +352,10 @@ export async function getAdminTransactions(query: AdminTransactionsQuery = {}): 
             amount: Number(tx.amount) || 0,
             currency: tx.currency ?? '',
             type: tx.type ?? '',
+            userId: tx.userId ?? tx.user_id ?? tx.user?.id ?? tx.user?._id ?? '',
             username: tx.username ?? tx.user?.email ?? tx.email ?? '',
             date: formattedDate,
+            createdAt: rawDate,
             txId: tx.txId ?? tx.reference ?? tx.transactionRef ?? '',
             status: tx.status ?? 'Pending',
             toAmount: Number(tx.toAmount ?? tx.to_amount) || undefined,
