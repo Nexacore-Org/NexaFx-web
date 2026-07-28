@@ -488,3 +488,31 @@ export async function deleteAnnouncement(id: string): Promise<void> {
         headers: getAuthHeaders(),
     });
 }
+
+// ─── Registration Trends ──────────────────────────────────────────────────
+
+export interface RegistrationDataPoint {
+  date: string;
+  newUsers: number;
+  cumulativeUsers: number;
+}
+
+export const getRegistrationTrends = async (
+  period: '7d' | '30d' | '90d' | '1y'
+): Promise<RegistrationDataPoint[]> => {
+  try {
+    const response = await apiClient<any>('/admin/analytics/registrations', {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      params: { period },
+    });
+    const data = response?.data ?? response?.registrations ?? (Array.isArray(response) ? response : []);
+    return data.map((point: any) => ({
+      date: point.date ?? point.createdAt ?? '',
+      newUsers: Number(point.newUsers ?? point.new_users ?? 0),
+      cumulativeUsers: Number(point.cumulativeUsers ?? point.cumulative_users ?? 0),
+    }));
+  } catch {
+    return [];
+  }
+};

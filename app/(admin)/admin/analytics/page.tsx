@@ -15,6 +15,7 @@ import {
 } from "@/lib/api/admin";
 import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
 import { AdminMetricCardsSkeleton } from "@/components/shared/page-skeletons";
+import { RegistrationChart } from "@/components/admin/RegistrationChart";
 
 const RevenueChart = dynamic(() => import("@/components/admin/RevenueChart").then(mod => mod.RevenueChart), {
   ssr: false,
@@ -142,6 +143,9 @@ export default function AnalyticsPage() {
           </div>
         </div>
       </div>
+
+      {/* Registration Trends Chart */}
+      <RegistrationChart />
 
       <CohortRetentionTable cohorts={cohortRetention} />
 
