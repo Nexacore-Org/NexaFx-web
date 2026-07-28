@@ -5,21 +5,18 @@ import {
   Download,
   Upload,
   CircleDollarSign,
+  Copy,
+  Check,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getBalances } from "@/lib/api/wallet";
 import { getProfile } from "@/lib/api/users";
 import { CopyButton } from "@/components/ui/copy-button";
-  Copy,
-  Check,
-  CircleDollarSign,
-} from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useState } from "react";
-import { getBalances } from "@/lib/api/wallet";
-import { getProfile } from "@/lib/api/users";
 import { haptics } from "@/lib/utils/haptics";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { useAuthStore } from "@/hooks/use-auth-store";
 
 const truncateAddress = (addr: string) =>
   `${addr.slice(0, 6)}...${addr.slice(-4)}`;
