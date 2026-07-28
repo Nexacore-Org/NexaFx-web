@@ -1,21 +1,24 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, UserPlus, ArrowUpDown, Clock, Coins } from "lucide-react";
+import { AlertTriangle, ChevronDown, UserPlus, ArrowUpDown, Clock, Coins } from "lucide-react";
 import { AdminMetricCard } from "@/components/admin/AdminMetricCard";
 import { CohortRetentionTable } from "@/components/admin/cohort-retention-table";
+import { AnomalyList } from "@/components/admin/anomaly-list";
 import dynamic from "next/dynamic";
 import {
   getAdminMetrics,
+  getAdminTransactions,
   getAdminUsers,
   getCohortRetention,
   type AdminMetrics,
+  type AdminTransaction,
   type AdminUser,
   type CohortRetentionData,
 } from "@/lib/api/admin";
 import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
 import { AdminMetricCardsSkeleton } from "@/components/shared/page-skeletons";
-import { RegistrationChart } from "@/components/admin/RegistrationChart";
+import { detectAnomalies, getAnomaliesThisWeek } from "@/lib/utils/anomaly-detection";
 
 const RevenueChart = dynamic(() => import("@/components/admin/RevenueChart").then(mod => mod.RevenueChart), {
   ssr: false,
@@ -30,6 +33,7 @@ export default function AnalyticsPage() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [recentUsers, setRecentUsers] = useState<AdminUser[]>([]);
   const [cohortRetention, setCohortRetention] = useState<CohortRetentionData[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<AdminTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [offlineNotice, setOfflineNotice] = useState<string | null>(null);
@@ -40,16 +44,18 @@ export default function AnalyticsPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [metricsData, usersData, cohortData] = await Promise.all([
+        const [metricsData, usersData, cohortData, transactionsData] = await Promise.all([
           getAdminMetrics(),
           getAdminUsers({ page: 1, limit: 5 }),
           getCohortRetention(),
+          getAdminTransactions({ page: 1, limit: 100 }),
         ]);
         hasCachedAnalyticsRef.current = true;
         setOfflineNotice(null);
         setMetrics(metricsData);
         setRecentUsers(usersData.data);
         setCohortRetention(cohortData);
+        setRecentTransactions(transactionsData.data);
         setError(null);
       } catch (err: any) {
         console.error("Failed to load admin analytics data", err);
@@ -93,6 +99,9 @@ export default function AnalyticsPage() {
     );
   }
 
+  const anomalies = detectAnomalies(recentTransactions);
+  const anomaliesThisWeek = getAnomaliesThisWeek(anomalies);
+
   return (
     <div className="space-y-6">
       {offlineNotice && (
@@ -107,6 +116,19 @@ export default function AnalyticsPage() {
         <AdminMetricCard label="Total Transaction" value={metrics.totalTransactions} icon={ArrowUpDown} />
         <AdminMetricCard label="Pending KYC" value={metrics.pendingKyc} icon={Clock} />
         <AdminMetricCard label="Currency" value={metrics.currencies} icon={Coins} />
+        <div
+          className={`bg-white rounded-2xl border px-6 py-5 flex items-center gap-4 flex-1 min-w-0 ${
+            anomaliesThisWeek > 0 ? "border-red-200 bg-red-50" : "border-gray-200"
+          }`}
+        >
+          <AlertTriangle className={`w-[25px] h-[25px] shrink-0 ${anomaliesThisWeek > 0 ? "text-red-600" : "text-gray-500"}`} />
+          <div className="min-w-0">
+            <p className="text-sm text-gray-500 truncate">Anomalies this week</p>
+            <p className={`text-2xl font-bold mt-0.5 ${anomaliesThisWeek > 0 ? "text-red-700" : "text-gray-900"}`}>
+              {anomaliesThisWeek.toLocaleString()}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Overview section header */}
@@ -144,10 +166,8 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Registration Trends Chart */}
-      <RegistrationChart />
-
       <CohortRetentionTable cohorts={cohortRetention} />
+      <AnomalyList anomalies={anomalies} />
 
       {/* Recent users table */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
