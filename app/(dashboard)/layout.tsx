@@ -12,6 +12,8 @@ import { useAuthStore } from "../../lib/store/auth-store";
 import { useRouter } from "next/navigation";
 import { useSidebarStore } from "../../hooks/use-sidebar-store";
 import { useSessionTimeout } from "@/hooks/use-session-timeout";
+import { usePinLock } from "@/hooks/use-pin-lock";
+import { PinLockScreen } from "@/components/shared/pin-lock-screen";
 
 export default function DashboardLayout({
   children,
@@ -24,6 +26,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [remainingTime, setRemainingTime] = useState(2 * 60 * 1000); // 2 minutes
+  const { isPinLocked, unlockWithPin } = usePinLock();
 
   const handleStaySignedIn = async () => {
     try {
@@ -123,6 +126,7 @@ export default function DashboardLayout({
           onStaySignedIn={handleStaySignedIn}
           remainingTimeMs={remainingTime}
         />
+        {isPinLocked && <PinLockScreen unlockWithPin={unlockWithPin} />}
       </div>
     </AuthGuard>
   );
