@@ -5,16 +5,12 @@ import {
   Download,
   Upload,
   CircleDollarSign,
-  Copy,
-  Check,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getBalances } from "@/lib/api/wallet";
 import { getProfile } from "@/lib/api/users";
 import { CopyButton } from "@/components/ui/copy-button";
-import { Tooltip } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { haptics } from "@/lib/utils/haptics";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useAuthStore } from "@/hooks/use-auth-store";
 

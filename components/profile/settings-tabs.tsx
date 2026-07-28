@@ -1,3 +1,8 @@
+import { VerificationBanner } from "@/components/profile/verification-banner";
+import { FAQSection } from "@/components/profile/faq-section";
+import { ProfileOverview } from "@/components/profile/profile-overview";
+import { PersonalInfo } from "@/components/profile/personal-info";
+
 "use client";
 
 import { useState } from "react";
@@ -5,10 +10,6 @@ import { cn } from "@/lib/utils";
 import { Lock, Bell, User, ShieldCheck } from "lucide-react";
 import { WebAuthnSection } from "@/components/settings/webauthn-section";
 import { ActiveSessions } from "@/components/settings/active-sessions";
-import { VerificationBanner } from "@/components/profile/verification-banner";
-import { FAQSection } from "@/components/profile/faq-section";
-import { ProfileOverview } from "@/components/profile/profile-overview";
-import { PersonalInfo } from "@/components/profile/personal-info";
 
 export function SettingsTabs() {
   const [activeTab, setActiveTab] = useState("Identity Verification");
@@ -81,5 +82,9 @@ export function SettingsTabs() {
         </div>
       )}
     </>
+  );
+}}
+      </nav>
+    </div>
   );
 }

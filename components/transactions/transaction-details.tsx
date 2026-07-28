@@ -265,6 +265,7 @@ function DetailRow({
                 <span className="text-sm font-bold text-foreground">{value}</span>
                 {isCopyable && (
                     <CopyButton value={value} label={`Copy ${label.toLowerCase()}`} size="sm" />
+                    <Copy className="h-3 w-3 text-muted-foreground cursor-pointer" />
                 )}
             </div>
         </div>
