@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { type AdminUser, getAdminUserById, deleteAdminUser, updateUserKyc } from '@/lib/api/admin';
 import { getRequestErrorMessage, isOfflineError } from '@/lib/api-client';
 import { X, Eye, EyeOff, Copy, Trash2, Loader2, Check, Ban } from 'lucide-react';
+import { TrustScoreBadge } from '@/components/admin/trust-score-badge';
+import { calculateTrustScore } from '@/lib/utils/trust-score';
 
 interface UserDetailPanelProps {
   user: AdminUser;
@@ -191,6 +193,16 @@ export function UserDetailPanel({ user: initialUser, onClose, onSuccess }: UserD
                     <p className="text-sm text-gray-900 font-medium">
                       {showSensitiveInfo ? currentUser.username : '••••••••'}
                     </p>
+                  </div>
+                </div>
+
+                {/* Trust Score */}
+                <div className="bg-white lg:rounded-lg lg:border lg:border-gray-200 lg:p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Trust Score</p>
+                      <TrustScoreBadge score={calculateTrustScore(currentUser).total} breakdown={calculateTrustScore(currentUser)} />
+                    </div>
                   </div>
                 </div>
 

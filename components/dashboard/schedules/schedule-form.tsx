@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
 import { createSchedule, type ScheduleFrequency, type ScheduleType } from "@/lib/api/schedules";
+import { requiresMemo, validateStellarAddress } from "@/lib/utils/stellar-validation";
 
 interface ScheduleFormProps {
   onClose: () => void;
@@ -26,9 +27,12 @@ export function ScheduleForm({ onClose, onSuccess }: ScheduleFormProps) {
       setError("Please enter a valid amount");
       return;
     }
-    if (type === "Withdraw" && !destinationAddress.trim()) {
-      setError("Please enter a destination address");
-      return;
+    if (type === "Withdraw") {
+      const result = validateStellarAddress(destinationAddress);
+      if (!result.valid) {
+        setError(result.error ?? "Please enter a valid Stellar destination address");
+        return;
+      }
     }
 
     try {
@@ -136,6 +140,11 @@ export function ScheduleForm({ onClose, onSuccess }: ScheduleFormProps) {
                 placeholder="Wallet address"
                 className="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
+              {requiresMemo(destinationAddress) && (
+                <p className="mt-2 text-xs text-amber-700">
+                  This address appears to belong to an exchange. You may need to include a memo/tag with your transfer. Please check with the recipient.
+                </p>
+              )}
             </div>
           )}
 

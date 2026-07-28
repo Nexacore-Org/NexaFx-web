@@ -22,3 +22,17 @@ export const getReferralStats = (): Promise<ReferralStats> =>
 
 export const getReferralHistory = (): Promise<ReferralHistoryItem[]> =>
   apiClient('/referrals/history', { useProxy: false })
+
+// ─── Referral Leaderboard ─────────────────────────────────────────────────
+
+export interface LeaderboardEntry {
+  rank: number;
+  maskedEmail: string;
+  referralCount: number;
+  totalRewardEarned: number;
+  rewardCurrency: string;
+  isCurrentUser: boolean;
+}
+
+export const getReferralLeaderboard = (): Promise<LeaderboardEntry[]> =>
+  apiClient('/referrals/leaderboard', { useProxy: false })
