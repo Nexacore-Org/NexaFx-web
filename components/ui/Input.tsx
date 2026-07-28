@@ -1,29 +1,79 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends React.ComponentProps<"input"> {
+  label?: string;
   error?: string;
+  helperText?: string;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ error, className, ...props }, ref) => (
-    <div>
-      <input
-        ref={ref}
-        className={cn(
-          "w-full px-4 py-2.5 bg-muted border border-border rounded-md",
-          "focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm text-foreground",
-          "placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed",
-          error && "border-destructive focus:ring-destructive/30",
-          className
-        )}
-        {...props}
-      />
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
-    </div>
-  )
-);
+function Input({
+  className,
+  label,
+  error,
+  helperText,
+  leftIcon,
+  rightIcon,
+  id,
+  ...props
+}: InputProps) {
+  const generatedId = React.useId();
+  const inputId = id ?? generatedId;
 
-Input.displayName = "Input";
+  return (
+    <div className="flex flex-col gap-1.5">
+      {label && (
+        <label htmlFor={inputId} className="text-sm font-medium text-foreground">
+          {label}
+        </label>
+      )}
+      <div className="relative flex items-center">
+        {leftIcon && (
+          <span className="absolute left-3 text-muted-foreground [&_svg]:size-4 pointer-events-none">
+            {leftIcon}
+          </span>
+        )}
+        <input
+          id={inputId}
+          aria-invalid={!!error}
+          aria-describedby={
+            error
+              ? `${inputId}-error`
+              : helperText
+                ? `${inputId}-helper`
+                : undefined
+          }
+          className={cn(
+            "flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-colors placeholder:text-muted-foreground",
+            "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+            error && "border-destructive focus-visible:ring-destructive/20",
+            leftIcon && "pl-9",
+            rightIcon && "pr-9",
+            className
+          )}
+          {...props}
+        />
+        {rightIcon && (
+          <span className="absolute right-3 text-muted-foreground [&_svg]:size-4 pointer-events-none">
+            {rightIcon}
+          </span>
+        )}
+      </div>
+      {error && (
+        <p id={`${inputId}-error`} className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
+      {!error && helperText && (
+        <p id={`${inputId}-helper`} className="text-xs text-muted-foreground">
+          {helperText}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export { Input };

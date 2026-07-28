@@ -1,7 +1,9 @@
-import { ListFilter } from "lucide-react";
-import { AdminTransaction } from "@/lib/api/admin";
+import { ListFilter, Flag, X, ShieldCheck } from "lucide-react";
+import { AdminTransaction, flagTransaction, unflagTransaction } from "@/lib/api/admin";
 import { TypeTransaction } from "./TypeTransaction";
 import { EmptyState } from "@/components/shared/empty-state";
+import { Tooltip } from "@/components/ui/tooltip";
+import { useState } from "react";
 
 interface TableTransactionProps {
   transactions: AdminTransaction[];
@@ -57,6 +59,7 @@ export function TableTransaction({ transactions }: TableTransactionProps) {
             </th>
             <th className="py-4 hidden sm:table-cell">Date</th>
             <th className="py-4">Transaction ID</th>
+            <th className="py-4 hidden sm:table-cell text-center">Status</th>
             <th className="py-4 sm:hidden">Type</th>
             <th className="py-4 text-center">Flag</th>
           </tr>
@@ -91,6 +94,32 @@ export function TableTransaction({ transactions }: TableTransactionProps) {
                 </td>
                 <td className="py-5 border border-transparent border-b-[#00000033]">
                   {item.txId}
+                </td>
+                {/* Whitelisted status badge */}
+                <td className="hidden sm:table-cell py-5 border border-transparent border-b-[#00000033] text-center">
+                  {item.whitelisted ? (
+                    <Tooltip
+                      content={
+                        <div className="text-xs">
+                          <p className="font-semibold">Whitelisted</p>
+                          <p className="mt-0.5 text-muted-foreground">
+                            by {item.whitelistedByEmail || item.whitelistedBy || 'an admin'}
+                            {item.whitelistedAt ? <> on {new Date(item.whitelistedAt).toLocaleDateString()}</> : ''}
+                          </p>
+                          {item.whitelistNotes && (
+                            <p className="mt-0.5 italic text-muted-foreground">&quot;{item.whitelistNotes}&quot;</p>
+                          )}
+                        </div>
+                      }
+                      side="top"
+                    >
+                      <span className="inline-flex items-center justify-center cursor-help">
+                        <ShieldCheck className="h-5 w-5 text-green-500" />
+                      </span>
+                    </Tooltip>
+                  ) : (
+                    <span className="text-gray-300">&mdash;</span>
+                  )}
                 </td>
                 <td className="sm:hidden py-5 border border-transparent border-b-[#00000033]">
                   <TypeTransaction>{item.type}</TypeTransaction>
