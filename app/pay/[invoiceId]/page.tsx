@@ -1,26 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import QRCode from "react-qr-code";
 import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getInvoice } from "@/lib/utils/invoices";
+import { validateStellarAddress } from "@/lib/utils/stellar-validation";
 import { Invoice } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 
 export default function PayInvoicePage() {
   const params = useParams();
   const { invoiceId } = params;
-  const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (typeof invoiceId === "string") {
-      const foundInvoice = getInvoice(invoiceId);
-      setInvoice(foundInvoice ?? null);
-    }
+  const invoice = useMemo<Invoice | null>(() => {
+    return typeof invoiceId === "string" ? getInvoice(invoiceId) ?? null : null;
   }, [invoiceId]);
 
   const handleCopy = () => {
@@ -44,6 +40,9 @@ export default function PayInvoicePage() {
       </div>
     );
   }
+
+  const addressValidation = validateStellarAddress(invoice.walletAddress);
+  const canDisplayWallet = addressValidation.valid;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
@@ -83,32 +82,40 @@ export default function PayInvoicePage() {
           <p className="text-sm text-center text-muted-foreground mb-4">
             To pay, send the exact amount to the wallet address below.
           </p>
-          <div className="flex items-center justify-center mb-4">
-            <QRCode
-              value={invoice.walletAddress}
-              size={128}
-              bgColor="var(--muted)"
-              fgColor="var(--foreground)"
-            />
-          </div>
-          <div className="relative bg-background rounded-md p-2 flex items-center">
-            <p className="text-sm font-mono break-all flex-grow">
-              {invoice.walletAddress}
+          {canDisplayWallet ? (
+            <>
+              <div className="flex items-center justify-center mb-4">
+                <QRCode
+                  value={invoice.walletAddress}
+                  size={128}
+                  bgColor="var(--muted)"
+                  fgColor="var(--foreground)"
+                />
+              </div>
+              <div className="relative bg-background rounded-md p-2 flex items-center">
+                <p className="text-sm font-mono break-all flex-grow">
+                  {invoice.walletAddress}
+                </p>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={handleCopy}
+                  className="h-8 w-8 flex-shrink-0"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                {copied && (
+                  <span className="absolute -top-8 right-0 bg-foreground text-background text-xs px-2 py-1 rounded">
+                    Copied!
+                  </span>
+                )}
+              </div>
+            </>
+          ) : (
+            <p className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {addressValidation.error ?? "This invoice has an invalid Stellar wallet address."}
             </p>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={handleCopy}
-              className="h-8 w-8 flex-shrink-0"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            {copied && (
-              <span className="absolute -top-8 right-0 bg-foreground text-background text-xs px-2 py-1 rounded">
-                Copied!
-              </span>
-            )}
-          </div>
+          )}
         </div>
 
         <Link href="/signup" className="w-full">

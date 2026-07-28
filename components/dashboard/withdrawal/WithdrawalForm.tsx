@@ -1,8 +1,7 @@
-import { FeeEstimatorModal } from "@/components/shared/fee-estimator-modal";
-
-("use client");
+"use client";
 
 import { useState, useEffect } from "react";
+import { FeeEstimatorModal } from "@/components/shared/fee-estimator-modal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
@@ -15,6 +14,7 @@ import {
   type WithdrawalFormValues,
 } from "@/lib/validations/transactions";
 import { Input } from "@/components/ui/Input";
+import { requiresMemo } from "@/lib/utils/stellar-validation";
 
 interface CurrencyOption {
   id: string;
@@ -42,6 +42,7 @@ export function WithdrawalForm() {
     handleSubmit,
     setValue,
     setError,
+    watch,
     formState: { errors },
   } = useForm<WithdrawalFormValues>({
     resolver: zodResolver(withdrawalSchema),
@@ -99,6 +100,8 @@ export function WithdrawalForm() {
 
   const selectedCurrency =
     currencies.find((c) => c.id === currency) || currencies[0];
+  const walletAddress = watch("walletAddress");
+  const showMemoWarning = requiresMemo(walletAddress ?? "");
 
   const onSubmit = (data: WithdrawalFormValues) => {
     if (selectedCurrency) {
@@ -161,6 +164,11 @@ export function WithdrawalForm() {
               errors.walletAddress ? "border-destructive" : "border-border",
             )}
           />
+          {showMemoWarning && (
+            <p className="text-xs text-amber-700">
+              This address appears to belong to an exchange. You may need to include a memo/tag with your transfer. Please check with the recipient.
+            </p>
+          )}
         </div>
 
         {/* Currency Selector */}
