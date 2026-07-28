@@ -226,7 +226,7 @@ export default function DeveloperPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {features.map((feature, index) => (
+            {features.map((feature) => (
               <Card
                 key={feature.title}
                 variant="elevated"
