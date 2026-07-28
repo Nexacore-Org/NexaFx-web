@@ -16,6 +16,9 @@ export interface AdminUser {
     kycStatus: 'Verified' | 'Unverified';
     createdAt: string;
     isActive: boolean;
+    createdAtRaw?: string;
+    twoFactorEnabled?: boolean;
+    trustScore?: number;
 }
 
 export interface AdminMetrics {
@@ -138,6 +141,8 @@ export async function getAdminUsers(query: AdminUsersQuery = {}): Promise<{ data
                   year: 'numeric',
               })
             : '',
+        createdAtRaw: user.createdAt ?? user.created_at ?? undefined,
+        twoFactorEnabled: user.twoFactorEnabled ?? user.two_factor_enabled ?? user.mfaEnabled ?? undefined,
         isActive: user.isActive ?? true,
     }));
 
@@ -170,6 +175,8 @@ export async function getAdminUserById(id: string): Promise<AdminUser> {
                   year: 'numeric',
               })
             : '',
+        createdAtRaw: user.createdAt ?? user.created_at ?? undefined,
+        twoFactorEnabled: user.twoFactorEnabled ?? user.two_factor_enabled ?? user.mfaEnabled ?? undefined,
         isActive: user.isActive ?? true,
     };
 }
