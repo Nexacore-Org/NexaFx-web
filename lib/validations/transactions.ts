@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { validateStellarAddress } from "@/lib/utils/stellar-validation";
 
 export const convertSchema = z.object({
   amount: z
@@ -12,8 +13,15 @@ export const convertSchema = z.object({
 export const withdrawalSchema = z.object({
   walletAddress: z
     .string()
-    .min(1, "Wallet address is required")
-    .min(10, "Please enter a valid wallet address"),
+    .superRefine((value, context) => {
+      const result = validateStellarAddress(value);
+      if (!result.valid) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: result.error ?? "Enter a valid Stellar public wallet address",
+        });
+      }
+    }),
   amount: z
     .string()
     .min(1, "Amount is required")

@@ -16,6 +16,9 @@ export interface AdminUser {
     kycStatus: 'Verified' | 'Unverified';
     createdAt: string;
     isActive: boolean;
+    createdAtRaw?: string;
+    twoFactorEnabled?: boolean;
+    trustScore?: number;
 }
 
 export interface AdminMetrics {
@@ -35,11 +38,13 @@ export interface CohortRetentionData {
 
 export interface AdminTransaction {
     id: string;
+    userId?: string;
     amount: number;
     currency: string;
     type: string;
     username: string;
     date: string;
+    createdAt?: string;
     txId: string;
     status: string;
     toAmount?: number;
@@ -136,6 +141,8 @@ export async function getAdminUsers(query: AdminUsersQuery = {}): Promise<{ data
                   year: 'numeric',
               })
             : '',
+        createdAtRaw: user.createdAt ?? user.created_at ?? undefined,
+        twoFactorEnabled: user.twoFactorEnabled ?? user.two_factor_enabled ?? user.mfaEnabled ?? undefined,
         isActive: user.isActive ?? true,
     }));
 
@@ -168,6 +175,8 @@ export async function getAdminUserById(id: string): Promise<AdminUser> {
                   year: 'numeric',
               })
             : '',
+        createdAtRaw: user.createdAt ?? user.created_at ?? undefined,
+        twoFactorEnabled: user.twoFactorEnabled ?? user.two_factor_enabled ?? user.mfaEnabled ?? undefined,
         isActive: user.isActive ?? true,
     };
 }
@@ -350,8 +359,10 @@ export async function getAdminTransactions(query: AdminTransactionsQuery = {}): 
             amount: Number(tx.amount) || 0,
             currency: tx.currency ?? '',
             type: tx.type ?? '',
+            userId: tx.userId ?? tx.user_id ?? tx.user?.id ?? tx.user?._id ?? '',
             username: tx.username ?? tx.user?.email ?? tx.email ?? '',
             date: formattedDate,
+            createdAt: rawDate,
             txId: tx.txId ?? tx.reference ?? tx.transactionRef ?? '',
             status: tx.status ?? 'Pending',
             toAmount: Number(tx.toAmount ?? tx.to_amount) || undefined,
@@ -484,6 +495,154 @@ export async function toggleAnnouncement(id: string, status: 'Active' | 'Inactiv
 
 export async function deleteAnnouncement(id: string): Promise<void> {
     await apiClient<void>(`/admin/announcements/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+    });
+}
+
+// ─── Broadcast Emails ──────────────────────────────────────────────────────
+
+export interface BroadcastEmail {
+    id: string;
+    subject: string;
+    content: string;
+    targetAudience: string;
+    status: 'Pending' | 'Sent' | 'Failed';
+    scheduledAt?: string;
+    sentAt?: string;
+    recipientCount: number;
+    createdAt: string;
+}
+
+export async function getBroadcastEmails(): Promise<BroadcastEmail[]> {
+    const response = await apiClient<any>('/admin/broadcast-emails', {
+        method: 'GET',
+        headers: getAuthHeaders(),
+    });
+    const data = response?.data ?? response?.emails ?? (Array.isArray(response) ? response : []);
+    return data.map((item: any) => ({
+        id: item.id ?? item._id ?? '',
+        subject: item.subject ?? '',
+        content: item.content ?? '',
+        targetAudience: item.targetAudience ?? 'All Users',
+        status: item.status ?? 'Pending',
+        scheduledAt: item.scheduledAt ?? undefined,
+        sentAt: item.sentAt ?? undefined,
+        recipientCount: Number(item.recipientCount) || 0,
+        createdAt: item.createdAt
+            ? new Date(item.createdAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+              })
+            : '',
+    }));
+}
+
+export async function sendBroadcastEmail(data: {
+    subject: string;
+    content: string;
+    targetAudience: string;
+    scheduledAt?: string;
+}): Promise<BroadcastEmail> {
+    const response = await apiClient<any>('/admin/broadcast-emails', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+    });
+    const item = response?.data ?? response;
+    return {
+        id: item.id ?? item._id ?? '',
+        subject: item.subject ?? data.subject,
+        content: item.content ?? data.content,
+        targetAudience: item.targetAudience ?? data.targetAudience,
+        status: item.status ?? 'Pending',
+        scheduledAt: item.scheduledAt ?? data.scheduledAt,
+        sentAt: item.sentAt ?? undefined,
+        recipientCount: Number(item.recipientCount) || 0,
+        createdAt: item.createdAt
+            ? new Date(item.createdAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+              })
+            : new Date().toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+              }),
+    };
+}
+
+export async function deleteBroadcastEmail(id: string): Promise<void> {
+    await apiClient<void>(`/admin/broadcast-emails/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+    });
+}
+
+// ─── User Notes ─────────────────────────────────────────────────────────────
+
+export interface UserNote {
+    id: string;
+    adminEmail: string;
+    content: string;
+    createdAt: string;
+}
+
+export async function getUserNotes(userId: string): Promise<UserNote[]> {
+    const response = await apiClient<any>(`/admin/users/${userId}/notes`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+    });
+    const data = response?.data ?? response?.notes ?? (Array.isArray(response) ? response : []);
+    return data.map((item: any) => ({
+        id: item.id ?? item._id ?? '',
+        adminEmail: item.adminEmail ?? item.admin_email ?? '',
+        content: item.content ?? item.note ?? '',
+        createdAt: item.createdAt
+            ? new Date(item.createdAt).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+              })
+            : '',
+    }));
+}
+
+export async function addUserNote(userId: string, content: string): Promise<UserNote> {
+    const response = await apiClient<any>(`/admin/users/${userId}/notes`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ content }),
+    });
+    const item = response?.data ?? response;
+    return {
+        id: item.id ?? item._id ?? '',
+        adminEmail: item.adminEmail ?? item.admin_email ?? '',
+        content: item.content ?? content,
+        createdAt: item.createdAt
+            ? new Date(item.createdAt).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+              })
+            : new Date().toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+              }),
+    };
+}
+
+export async function deleteUserNote(userId: string, noteId: string): Promise<void> {
+    await apiClient<void>(`/admin/users/${userId}/notes/${noteId}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
     });
