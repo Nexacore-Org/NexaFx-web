@@ -11,6 +11,7 @@ import {
   ArrowUpDown,
   TrendingUp,
   FileText,
+  Code2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/hooks/use-sidebar-store";
@@ -22,6 +23,7 @@ const menuItems = [
   { icon: Mail, label: "Transactions", href: "/transactions" },
   { icon: FileText, label: "Invoices", href: "/invoices" },
   { icon: TrendingUp, label: "Insights", href: "/insights" },
+  { icon: Code2, label: "Developer API", href: "/developer" },
   { icon: CircleUserRound, label: "Settings", href: "/settings" },
 ];
 

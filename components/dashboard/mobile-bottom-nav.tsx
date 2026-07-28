@@ -18,6 +18,7 @@ import {
   Clock,
   HelpCircle,
   Zap,
+  Code2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,7 @@ const moreNavItems: NavItem[] = [
   { icon: TrendingUp, label: "Insights", href: "/dashboard/insights" },
   { icon: Users, label: "Referrals", href: "/dashboard/referrals" },
   { icon: Clock, label: "Schedules", href: "/dashboard/schedules" },
+  { icon: Code2, label: "Developer", href: "/developer" },
   { icon: HelpCircle, label: "Support", href: "/dashboard/support" },
   { icon: Zap, label: "What's New", href: "/dashboard/whats-new" },
 ];
