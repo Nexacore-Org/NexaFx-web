@@ -21,6 +21,19 @@ import { useAuthStore } from "@/hooks/use-auth-store";
 const truncateAddress = (addr: string) =>
   `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
+function formatCurrency(amount: string | number | undefined, currency: string) {
+  if (amount === undefined || amount === null || amount === "") return "";
+  const raw = typeof amount === "string" ? amount.replace(/[^0-9.-]+/g, "") : String(amount);
+  const num = Number(raw);
+  if (!Number.isFinite(num)) return String(amount);
+  try {
+    const locale = currency === "NGN" ? "en-NG" : "en-US";
+    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(num);
+  } catch {
+    return String(amount);
+  }
+}
+
 type AccountOverviewTypes = {
   openDeposit: boolean;
   onDepositClick?: () => void;
@@ -32,7 +45,6 @@ export function AccountOverview({
   onDepositClick,
   onWithdrawClick,
 }: AccountOverviewTypes) {
-  const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState("");
@@ -52,7 +64,6 @@ export function AccountOverview({
 
   useEffect(() => {
     if (wsBalance && wsBalance.length > 0) {
-      setBalances(wsBalance);
       setError(null);
 
       const ngnItem = wsBalance.find(
@@ -64,30 +75,17 @@ export function AccountOverview({
       const firstItem = wsBalance[0];
 
       if (ngnItem) {
-        setBalance(formatCurrency(ngnItem.amount, "NGN"));
+        setBalance(formatCurrency(ngnItem.balance, "NGN"));
       } else if (usdItem) {
-        setBalance(formatCurrency(usdItem.amount, "USD"));
+        setBalance(formatCurrency(usdItem.balance, "USD"));
       } else {
-        setBalance(formatCurrency(firstItem.amount, firstItem.currency));
+        setBalance(formatCurrency(firstItem.balance, firstItem.currency));
       }
     }
   }, [wsBalance]);
 
   useEffect(() => {
     let cancelled = false;
-
-    const formatCurrency = (amount: string | number | undefined, currency: string) => {
-      if (amount === undefined || amount === null || amount === "") return "";
-      const raw = typeof amount === "string" ? amount.replace(/[^0-9.-]+/g, "") : String(amount);
-      const num = Number(raw);
-      if (!Number.isFinite(num)) return String(amount);
-      try {
-        const locale = currency === "NGN" ? "en-NG" : "en-US";
-        return new Intl.NumberFormat(locale, { style: "currency", currency }).format(num as number);
-      } catch {
-        return String(amount);
-      }
-    };
 
     const fetchAccount = async () => {
       try {
@@ -131,16 +129,6 @@ export function AccountOverview({
       cancelled = true;
     };
   }, []);
-  const handleCopyAddress = async () => {
-    try {
-      await navigator.clipboard.writeText(walletAddress);
-      setCopied(true);
-      haptics.light();
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy address:", err);
-    }
-  };
 
   return (
     <section className="account-overview-bg rounded-b-xl md:rounded-b-none md:ml-4">
@@ -178,23 +166,6 @@ export function AccountOverview({
                     {truncateAddress(walletAddress)}
                   </p>
                   <CopyButton value={walletAddress} label="Copy wallet address" size="sm" />
-                  <Tooltip content={`Stellar wallet: ${walletAddress}`}>
-                    <p className="text-xs font-medium text-foreground">
-                      {truncateAddress(walletAddress)}
-                    </p>
-                  </Tooltip>
-                  <button
-                    onClick={handleCopyAddress}
-                    aria-label="Copy wallet address"
-                    className="transition-colors"
-                    title={copied ? "Copied!" : "Copy address"}
-                  >
-                    {copied ? (
-                      <Check className="size-4 text-green-500" />
-                    ) : (
-                      <Copy className="size-4" />
-                    )}
-                  </button>
                 </div>
               ) : null}
             </div>

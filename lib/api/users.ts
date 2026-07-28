@@ -24,3 +24,21 @@ export const terminateAllOtherSessions = (): Promise<void> => {
     method: "DELETE",
   });
 };
+
+// ─── Account Tier & Limits ────────────────────────────────────────────────
+
+export type AccountTier = 'Basic' | 'Verified' | 'Premium';
+
+export interface AccountLimits {
+  tier: AccountTier;
+  dailyConversionLimit: number;
+  monthlyConversionLimit: number;
+  dailyWithdrawalLimit: number;
+  monthlyWithdrawalLimit: number;
+  currency: string;
+  nextTier?: AccountTier;
+  nextTierRequirements?: string[];
+}
+
+export const getAccountLimits = (): Promise<AccountLimits> =>
+  apiClient('/users/tier', { useProxy: false });

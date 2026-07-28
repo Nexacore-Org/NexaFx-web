@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { addInvoice } from "@/lib/utils/invoices";
+import { validateStellarAddress } from "@/lib/utils/stellar-validation";
 import { useUser } from "@/hooks/use-user"; // Assuming a hook to get user info
 
 export default function CreateInvoicePage() {
@@ -16,10 +17,18 @@ export default function CreateInvoicePage() {
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("NGN");
   const [description, setDescription] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     if (!amount || !user) return;
+
+    const addressValidation = validateStellarAddress(user.walletAddress ?? "");
+    if (!addressValidation.valid) {
+      setError(addressValidation.error ?? "Your wallet address is not valid.");
+      return;
+    }
 
     const newInvoice = {
       id: uuidv4(),
@@ -27,7 +36,7 @@ export default function CreateInvoicePage() {
       currency,
       description,
       senderName: user.name, // Assuming user object has a name property
-      walletAddress: user.walletAddress, // Assuming user object has a walletAddress
+      walletAddress: user.walletAddress,
       createdAt: new Date().toISOString(),
       status: "Pending" as const,
     };
@@ -40,6 +49,11 @@ export default function CreateInvoicePage() {
     <div className="max-w-2xl mx-auto p-4 sm:p-6">
       <h1 className="text-2xl font-bold mb-6">Create Invoice</h1>
       <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="amount">Amount</Label>
