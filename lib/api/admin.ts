@@ -581,6 +581,31 @@ export async function deleteBroadcastEmail(id: string): Promise<void> {
     });
 }
 
+// ─── Geographic Analytics ────────────────────────────────────────────────────
+
+export interface GeoData {
+  country: string;       // ISO 3166-1 alpha-2 e.g. "NG"
+  countryName: string;   // e.g. "Nigeria"
+  transactionCount: number;
+  totalVolume: number;
+  currency: string;
+}
+
+export async function getGeoAnalytics(): Promise<GeoData[]> {
+  const response = await apiClient<any>('/admin/analytics/geo', {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  const data = response?.data ?? response?.geo ?? response?.countries ?? (Array.isArray(response) ? response : []);
+  return (data as any[]).map((item: any) => ({
+    country: item.country ?? item.country_code ?? '',
+    countryName: item.countryName ?? item.country_name ?? item.name ?? '',
+    transactionCount: Number(item.transactionCount ?? item.transaction_count ?? item.count) || 0,
+    totalVolume: Number(item.totalVolume ?? item.total_volume ?? item.volume) || 0,
+    currency: item.currency ?? 'USD',
+  }));
+}
+
 // ─── User Notes ─────────────────────────────────────────────────────────────
 
 export interface UserNote {

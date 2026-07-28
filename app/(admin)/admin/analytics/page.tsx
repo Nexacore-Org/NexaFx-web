@@ -11,10 +11,12 @@ import {
   getAdminTransactions,
   getAdminUsers,
   getCohortRetention,
+  getGeoAnalytics,
   type AdminMetrics,
   type AdminTransaction,
   type AdminUser,
   type CohortRetentionData,
+  type GeoData,
 } from "@/lib/api/admin";
 import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
 import { AdminMetricCardsSkeleton } from "@/components/shared/page-skeletons";
@@ -29,11 +31,21 @@ const RevenueChart = dynamic(() => import("@/components/admin/RevenueChart").the
   ),
 });
 
+const GeoDistribution = dynamic(() => import("@/components/admin/geo-distribution").then(mod => mod.GeoDistribution), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-white rounded-2xl flex-1 min-w-0 h-63.25 py-2.5 px-5 border border-gray-200 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
+    </div>
+  ),
+});
+
 export default function AnalyticsPage() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [recentUsers, setRecentUsers] = useState<AdminUser[]>([]);
   const [cohortRetention, setCohortRetention] = useState<CohortRetentionData[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<AdminTransaction[]>([]);
+  const [geoData, setGeoData] = useState<GeoData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [offlineNotice, setOfflineNotice] = useState<string | null>(null);
@@ -44,11 +56,12 @@ export default function AnalyticsPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [metricsData, usersData, cohortData, transactionsData] = await Promise.all([
+        const [metricsData, usersData, cohortData, transactionsData, geoResult] = await Promise.all([
           getAdminMetrics(),
           getAdminUsers({ page: 1, limit: 5 }),
           getCohortRetention(),
           getAdminTransactions({ page: 1, limit: 100 }),
+          getGeoAnalytics(),
         ]);
         hasCachedAnalyticsRef.current = true;
         setOfflineNotice(null);
@@ -56,6 +69,7 @@ export default function AnalyticsPage() {
         setRecentUsers(usersData.data);
         setCohortRetention(cohortData);
         setRecentTransactions(transactionsData.data);
+        setGeoData(geoResult);
         setError(null);
       } catch (err: any) {
         console.error("Failed to load admin analytics data", err);
@@ -167,6 +181,10 @@ export default function AnalyticsPage() {
       </div>
 
       <CohortRetentionTable cohorts={cohortRetention} />
+
+      {/* Geographic distribution */}
+      <GeoDistribution data={geoData} />
+
       <AnomalyList anomalies={anomalies} />
 
       {/* Recent users table */}
