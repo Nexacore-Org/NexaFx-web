@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export default function Hero() {
   return (
-    <section className="flex flex-col md:flex-row max-w-360 mx-auto px-6 md:px-12 md:py- gap-12 lg:gap-30 items-center mb-32">
+    <section className="flex flex-col md:flex-row max-w-[1440px] mx-auto px-6 md:px-12 md:py-24 gap-12 lg:gap-32 items-center mb-32">
       <div className="w-full md:w-1/2">
         <div className="inline-flex items-center gap-2 bg-[#F39A00]/10 px-4 py-1.5 rounded-full mb-6">
           <span className="w-2 h-2 bg-[#F39A00] rounded-full animate-pulse" />
@@ -45,7 +45,7 @@ export default function Hero() {
         <div className="bg-white/50 p-4 rounded-4xl shadow-2xl backdrop-blur border">
           <Image
             src="/finance.png"
-            alt="finance visual"
+            alt="NexaFX financial trading platform"
             width={800}
             height={800}
             className="rounded-3xl w-[450px] h-[480px] object-cover"

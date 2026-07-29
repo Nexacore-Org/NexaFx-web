@@ -1,4 +1,6 @@
+import { Megaphone } from "lucide-react";
 import { type PushNotification } from "@/lib/api/admin";
+import { EmptyState } from "@/components/shared/empty-state";
 
 type Props = {
     data: PushNotification[];
@@ -28,7 +30,7 @@ export default function PushNotificationTable({
     };
 
     return (
-        <div className="bg-white rounded-lg  overflow-x-auto">
+        <div className="bg-white rounded-lg overflow-x-auto w-full max-w-[100vw]">
             <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-left h-11 lg:h-16.5">
                     <tr>
@@ -57,6 +59,7 @@ export default function PushNotificationTable({
                     </tr>
                 </thead>
 
+                {data.length > 0 && (
                 <tbody>
                     {data.map((row) => (
                         <tr key={row.id} className="border-t h-16 md:h-22 ">
@@ -95,7 +98,15 @@ export default function PushNotificationTable({
                         </tr>
                     ))}
                 </tbody>
+                )}
             </table>
+            {data.length === 0 && (
+                <EmptyState
+                    icon={<Megaphone className="h-16 w-16" />}
+                    title="No notifications sent yet"
+                    description="Use the form above to send your first push notification."
+                />
+            )}
         </div>
     );
 }

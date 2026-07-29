@@ -26,11 +26,11 @@ export function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
 
   return createPortal(
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200'>
-      <div className='bg-white dark:bg-card w-full max-w-3xl rounded-xl shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden relative'>
+      <div className='bg-white dark:bg-card w-full max-w-3xl max-md:w-screen max-md:h-[100dvh] max-md:max-h-screen max-md:rounded-none max-md:overflow-y-auto rounded-xl shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden relative'>
         {status === 'success' ? (
           <div className='flex flex-col items-center justify-center p-12 text-center space-y-6'>
             <div className='relative'>
-              <Image src='/Frame.svg' alt='Success' width={500} height={100} />
+              <Image src='/Frame.svg' alt='Verification completed successfully' width={500} height={100} />
             </div>
 
             <div className='pt-4 w-full max-w-sm'>

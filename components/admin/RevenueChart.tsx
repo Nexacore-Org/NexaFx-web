@@ -76,7 +76,7 @@ export function RevenueChart() {
                             tick={{ fontSize: 10, fill: "#9CA3AF" }}
                             width={44}
                         />
-<Tooltip
+                        <Tooltip
                             cursor={{ fill: 'transparent' }}
                             formatter={(value) => [
                                 `$${(Number(value) || 0).toLocaleString()}`,

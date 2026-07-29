@@ -13,6 +13,12 @@
 # testing
 /coverage
 
+# e2e / playwright
+/e2e/.auth/
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
 # next.js
 /.next/
 /out/
@@ -40,3 +46,7 @@ pnpm-lock.yaml
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+app/.vscode/
+
+*storybook.log
+storybook-static

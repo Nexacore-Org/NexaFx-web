@@ -1,7 +1,65 @@
-import { useAuthStore } from '@/hooks/use-auth-store';
+import { useAuthStore } from "@/hooks/use-auth-store";
+import * as Sentry from "@sentry/nextjs";
+import { parseRetryAfter } from "./utils/retry-after";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
-const PROXY_URL = '/api/proxy';
+export class RateLimitError extends Error {
+  retryAfterSeconds: number;
+
+  constructor(retryAfterSeconds: number) {
+    super("Rate limit exceeded");
+    this.name = "RateLimitError";
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const PROXY_URL = "/api/proxy";
+
+export const OFFLINE_STALE_DATA_MESSAGE =
+  "You're offline. This data may be out of date.";
+export const OFFLINE_EMPTY_DATA_MESSAGE =
+  "Unable to load — you appear to be offline.";
+
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+export class OfflineError extends ApiError {
+  constructor(message = "No internet connection") {
+    super(message, 0);
+    this.name = "OfflineError";
+  }
+}
+
+export function isOfflineError(error: unknown): error is OfflineError {
+  return error instanceof ApiError && error.status === 0;
+}
+
+export function getOfflineMessage(hasCachedData: boolean) {
+  return hasCachedData
+    ? OFFLINE_STALE_DATA_MESSAGE
+    : OFFLINE_EMPTY_DATA_MESSAGE;
+}
+
+export function getRequestErrorMessage(
+  error: unknown,
+  options: {
+    fallback: string;
+    hasCachedData?: boolean;
+  },
+) {
+  if (isOfflineError(error)) {
+    return getOfflineMessage(Boolean(options.hasCachedData));
+  }
+
+  return error instanceof Error ? error.message : options.fallback;
+}
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string>;
@@ -10,7 +68,6 @@ interface RequestOptions extends RequestInit {
 
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
-const inFlightRequests = new Map<string, Promise<any>>();
 
 function subscribeTokenRefresh(cb: (token: string) => void) {
   refreshSubscribers.push(cb);
@@ -21,19 +78,31 @@ function onRefreshed(token: string) {
   refreshSubscribers = [];
 }
 
+function captureApiError(error: ApiError, endpoint: string) {
+  Sentry.captureException(error, {
+    extra: {
+      endpoint,
+      status: error.status,
+    },
+  });
+}
+
 async function refreshToken(): Promise<string | null> {
-  const refreshTokenStr = typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
+  const refreshTokenStr =
+    typeof window !== "undefined"
+      ? localStorage.getItem("refresh_token")
+      : null;
   if (!refreshTokenStr) return null;
 
   try {
     const response = await fetch(`${BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken: refreshTokenStr }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to refresh token');
+      throw new Error("Failed to refresh token");
     }
 
     const data = await response.json();
@@ -45,7 +114,7 @@ async function refreshToken(): Promise<string | null> {
     }
     return null;
   } catch (error) {
-    console.error('Refresh token error:', error);
+    console.error("Refresh token error:", error);
     useAuthStore.getState().logout();
     return null;
   }
@@ -55,105 +124,122 @@ export async function apiClient<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { params, useProxy = true, ...fetchOptions } = options;
-  
-  let url = '';
-  if (useProxy) {
-    url = `${PROXY_URL}${path.startsWith('/') ? path : `/${path}`}`;
-  } else {
-    url = `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    throw new OfflineError("No internet connection");
   }
-  
+
+  const { params, useProxy = true, ...fetchOptions } = options;
+
+  let url = "";
+  if (useProxy) {
+    url = `${PROXY_URL}${path.startsWith("/") ? path : `/${path}`}`;
+  } else {
+    url = `${BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+  }
+
   const searchParams = new URLSearchParams();
   if (params) {
     Object.keys(params).forEach((key) => searchParams.append(key, params[key]));
   }
-  const finalUrl = searchParams.toString() ? `${url}?${searchParams.toString()}` : url;
+  const finalUrl = searchParams.toString()
+    ? `${url}?${searchParams.toString()}`
+    : url;
 
-  const isGet = !fetchOptions.method || fetchOptions.method.toUpperCase() === 'GET';
-  let requestKey = '';
-  if (isGet) {
-    requestKey = finalUrl;
-    if (inFlightRequests.has(requestKey)) {
-      return inFlightRequests.get(requestKey) as Promise<T>;
+  const getHeaders = () => {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("access_token")
+        : null;
+    const headers = new Headers(fetchOptions.headers || {});
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
     }
-  }
-
-  const performRequest = async (): Promise<T> => {
-    const getHeaders = () => {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-      const headers = new Headers(fetchOptions.headers || {});
-      if (!headers.has('Content-Type')) {
-        headers.set('Content-Type', 'application/json');
+    if (token) {
+      if (useProxy) {
+        headers.set("x-client-token", token);
+      } else {
+        headers.set("Authorization", `Bearer ${token}`);
       }
-      if (token) {
-        if (useProxy) {
-          headers.set('x-client-token', token);
-        } else {
-          headers.set('Authorization', `Bearer ${token}`);
-        }
-      }
-      return headers;
-    };
+    }
+    return headers;
+  };
 
-    const executeRequest = (): Promise<Response> => {
-      return fetch(finalUrl, {
+  const executeRequest = async (): Promise<Response> => {
+    try {
+      return await fetch(finalUrl, {
         ...fetchOptions,
         headers: getHeaders(),
       });
-    };
-
-    let response = await executeRequest();
-
-    if (response.status === 401) {
-      if (!isRefreshing) {
-        isRefreshing = true;
-        const newToken = await refreshToken();
-        isRefreshing = false;
-        if (newToken) {
-          onRefreshed(newToken);
-        } else {
-          refreshSubscribers = [];
-          const data = await response.clone().json().catch(() => ({}));
-          throw new Error(data?.message || 'Unauthorized');
-        }
-      } else {
-        return new Promise<T>((resolve, reject) => {
-          subscribeTokenRefresh(async () => {
-            try {
-              const retryResponse = await executeRequest();
-              if (!retryResponse.ok) {
-                const data = await retryResponse.json().catch(() => ({}));
-                reject(new Error(data?.message || `Request failed with status ${retryResponse.status}`));
-                return;
-              }
-              resolve(await retryResponse.json());
-            } catch (err) {
-              reject(err);
-            }
-          });
-        });
+    } catch (error) {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        throw new OfflineError("No internet connection");
       }
 
-      response = await executeRequest();
+      throw error;
     }
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data?.message || `Request failed with status ${response.status}`);
-    }
-
-    return response.json();
   };
 
-  const requestPromise = performRequest();
+  let response = await executeRequest();
 
-  if (isGet) {
-    inFlightRequests.set(requestKey, requestPromise);
-    requestPromise.finally(() => {
-      inFlightRequests.delete(requestKey);
-    });
+  if (response.status === 401) {
+    if (!isRefreshing) {
+      isRefreshing = true;
+      const newToken = await refreshToken();
+      isRefreshing = false;
+      if (newToken) {
+        onRefreshed(newToken);
+      } else {
+        refreshSubscribers = [];
+        const data = await response
+          .clone()
+          .json()
+          .catch(() => ({}));
+        const error = new ApiError(data?.message || "Unauthorized", response.status);
+        captureApiError(error, finalUrl);
+        throw error;
+      }
+    } else {
+      return new Promise<T>((resolve, reject) => {
+        subscribeTokenRefresh(async () => {
+          try {
+            const retryResponse = await executeRequest();
+            if (!retryResponse.ok) {
+              const data = await retryResponse.json().catch(() => ({}));
+              const error = new ApiError(
+                data?.message ||
+                  `Request failed with status ${retryResponse.status}`,
+                retryResponse.status,
+              );
+              captureApiError(error, finalUrl);
+              reject(error);
+              return;
+            }
+            resolve(await retryResponse.json());
+          } catch (err) {
+            reject(err);
+          }
+        });
+      });
+    }
+
+    response = await executeRequest();
   }
 
-  return requestPromise;
+  if (response.status === 429) {
+    const retryAfterHeader = response.headers.get('Retry-After');
+    const retryAfterSeconds = parseRetryAfter(retryAfterHeader);
+    throw new RateLimitError(retryAfterSeconds);
+  }
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const error = new ApiError(
+      data?.message || `Request failed with status ${response.status}`,
+      response.status,
+    );
+    captureApiError(error, finalUrl);
+    throw error;
+  }
+
+  return response.json();
 }

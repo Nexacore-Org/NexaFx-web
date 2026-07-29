@@ -2,30 +2,74 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-inter)"],
+      },
       colors: {
-        brand: {
-          50: "#fffbe6",
-          100: "#fff1b8",
-          200: "#ffe58f",
-          300: "#ffd666",
-          400: "#ffc53d",
-          500: "#FFD552", // main brand
-          600: "#faad14",
-          700: "#d48806",
-          800: "#ad6800",
-          900: "#874d00",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        brand: "var(--brand)",
+        card: {
+          DEFAULT: "var(--card)",
+          foreground: "var(--card-foreground)",
         },
+        popover: {
+          DEFAULT: "var(--popover)",
+          foreground: "var(--popover-foreground)",
+        },
+        primary: {
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
+        },
+        secondary: {
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
+        },
+        muted: {
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
+        },
+        destructive: {
+          DEFAULT: "var(--destructive)",
+        },
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
+        sidebar: {
+          DEFAULT: "var(--sidebar)",
+          foreground: "var(--sidebar-foreground)",
+          primary: "var(--sidebar-primary)",
+          "primary-foreground": "var(--sidebar-primary-foreground)",
+          accent: "var(--sidebar-accent)",
+          "accent-foreground": "var(--sidebar-accent-foreground)",
+          border: "var(--sidebar-border)",
+        },
+        chart: {
+          1: "var(--chart-1)",
+          2: "var(--chart-2)",
+          3: "var(--chart-3)",
+          4: "var(--chart-4)",
+          5: "var(--chart-5)",
+        },
+      },
+      borderRadius: {
+        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 2px)",
+        lg: "var(--radius)",
+        xl: "calc(var(--radius) + 4px)",
       },
     },
   },
   plugins: [],
 };
+
 export default config;
