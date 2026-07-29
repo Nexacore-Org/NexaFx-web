@@ -23,7 +23,9 @@ export function WithdrawalReview() {
     };
 
     const handleConfirm = async () => {
-        setStep('processing');
+        // Optimistically set to success
+        setStep('success');
+        setTransactionResult(null, 'pending');
 
         try {
             const response = await createWithdrawal({
@@ -31,9 +33,9 @@ export function WithdrawalReview() {
                 amount: parseFloat(amount),
                 destinationAddress: walletAddress,
             });
-
+            
+            // Update with real transaction ID once available
             setTransactionResult(response.transactionId, 'success');
-            setStep('success');
         } catch (error) {
             const errorMessage = error instanceof Error
                 ? error.message

@@ -122,17 +122,32 @@ export function ConvertForm() {
         
         setIsSubmitting(true);
         setErrors({});
+
+        // Optimistic update
+        const prevBalances = { ...balances };
+        setBalances((prev) => {
+            const newBals = { ...prev };
+            const fromB = parseFloat((newBals[fromCurrency] || "0").replace(/,/g, ""));
+            const toB = parseFloat((newBals[toCurrency] || "0").replace(/,/g, ""));
+            newBals[fromCurrency] = (fromB - parseFloat(amount)).toString();
+            newBals[toCurrency] = (toB + parseFloat(convertedAmount.replace(/,/g, ""))).toString();
+            return newBals;
+        });
+        const prevAmount = amount;
+        setAmount("");
+
         try {
             const res = await createSwap({
                 fromCurrency,
                 toCurrency,
-                amount,
+                amount: prevAmount,
             });
             if (res.status === "failed") {
+                setBalances(prevBalances);
+                setAmount(prevAmount);
                 setErrors({ amount: res.message || "Swap failed" });
             } else {
                 // Success
-                setAmount("");
                 // Refresh balances
                 const bals = await getBalances();
                 const newBalances: Record<string, string> = {};
@@ -142,6 +157,8 @@ export function ConvertForm() {
                 setBalances(newBalances);
             }
         } catch (err: unknown) {
+            setBalances(prevBalances);
+            setAmount(prevAmount);
             const errorMessage = err instanceof Error ? err.message : "An error occurred during conversion";
             setErrors({ amount: errorMessage });
         } finally {
