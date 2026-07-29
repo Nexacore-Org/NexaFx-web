@@ -94,7 +94,7 @@ export function KycReviewPanel({ submission, onClose, onApproved, onRejected }: 
                 >
                   <img
                     src={doc.url}
-                    alt={doc.type}
+                    alt={`KYC document: ${doc.type.replace(/_/g, " ").toLowerCase()}`}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
@@ -200,7 +200,7 @@ export function KycReviewPanel({ submission, onClose, onApproved, onRejected }: 
 
           <img
             src={submission.documents[lightboxIndex].url}
-            alt={submission.documents[lightboxIndex].type}
+            alt={`KYC document: ${submission.documents[lightboxIndex].type.replace(/_/g, " ").toLowerCase()}`}
             className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg"
             onClick={(e) => e.stopPropagation()}
           />

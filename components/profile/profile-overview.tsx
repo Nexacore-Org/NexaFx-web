@@ -80,7 +80,7 @@ export function ProfileOverview() {
               profile.avatarUrl ||
               `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.firstName}`
             }
-            alt="Avatar"
+            alt="User profile photo"
             fill
             className="object-cover"
           />

@@ -45,7 +45,7 @@ export default function Hero() {
         <div className="bg-white/50 p-4 rounded-4xl shadow-2xl backdrop-blur border">
           <Image
             src="/finance.png"
-            alt="finance visual"
+            alt="NexaFX financial trading platform"
             width={800}
             height={800}
             className="rounded-3xl w-[450px] h-[480px] object-cover"

@@ -30,7 +30,7 @@ export function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
         {status === 'success' ? (
           <div className='flex flex-col items-center justify-center p-12 text-center space-y-6'>
             <div className='relative'>
-              <Image src='/Frame.svg' alt='Success' width={500} height={100} />
+              <Image src='/Frame.svg' alt='Verification completed successfully' width={500} height={100} />
             </div>
 
             <div className='pt-4 w-full max-w-sm'>

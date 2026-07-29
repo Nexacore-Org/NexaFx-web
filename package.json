@@ -50,6 +50,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@axe-core/cli": "^4.12.1",
     "@chromatic-com/storybook": "^5.2.1",
     "@playwright/test": "^1.61.1",
     "@storybook/addon-a11y": "^10.4.6",
@@ -77,6 +78,7 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite": "^8.1.0",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.9",
+    "wait-on": "^9.1.0"
   }
 }

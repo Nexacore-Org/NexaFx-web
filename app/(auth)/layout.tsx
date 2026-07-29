@@ -12,7 +12,7 @@ export default function AuthLayout({
         <Link href="/">
           <Image
             src="/logo.png"
-            alt="NexaFx"
+            alt="NexaFX logo"
             width={120}
             height={40}
             priority
