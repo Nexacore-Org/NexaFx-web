@@ -44,6 +44,7 @@ export default function VerifyOtpPage() {
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     const pastedData = e.clipboardData.getData('text').slice(0, 6);
     if (!/^\d+$/.test(pastedData)) return;
 
@@ -59,6 +60,7 @@ export default function VerifyOtpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     const otpCode = otp.join('');
     if (otpCode.length !== 6) {
       setError('Please enter all 6 digits');

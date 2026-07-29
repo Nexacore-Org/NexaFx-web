@@ -6,10 +6,19 @@ export interface Currency {
   symbol?: string;
 }
 
+interface CurrenciesResponse {
+  data?: Currency[];
+  currencies?: Currency[];
+}
+
+interface CurrenciesResponse {
+  data?: Currency[];
+  currencies?: Currency[];
+}
+
 export async function getCurrencies(): Promise<Currency[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = await apiClient<any>("/currencies", { useProxy: false });
-  return Array.isArray(data) ? data : (data.data ?? data.currencies ?? []);
+    const data = await apiClient<CurrenciesResponse | Currency[]>("/currencies", { useProxy: false });
+  return (Array.isArray(data) ? data : (data.data ?? data.currencies ?? [])) as Currency[];
 }
 
 export async function getBaseCurrency(): Promise<Currency> {

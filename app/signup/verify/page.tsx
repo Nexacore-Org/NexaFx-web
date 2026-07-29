@@ -44,6 +44,7 @@ export default function VerifyOtpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     if (otp.some((digit) => digit === "")) return;
 
     setIsLoading(true);

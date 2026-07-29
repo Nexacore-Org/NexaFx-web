@@ -44,6 +44,7 @@ export default function CreateAccountPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     if (!validate()) return;
 
     setIsLoading(true);

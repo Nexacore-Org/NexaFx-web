@@ -1,16 +1,35 @@
 import { Notification } from "@/types/notification";
 import { apiClient } from "../api-client";
 
+interface NotificationsResponse {
+  data?: Notification[];
+  notifications?: Notification[];
+}
+
+interface UnreadCountResponse {
+  count?: number;
+  unreadCount?: number;
+}
+
+interface NotificationsResponse {
+  data?: Notification[];
+  notifications?: Notification[];
+}
+
+interface UnreadCountResponse {
+  count?: number;
+  unreadCount?: number;
+}
+
 export async function getNotifications(
   page = 1,
   limit = 20
 ): Promise<Notification[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = await apiClient<any>("/notifications", {
+    const data = await apiClient<NotificationsResponse | Notification[]>("/notifications", {
     params: { page: String(page), limit: String(limit) },
     useProxy: false,
   });
-  return Array.isArray(data) ? data : (data.data ?? data.notifications ?? []);
+  return (Array.isArray(data) ? data : (data.data ?? data.notifications ?? [])) as Notification[];
 }
 
 export async function markAsRead(id: string): Promise<void> {
@@ -35,9 +54,8 @@ export async function deleteNotification(id: string): Promise<void> {
 }
 
 export async function getUnreadCount(): Promise<number> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = await apiClient<any>("/notifications/unread-count", {
+    const data = await apiClient<UnreadCountResponse>("/notifications/unread-count", {
     useProxy: false,
   });
-  return data.count ?? data.unreadCount ?? 0;
+  return (data as UnreadCountResponse).count ?? (data as UnreadCountResponse).unreadCount ?? 0;
 }
