@@ -1,20 +1,18 @@
 ## Description
-<!-- Please include a summary of the change and which issue is fixed. -->
-<!-- Please also include relevant motivation and context. -->
+Briefly describe the change.
 
-Fixes # (issue)
+## Changes Implemented
+- [ ] 
 
-## Type of change
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] This change requires a documentation update
+## How to Test
+1. 
 
-## Checklist:
-- [ ] My code follows the style guidelines of this project
-- [ ] I have performed a self-review of my own code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
+## Checklist
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+- [ ] No hardcoded values (balances, users, mock data)
+- [ ] No imports from `lib/admin-mock-data.ts`
+- [ ] PR targets `v2` branch
+
+## Related Issues
+- Closes #<ISSUE_NUMBER>

@@ -1,279 +1,158 @@
-'use client';
+"use client";
 
-import { verifyLoginOtp, resendLoginOtp } from '@/lib/api/auth';
-import { useEffect, useRef, useState } from 'react';
-
-import Image from 'next/image';
-import Link from 'next/link';
-import { useAuthStore } from '@/hooks/use-auth-store';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import OtpInput from "@/components/auth/otp-input";
+import { resendLoginOtp, verifyLoginOtp } from "@/lib/api/auth";
+import { useAuthStore } from "@/hooks/use-auth-store";
 
 export default function VerifyOtpPage() {
   const router = useRouter();
-  const setAuth = useAuthStore((s) => s.setAuth);
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const [otp, setOtp] = useState("");
+  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [isResending, setIsResending] = useState(false);
+  const [apiError, setApiError] = useState("");
+  const [resendMessage, setResendMessage] = useState("");
 
   useEffect(() => {
-    inputRefs.current[0]?.focus();
-  }, []);
-
-  const handleChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
-
-    const newOtp = [...otp];
-    newOtp[index] = value.slice(-1);
-    setOtp(newOtp);
-    setError('');
-
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyDown = (
-    index: number,
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').slice(0, 6);
-    if (!/^\d+$/.test(pastedData)) return;
-
-    const newOtp = [...otp];
-    pastedData.split('').forEach((char, index) => {
-      if (index < 6) newOtp[index] = char;
-    });
-    setOtp(newOtp);
-
-    const lastFilledIndex = Math.min(pastedData.length, 5);
-    inputRefs.current[lastFilledIndex]?.focus();
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const otpCode = otp.join('');
-    if (otpCode.length !== 6) {
-      setError('Please enter all 6 digits');
-      return;
-    }
-    const storedEmail = sessionStorage.getItem('login-email');
+    const storedEmail = sessionStorage.getItem("login-email");
     if (!storedEmail) {
-      setError('No email found. Please sign in again.');
+      router.replace("/login");
       return;
     }
+
+    setEmail(storedEmail);
+  }, [router]);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setApiError("");
+    setResendMessage("");
+
+    if (!email) {
+      setApiError("Please sign in again to continue.");
+      return;
+    }
+
+    if (otp.length !== 6) {
+      setApiError("Please enter the 6-digit OTP");
+      return;
+    }
+
     setIsLoading(true);
-    setError('');
+
     try {
-      const res = await verifyLoginOtp({ email: storedEmail, otp: otpCode }) as { user: { id: string; firstName: string; lastName: string; email: string; role: 'USER' | 'ADMIN' }; accessToken: string; refreshToken: string };
-      const fullName = [res.user.firstName, res.user.lastName].filter(Boolean).join(' ');
-      setAuth({ ...res.user, name: fullName }, res.accessToken, res.refreshToken);
+      const res = (await verifyLoginOtp({
+        email,
+        otp,
+      })) as {
+        user: {
+          id: string;
+          firstName: string;
+          lastName: string;
+          email: string;
+          role: "USER" | "ADMIN";
+        };
+        accessToken: string;
+        refreshToken: string;
+      };
+
+      if (!res?.accessToken || !res?.refreshToken || !res?.user) {
+        setApiError("Login completed, but no session tokens were returned.");
+        return;
+      }
+
+      setAuth(
+        {
+          id: res.user.id,
+          firstName: res.user.firstName,
+          lastName: res.user.lastName,
+          name: `${res.user.firstName} ${res.user.lastName}`.trim(),
+          email: res.user.email,
+          role: res.user.role,
+        },
+        res.accessToken,
+        res.refreshToken,
+      );
+      sessionStorage.removeItem("login-email");
+      router.push("/");
+    } catch (error) {
+      setApiError(
+        error instanceof Error ? error.message : "Invalid or expired OTP",
+      );
+    } finally {
       setIsLoading(false);
-      router.push('/dashboard');
-    } catch (err: unknown) {
-      setIsLoading(false);
-      setError(err instanceof Error ? err.message : 'Invalid or expired OTP');
     }
   };
 
   const handleResend = async () => {
-    setOtp(['', '', '', '', '', '']);
-    setError('');
-    inputRefs.current[0]?.focus();
-    const storedEmail = sessionStorage.getItem('login-email');
-    if (!storedEmail) {
-      setError('Missing email. Please sign in again.');
-      return;
-    }
+    if (!email) return;
+
+    setIsResending(true);
+    setApiError("");
+    setResendMessage("");
+
     try {
-      await resendLoginOtp({ email: storedEmail });
-    } catch {
-      setError('Failed to resend code');
+      await resendLoginOtp({ email });
+      setResendMessage("A new code has been sent.");
+    } catch (error) {
+      setApiError(
+        error instanceof Error ? error.message : "Failed to resend code",
+      );
+    } finally {
+      setIsResending(false);
     }
   };
 
-  const isComplete = otp.every((digit) => digit !== '');
-
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#A0C3FD] to-[#FFE79C]">
-      {/* Desktop Header */}
-      <div className="hidden md:block">
-        <div className="flex justify-between items-center px-8 py-6 backdrop-blur-sm bg-white/10">
-          <Image
-            src="/logo.png"
-            alt="NexaFX"
-            width={120}
-            height={40}
-            priority
-          />
-        </div>
+    <div className="w-full max-w-lg rounded-3xl border border-border/50 bg-card p-8 text-card-foreground shadow-[0_8px_30px_rgb(0,0,0,0.04)] animate-in fade-in slide-in-from-bottom-5 duration-500 sm:p-12">
+      <div className="mb-10 text-center">
+        <h1 className="mb-4 text-3xl font-bold tracking-tight text-zinc-900">
+          Verify code
+        </h1>
+        <p className="mx-auto max-w-[280px] leading-relaxed text-zinc-500 italic">
+          Confirmation code sent. Check your inbox or spam folder.
+        </p>
       </div>
 
-      {/* Desktop View */}
-      <div
-        className="hidden md:flex items-center justify-center px-4"
-        style={{ minHeight: 'calc(100vh - 88px)' }}
-      >
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-12">
-          <div className="mb-8">
-            <h1 className="text-3xl font-semibold mb-4 text-center">
-              VERIFY CODE
-            </h1>
-            <p className="text-gray-500 text-sm text-center">
-              Confirmation code sent. Check inbox or spam folder for the code
-            </p>
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <OtpInput value={otp} onChange={setOtp} />
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
+        {apiError && (
+          <p className="text-center text-xs text-red-500">{apiError}</p>
+        )}
+        {resendMessage && (
+          <p className="text-center text-xs text-green-600">{resendMessage}</p>
+        )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="flex gap-2.5 justify-between">
-              {otp.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(el) => {
-                    inputRefs.current[index] = el;
-                  }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  onPaste={handlePaste}
-                  className="w-12 h-12 text-center text-xl font-semibold bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all"
-                  disabled={isLoading}
-                />
-              ))}
-            </div>
-
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={handleResend}
-                className="text-xs text-gray-600 hover:text-gray-800"
-                disabled={isLoading}
-              >
-                Resend code
-              </button>
-            </div>
-
-            <button
-              type="submit"
-              disabled={!isComplete || isLoading}
-              className="w-full py-2.5 bg-[#F39A00] hover:bg-[#da8a00] text-black font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-6"
-            >
-              {isLoading ? 'Processing...' : 'Proceed'}
-            </button>
-          </form>
-        </div>
-      </div>
-
-      {/* Mobile View */}
-      <div className="md:hidden min-h-screen bg-linear-to-br from-[#A0C3FD] to-[#FFE79C] p-4">
-        {/* Mobile Header */}
-        <div className="flex justify-between items-center mb-6">
-          <button
-            onClick={() => router.back()}
-            className="p-2 text-gray-700 hover:text-gray-900 transition-colors"
-          >
-            <svg
-              width="20"
-              height="20"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <Link
-            href="/request-access"
-            className="px-4 py-2 bg-[#00A651] text-white text-sm font-medium rounded-md hover:bg-[#009147] transition-colors"
-          >
-            Request access
-          </Link>
-        </div>
-
-        <div
-          className="flex items-center justify-center"
-          style={{ minHeight: 'calc(100vh - 120px)' }}
+        <button
+          type="submit"
+          disabled={isLoading || otp.length !== 6}
+          className="h-16 w-full rounded-xl bg-orange-500 text-lg font-bold text-white shadow-[0_4px_14px_0_rgb(249,115,22,0.39)] transition-all hover:scale-[1.01] hover:bg-orange-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-orange-300"
         >
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-            <div className="mb-8">
-              <h1 className="text-2xl font-semibold text-center mb-4">
-                VERIFY CODE
-              </h1>
-              <p className="text-gray-500 text-center text-xs">
-                Confirmation code sent. Check inbox or spam folder for the code
-              </p>
+          {isLoading ? (
+            <div className="flex items-center justify-center gap-2">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              <span>Verifying...</span>
             </div>
+          ) : (
+            "Proceed"
+          )}
+        </button>
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="flex gap-2 justify-between">
-                {otp.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={(el) => {
-                      inputRefs.current[index] = el;
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleChange(index, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
-                    onPaste={handlePaste}
-                    className="w-11 h-11 text-center text-lg font-semibold bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all"
-                    disabled={isLoading}
-                  />
-                ))}
-              </div>
-
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  className="text-xs text-gray-600 hover:text-gray-800"
-                  disabled={isLoading}
-                >
-                  Resend code
-                </button>
-              </div>
-
-              <button
-                type="submit"
-                disabled={!isComplete || isLoading}
-                className="w-full py-2.5 bg-[#F39A00] hover:bg-[#da8a00] text-black font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-6"
-              >
-                {isLoading ? 'Processing...' : 'Proceed'}
-              </button>
-            </form>
-          </div>
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={isResending || !email}
+            className="text-sm font-medium text-zinc-500 transition-colors hover:text-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isResending ? "Resending..." : "Didn't receive code? Resend"}
+          </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

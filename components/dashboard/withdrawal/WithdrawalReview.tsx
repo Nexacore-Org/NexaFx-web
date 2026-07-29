@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
-import { ChevronLeft, Loader2, Coins, CircleDollarSign, BadgeDollarSign } from "lucide-react";
+import { ChevronLeft, Coins, CircleDollarSign, BadgeDollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createWithdrawal } from "@/lib/api/transactions";
+import { WithdrawalConfirmationModal } from "@/components/dashboard/withdraw/withdrawal-confirmation-modal";
 
 const currencies = [
     { id: 'USDC', name: 'USD Coin', icon: <CircleDollarSign className="w-8 h-8 text-blue-500" /> },
@@ -13,8 +15,10 @@ const currencies = [
 
 export function WithdrawalReview() {
     const { currency, amount, walletAddress, step, setStep, setTransactionResult, close, reset } = useWithdrawalStore();
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    const isProcessing = step === 'processing';
+    const isProcessingStep = step === 'processing';
     const selectedCurrency = currencies.find(c => c.id === currency) || currencies[0];
 
     const truncateAddress = (addr: string) => {
@@ -22,14 +26,19 @@ export function WithdrawalReview() {
         return `${addr.slice(0, 8)}...${addr.slice(-6)}`;
     };
 
-    const handleConfirm = async () => {
+    const handleConfirmClick = () => {
+        setShowConfirmation(true);
+    };
+
+    const handleConfirmedWithdrawal = async () => {
+        setIsProcessing(true);
         setStep('processing');
 
         try {
             const response = await createWithdrawal({
                 currency,
-                amount: parseFloat(amount),
-                destinationAddress: walletAddress,
+                amount,
+                walletAddress,
             });
 
             setTransactionResult(response.transactionId, 'success');
@@ -40,32 +49,45 @@ export function WithdrawalReview() {
                 : 'An unexpected error occurred';
             setTransactionResult(null, 'failed', errorMessage);
             setStep('error');
+        } finally {
+            setIsProcessing(false);
+            setShowConfirmation(false);
         }
     };
 
     const handleCancel = () => {
-        if (isProcessing) return;
+        if (isProcessingStep) return;
         close();
         setTimeout(() => reset(), 300);
     };
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 relative">
+            {showConfirmation && (
+                <WithdrawalConfirmationModal
+                    amount={amount}
+                    currency={currency}
+                    destinationAddress={walletAddress}
+                    onConfirm={handleConfirmedWithdrawal}
+                    onCancel={() => setShowConfirmation(false)}
+                    isLoading={isProcessing}
+                />
+            )}
             {/* Header */}
             <div className="flex items-center gap-3 pt-4">
                 <button
                     onClick={() => setStep('form')}
-                    disabled={isProcessing}
+                    disabled={isProcessingStep}
                     className={cn(
                         "p-2 -ml-2 rounded-full hover:bg-muted transition-colors",
-                        isProcessing && "opacity-50 cursor-not-allowed"
+                        isProcessingStep && "opacity-50 cursor-not-allowed"
                     )}
                     aria-label="Go back to withdrawal form"
                 >
                     <ChevronLeft className="size-5 text-muted-foreground" />
                 </button>
                 <div>
-                    <h2 className="text-xl font-bold text-foreground">Review Withdrawal</h2>
+                    <h2 id="withdrawal-modal-title" className="text-xl font-bold text-foreground">Review Withdrawal</h2>
                     <p className="text-sm text-muted-foreground">Confirm your withdrawal details</p>
                 </div>
             </div>
@@ -116,42 +138,35 @@ export function WithdrawalReview() {
             {/* Actions */}
             <div className="space-y-3 pt-2">
                 <button
-                    onClick={handleConfirm}
-                    disabled={isProcessing}
+                    onClick={handleConfirmClick}
+                    disabled={isProcessingStep}
                     className={cn(
                         "w-full py-3.5 rounded-xl font-semibold",
                         "bg-primary text-primary-foreground",
                         "hover:bg-primary/90 active:scale-[0.98]",
                         "transition-all duration-200",
                         "flex items-center justify-center gap-2",
-                        isProcessing && "opacity-80 cursor-not-allowed"
+                        isProcessingStep && "opacity-80 cursor-not-allowed"
                     )}
                 >
-                    {isProcessing ? (
-                        <>
-                            <Loader2 className="size-5 animate-spin" />
-                            Processing...
-                        </>
-                    ) : (
-                        "Confirm Withdrawal"
-                    )}
+                    Confirm Withdrawal
                 </button>
                 <button
                     onClick={() => setStep('form')}
-                    disabled={isProcessing}
+                    disabled={isProcessingStep}
                     className={cn(
                         "w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors",
-                        isProcessing && "opacity-50 cursor-not-allowed"
+                        isProcessingStep && "opacity-50 cursor-not-allowed"
                     )}
                 >
                     Go Back
                 </button>
                 <button
                     onClick={handleCancel}
-                    disabled={isProcessing}
+                    disabled={isProcessingStep}
                     className={cn(
                         "w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors",
-                        isProcessing && "opacity-50 cursor-not-allowed"
+                        isProcessingStep && "opacity-50 cursor-not-allowed"
                     )}
                 >
                     Cancel

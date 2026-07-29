@@ -1,0 +1,10 @@
+{
+  "Navigation": {
+    "dashboard": "Dashboard",
+    "convert": "Convert",
+    "deposit": "Deposit",
+    "withdraw": "Withdraw",
+    "transactions": "Transactions",
+    "settings": "Settings"
+  }
+}

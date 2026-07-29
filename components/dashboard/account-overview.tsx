@@ -4,16 +4,31 @@ import {
   ChevronDown,
   Download,
   Upload,
-  Copy,
-  Check,
   CircleDollarSign,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getBalances } from "@/lib/api/wallet";
 import { getProfile } from "@/lib/api/users";
+import { CopyButton } from "@/components/ui/copy-button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { useAuthStore } from "@/hooks/use-auth-store";
 
 const truncateAddress = (addr: string) =>
   `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+
+function formatCurrency(amount: string | number | undefined, currency: string) {
+  if (amount === undefined || amount === null || amount === "") return "";
+  const raw = typeof amount === "string" ? amount.replace(/[^0-9.-]+/g, "") : String(amount);
+  const num = Number(raw);
+  if (!Number.isFinite(num)) return String(amount);
+  try {
+    const locale = currency === "NGN" ? "en-NG" : "en-US";
+    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(num);
+  } catch {
+    return String(amount);
+  }
+}
 
 type AccountOverviewTypes = {
   openDeposit: boolean;
@@ -26,7 +41,6 @@ export function AccountOverview({
   onDepositClick,
   onWithdrawClick,
 }: AccountOverviewTypes) {
-  const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState("");
@@ -34,21 +48,40 @@ export function AccountOverview({
   const [ngnBalance, setNgnBalance] = useState("");
   const [usdBalance, setUsdBalance] = useState("");
 
+  const wsBalance = useWebSocket((s) => s.balance);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const subscribe = useWebSocket((s) => s.subscribe);
+
+  useEffect(() => {
+    if (accessToken) {
+      subscribe(accessToken);
+    }
+  }, [accessToken, subscribe]);
+
+  useEffect(() => {
+    if (wsBalance && wsBalance.length > 0) {
+      setError(null);
+
+      const ngnItem = wsBalance.find(
+        (b) => b.currency.toUpperCase() === "NGN"
+      );
+      const usdItem = wsBalance.find(
+        (b) => b.currency.toUpperCase() === "USD"
+      );
+      const firstItem = wsBalance[0];
+
+      if (ngnItem) {
+        setBalance(formatCurrency(ngnItem.balance, "NGN"));
+      } else if (usdItem) {
+        setBalance(formatCurrency(usdItem.balance, "USD"));
+      } else {
+        setBalance(formatCurrency(firstItem.balance, firstItem.currency));
+      }
+    }
+  }, [wsBalance]);
+
   useEffect(() => {
     let cancelled = false;
-
-    const formatCurrency = (amount: string | number | undefined, currency: string) => {
-      if (amount === undefined || amount === null || amount === "") return "";
-      const raw = typeof amount === "string" ? amount.replace(/[^0-9.-]+/g, "") : String(amount);
-      const num = Number(raw);
-      if (!Number.isFinite(num)) return String(amount);
-      try {
-        const locale = currency === "NGN" ? "en-NG" : "en-US";
-        return new Intl.NumberFormat(locale, { style: "currency", currency }).format(num as number);
-      } catch {
-        return String(amount);
-      }
-    };
 
     const fetchAccount = async () => {
       try {
@@ -92,15 +125,6 @@ export function AccountOverview({
       cancelled = true;
     };
   }, []);
-  const handleCopyAddress = async () => {
-    try {
-      await navigator.clipboard.writeText(walletAddress);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy address:", err);
-    }
-  };
 
   return (
     <section className="account-overview-bg rounded-b-xl md:rounded-b-none md:ml-4">
@@ -112,9 +136,9 @@ export function AccountOverview({
             {/* Balance row */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               {isLoading ? (
-                <div className="space-y-2.5 animate-pulse">
-                  <div className="h-4 w-24 bg-muted rounded" />
-                  <div className="h-9 w-44 bg-muted rounded" />
+                <div className="space-y-2.5">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-9 w-44" />
                 </div>
               ) : error ? (
                 <p className="text-sm text-red-500">{error}</p>
@@ -131,24 +155,13 @@ export function AccountOverview({
 
               {/* Wallet address pill — desktop only */}
               {isLoading ? (
-                <div className="hidden md:block h-9 w-36 bg-muted rounded animate-pulse" />
+                <Skeleton className="hidden md:block h-9 w-36" />
               ) : !error ? (
                 <div className="hidden md:inline-flex md:items-center gap-2 bg-muted rounded-sm border border-border px-4 py-2">
                   <p className="text-xs font-medium text-foreground">
                     {truncateAddress(walletAddress)}
                   </p>
-                  <button
-                    onClick={handleCopyAddress}
-                    aria-label="Copy wallet address"
-                    className="transition-colors"
-                    title={copied ? "Copied!" : "Copy address"}
-                  >
-                    {copied ? (
-                      <Check className="size-4 text-green-500" />
-                    ) : (
-                      <Copy className="size-4" />
-                    )}
-                  </button>
+                  <CopyButton value={walletAddress} label="Copy wallet address" size="sm" />
                 </div>
               ) : null}
             </div>
@@ -173,9 +186,9 @@ export function AccountOverview({
 
             {/* Mini balance cards */}
             {isLoading ? (
-              <div className="grid w-full grid-cols-1 md:grid-cols-2 gap-4 animate-pulse">
-                <div className="rounded-sm bg-muted h-20 md:border-[0.43px] border-[#79797966]" />
-                <div className="rounded-sm bg-muted h-20 md:border-[0.43px] border-[#79797966]" />
+              <div className="grid w-full grid-cols-1 md:grid-cols-2 gap-4">
+                <Skeleton className="h-20 rounded-sm" />
+                <Skeleton className="h-20 rounded-sm" />
               </div>
             ) : !error ? (
               <div className="grid w-full grid-cols-1 md:grid-cols-2 gap-4">
