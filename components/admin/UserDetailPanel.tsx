@@ -50,8 +50,8 @@ export function UserDetailPanel({ user, onClose }: UserDetailPanelProps) {
   };
 
   const getInitials = () => {
-    if (currentUser.firstName && currentUser.lastName) {
-      return `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase();
+    if (currentUser.firstName || currentUser.lastName) {
+      return ((currentUser.firstName?.[0] || '') + (currentUser.lastName?.[0] || '')).toUpperCase() || 'U';
     }
     return currentUser.email[0].toUpperCase();
   };
@@ -97,7 +97,7 @@ export function UserDetailPanel({ user, onClose }: UserDetailPanelProps) {
                   <div className="flex justify-between items-center">
                     <p className="text-sm text-gray-500">Name</p>
                     <p className="text-sm text-gray-900 font-medium">
-                      {showSensitiveInfo ? (currentUser.firstName && currentUser.lastName ? `${currentUser.firstName} , ${currentUser.lastName}` : 'No name') : '••••••••'}
+                      {showSensitiveInfo ? ([currentUser.firstName, currentUser.lastName].filter(Boolean).join(' ') || 'N/A') : '••••••••'}
                     </p>
                   </div>
                   <div className="flex justify-between items-center">

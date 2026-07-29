@@ -44,8 +44,8 @@ export function AdminUserTable({ users, onUserClick }: AdminUserTableProps) {
                 </div>
               </td>
               <td className="py-4 px-6">
-                <span className={`text-sm ${user.firstName && user.lastName ? 'text-gray-900' : 'text-gray-400'}`}>
-                  {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'No name'}
+                <span className={`text-sm ${(user.firstName || user.lastName) ? 'text-gray-900' : 'text-gray-400'}`}>
+                  {[user.firstName, user.lastName].filter(Boolean).join(' ') || 'N/A'}
                 </span>
               </td>
               <td className="py-4 px-6">
