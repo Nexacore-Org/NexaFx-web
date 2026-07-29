@@ -67,6 +67,8 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
   },
 
   markAsRead: (id) => {
+    const prevNotifications = useNotificationsStore.getState().notifications;
+    const prevUnreadCount = useNotificationsStore.getState().unreadCount;
     set((state) => {
       const updated = state.notifications.map((n) =>
         n.id === id ? { ...n, isRead: true } : n
@@ -76,15 +78,21 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
         unreadCount: updated.filter((n) => !n.isRead).length,
       };
     });
-    api.markAsRead(id).catch(() => {});
+    api.markAsRead(id).catch(() => {
+        set({ notifications: prevNotifications, unreadCount: prevUnreadCount });
+    });
   },
 
   markAllAsRead: () => {
+    const prevNotifications = useNotificationsStore.getState().notifications;
+    const prevUnreadCount = useNotificationsStore.getState().unreadCount;
     set((state) => ({
       notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
       unreadCount: 0,
     }));
-    api.markAllAsRead().catch(() => {});
+    api.markAllAsRead().catch(() => {
+        set({ notifications: prevNotifications, unreadCount: prevUnreadCount });
+    });
   },
 
   addNotification: (notification) =>
@@ -94,6 +102,8 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
     })),
 
   removeNotification: (id) => {
+    const prevNotifications = useNotificationsStore.getState().notifications;
+    const prevUnreadCount = useNotificationsStore.getState().unreadCount;
     set((state) => {
       const notification = state.notifications.find((n) => n.id === id);
       const updated = state.notifications.filter((n) => n.id !== id);
@@ -103,6 +113,8 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
           state.unreadCount - (notification && !notification.isRead ? 1 : 0),
       };
     });
-    api.deleteNotification(id).catch(() => {});
+    api.deleteNotification(id).catch(() => {
+        set({ notifications: prevNotifications, unreadCount: prevUnreadCount });
+    });
   },
 }));

@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/hooks/use-auth-store';
+import { sanitizeInput } from '@/lib/sanitise';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 const PROXY_URL = '/api/proxy';
@@ -86,6 +87,15 @@ export async function apiClient<T>(
   };
 
   const executeRequest = (): Promise<Response> => {
+    if (fetchOptions.body && typeof fetchOptions.body === 'string') {
+      try {
+        const parsed = JSON.parse(fetchOptions.body);
+        const sanitized = sanitizeInput(parsed);
+        fetchOptions.body = JSON.stringify(sanitized);
+      } catch {
+        // Ignore parsing errors
+      }
+    }
     return fetch(finalUrl, {
       ...fetchOptions,
       headers: getHeaders(),
