@@ -137,10 +137,7 @@ export default function AnalyticsPage() {
                     </thead>
                     <tbody>
                         {recentUsers.map((user) => {
-                            const fullName =
-                                user.firstName && user.lastName
-                                    ? `${user.firstName} ${user.lastName}`
-                                    : null;
+                            const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || null;
                             return (
                                 <tr
                                     key={user.id}
@@ -155,7 +152,7 @@ export default function AnalyticsPage() {
                                     </td>
                                     <td className="px-4 py-4 text-gray-900">{user.email}</td>
                                     <td className="px-4 py-4 text-gray-400">
-                                        {fullName ?? "No name"}
+                                        {fullName ?? "N/A"}
                                     </td>
                                     <td className="px-4 py-4 text-gray-400">
                                         {user.phone ?? "No Phone number"}
