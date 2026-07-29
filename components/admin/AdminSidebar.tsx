@@ -70,7 +70,7 @@ export function AdminSidebar({ isOpen, onClose }: Props) {
                         {!isCollapsed && (
                             <Image
                                 src="/icons/logo.svg"
-                                alt="NexaFX"
+                                alt="NexaFX logo"
                                 width={100}
                                 height={32}
                                 priority

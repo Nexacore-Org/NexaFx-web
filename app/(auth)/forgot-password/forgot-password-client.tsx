@@ -70,7 +70,7 @@ export default function ForgotPasswordPageClient() {
     <div className="min-h-screen bg-linear-to-br from-[#A0C3FD] to-[#FFE79C]">
       <div className="hidden md:block">
         <div className="flex justify-between items-center px-8 py-6 backdrop-blur-sm bg-white/10">
-          <Image src="/logo.png" alt="NexaFX" width={120} height={40} priority />
+          <Image src="/logo.png" alt="NexaFX logo" width={120} height={40} priority />
           <div className="text-sm text-gray-700">
             <Link href="/login" className="text-[#FFA200] hover:underline font-medium">
               Sign in
@@ -85,7 +85,7 @@ export default function ForgotPasswordPageClient() {
         ) : (
           <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 md:p-12">
             <div className="flex justify-center mb-6 md:hidden">
-              <Image src="/logo.png" alt="NexaFX" width={120} height={40} priority />
+              <Image src="/logo.png" alt="NexaFX logo" width={120} height={40} priority />
             </div>
 
             <div className="mb-8">

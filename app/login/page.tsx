@@ -62,7 +62,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md rounded-2xl border border-border/50 bg-card p-8 text-card-foreground shadow-lg sm:p-12">
           <div className="mb-8">
             <div className="mb-6 flex justify-center">
-              <Image src="/logo.png" alt="NexaFX" width={120} height={40} priority />
+              <Image src="/logo.png" alt="NexaFX logo" width={120} height={40} priority />
             </div>
             <h1 className="mb-2 text-center text-3xl font-semibold">Sign in</h1>
             <p className="text-center text-sm text-muted-foreground">

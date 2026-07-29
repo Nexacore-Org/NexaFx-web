@@ -53,7 +53,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
           {!isCollapsed && (
             <Image
               src="/icons/logo.svg"
-              alt="Logo"
+              alt="NexaFX logo"
               className="h-8"
               width={100}
               height={100}

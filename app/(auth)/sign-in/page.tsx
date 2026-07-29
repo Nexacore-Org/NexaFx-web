@@ -43,7 +43,7 @@ export default function SignInPage() {
         <div className="flex justify-between items-center px-8 py-6 backdrop-blur-sm bg-white/10">
           <Image
             src="/logo.png"
-            alt="NexaFX"
+            alt="NexaFX logo"
             width={120}
             height={40}
             priority
@@ -188,7 +188,7 @@ export default function SignInPage() {
             <div className="flex justify-center mb-6">
               <Image
                 src="/logo.png"
-                alt="NexaFX"
+                alt="NexaFX logo"
                 width={120}
                 height={40}
                 priority
