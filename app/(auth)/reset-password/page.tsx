@@ -56,6 +56,7 @@ function ResetPasswordContent() {
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     const pastedData = e.clipboardData.getData("text").slice(0, 6);
     if (!/^\d+$/.test(pastedData)) return;
 
@@ -90,6 +91,7 @@ function ResetPasswordContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     if (!validate()) return;
 
     if (!email) {

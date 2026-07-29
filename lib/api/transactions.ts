@@ -1,3 +1,12 @@
+type GenericApiResponse = Record<string, unknown> & {
+  data?: Record<string, unknown> & { id?: string; transactionId?: string; status?: string };
+  transactions?: GenericApiResponse[];
+  items?: GenericApiResponse[];
+  status?: string;
+  transaction_id?: string;
+  id?: string;
+  transactionId?: string;
+};
 import { apiClient } from '../api-client';
 
 export type TransactionStatus = 'Success' | 'Pending' | 'Failed';
@@ -35,8 +44,7 @@ export interface PaginatedTransactions {
     limit: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapTransaction(dto: Record<string, any>): Transaction {
+function mapTransaction(dto: GenericApiResponse): Transaction {
     const typeMap: Record<string, TransactionType> = {
         deposit: 'Deposit',
         withdrawal: 'Withdraw',
@@ -106,8 +114,7 @@ export async function getTransactions(
     if (query.from) params.from = query.from;
     if (query.to) params.to = query.to;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const json = await apiClient<any>('/transactions', {
+        const json = await apiClient<GenericApiResponse>('/transactions', {
         params,
     });
 
@@ -120,8 +127,7 @@ export async function getTransactions(
         };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = (json.data ?? json.transactions ?? json.items ?? []) as Record<string, any>[];
+        const data = (json.data ?? json.transactions ?? json.items ?? []) as GenericApiResponse[];
     const total = (json.total ?? json.totalCount ?? json.count ?? data.length) as number;
     const page = (json.page ?? query.page ?? 1) as number;
     const limit = (json.limit ?? query.limit ?? 10) as number;
@@ -135,10 +141,8 @@ export async function getTransactions(
 }
 
 export async function getTransactionById(id: string): Promise<Transaction> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const json = await apiClient<any>(`/transactions/${id}`);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dto = (json.data ?? json) as Record<string, any>;
+        const json = await apiClient<GenericApiResponse>(`/transactions/${id}`);
+        const dto = (json.data ?? json) as GenericApiResponse;
     return mapTransaction(dto);
 }
 
@@ -165,8 +169,7 @@ export interface WithdrawalResponse {
 export async function createWithdrawal(
     data: CreateWithdrawalDto
 ): Promise<WithdrawalResponse> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const json = await apiClient<any>('/transactions/withdraw', {
+        const json = await apiClient<GenericApiResponse>('/transactions/withdraw', {
         method: 'POST',
         body: JSON.stringify(data),
     });
@@ -207,8 +210,7 @@ export interface DepositResponse {
 export async function createDeposit(
     data: CreateDepositDto
 ): Promise<DepositResponse> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const json = await apiClient<any>('/transactions/deposit', {
+        const json = await apiClient<GenericApiResponse>('/transactions/deposit', {
         method: 'POST',
         body: JSON.stringify(data),
     });
@@ -250,8 +252,7 @@ export interface SwapResponse {
 }
 
 export async function createSwap(data: CreateSwapDto): Promise<SwapResponse> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const json = await apiClient<any>('/transactions/swap', {
+        const json = await apiClient<GenericApiResponse>('/transactions/swap', {
         method: 'POST',
         body: JSON.stringify(data),
     });
@@ -270,8 +271,8 @@ export async function createSwap(data: CreateSwapDto): Promise<SwapResponse> {
     return {
         transactionId,
         status,
-        toAmount: json.toAmount ?? json.to_amount,
-        exchangeRate: json.exchangeRate ?? json.exchange_rate,
+        toAmount: (json.toAmount ?? json.to_amount) as number | undefined,
+        exchangeRate: (json.exchangeRate ?? json.exchange_rate) as number | undefined,
         message: json.message as string | undefined,
     };
 }
