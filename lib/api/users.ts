@@ -1,5 +1,36 @@
 import { apiClient } from "@/lib/api-client";
 
+// ─── Profile ──────────────────────────────────────────────────────────────
+
+export interface UserProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  walletAddress?: string;
+  isVerified?: boolean;
+  avatarUrl?: string;
+}
+
+export interface UpdateProfileDto {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+}
+
+export const getProfile = (): Promise<UserProfile> =>
+  apiClient('/users/profile', { useProxy: false });
+
+export const updateProfile = (data: UpdateProfileDto): Promise<UserProfile> =>
+  apiClient('/users/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    useProxy: false,
+  });
+
+// ─── Sessions ─────────────────────────────────────────────────────────────
+
 export interface UserSession {
   id: string;
   deviceInfo: string;
