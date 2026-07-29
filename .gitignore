@@ -1,1 +1,6 @@
 # Config for nurudeenmuzainat
+coverage
+playwright-report/
+test-results/
+.sentry-clirc
+*credentials*
