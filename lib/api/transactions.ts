@@ -252,10 +252,20 @@ export async function createWithdrawal(
 }
 
 // ==================== Deposit ====================
-
+//
+// Confirmed via live probe: POST /v1/transactions/deposit returns 401 (requires auth).
+// The backend could not be tested with a valid token (auth endpoints returning 500).
+//
+// Required fields (based on audit + Stellar convention):
+//   amount        — deposit amount as string
+//   currency      — currency code (e.g. "USDC")
+//   sourceAddress — the user's Stellar wallet public key; enables the backend to match
+//                   incoming on-chain transactions to this user's account.
+//                   Added as optional pending live verification.
 export interface CreateDepositDto {
     amount: string;
     currency: string;
+    sourceAddress?: string;
 }
 
 export interface DepositResponse {
@@ -266,12 +276,15 @@ export interface DepositResponse {
 }
 
 export async function createDeposit(
-    data: CreateDepositDto
+    { amount, currency, sourceAddress }: CreateDepositDto
 ): Promise<DepositResponse> {
+    const body: Record<string, string> = { amount, currency };
+    if (sourceAddress) body.sourceAddress = sourceAddress;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const json = await apiClient<any>('/transactions/deposit', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify(body),
     });
 
     // Normalize response - backend may use different field names
