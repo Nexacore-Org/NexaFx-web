@@ -9,9 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowUpDown,
-  TrendingUp,
-  FileText,
-  Code2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/hooks/use-sidebar-store";
@@ -19,11 +16,8 @@ import Image from "next/image";
 
 const menuItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
-  // { icon: ArrowUpDown, label: "Convert", href: "/convert" },
+  { icon: ArrowUpDown, label: "Convert", href: "/convert" },
   { icon: Mail, label: "Transactions", href: "/transactions" },
-  { icon: FileText, label: "Invoices", href: "/invoices" },
-  { icon: TrendingUp, label: "Insights", href: "/insights" },
-  { icon: Code2, label: "Developer API", href: "/developer" },
   { icon: CircleUserRound, label: "Settings", href: "/settings" },
 ];
 
@@ -53,7 +47,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
           {!isCollapsed && (
             <Image
               src="/icons/logo.svg"
-              alt="NexaFX logo"
+              alt="Logo"
               className="h-8"
               width={100}
               height={100}

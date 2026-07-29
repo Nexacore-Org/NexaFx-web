@@ -6,17 +6,9 @@ import {
   DollarSign,
   PoundSterling,
   Euro,
-  Star,
 } from "lucide-react";
-import { InfoIcon } from "@/components/ui/info-icon";
 import { useEffect, useState } from "react";
 import { getExchangeRate } from "@/lib/api/exchange-rates";
-import {
-  addToWatchlist,
-  getWatchlist,
-  isInWatchlist,
-  removeFromWatchlist,
-} from "@/lib/utils/watchlist";
 
 interface RateData {
   pair: string;
@@ -51,17 +43,6 @@ export function MarketOverview() {
   const [marketData, setMarketData] = useState<RateData[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [watchlist, setWatchlist] = useState<string[]>([]);
-
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setWatchlist(getWatchlist());
-    };
-
-    setWatchlist(getWatchlist());
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
 
   const fetchRates = async () => {
     try {
@@ -81,10 +62,7 @@ export function MarketOverview() {
             return {
               pair: p.pair,
               rate: rateValue
-                ? `₦${Number(rateValue).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}`
+                ? `₦${Number(rateValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                 : "N/A",
               change:
                 changeValue !== null
@@ -114,31 +92,15 @@ export function MarketOverview() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchRates();
-    }, 0);
+    fetchRates();
     const interval = setInterval(fetchRates, 60000);
-    return () => {
-      clearTimeout(timer);
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, []);
-
-  const toggleWatchlist = (pair: string) => {
-    if (isInWatchlist(pair)) {
-      removeFromWatchlist(pair);
-    } else {
-      addToWatchlist(pair);
-    }
-  };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm md:text-lg font-semibold">
-          Exchange Rates
-          <InfoIcon tooltip="Live market rates from the Stellar decentralized exchange. Rates are updated every 60 seconds." />
-        </h3>
+        <h3 className="text-sm md:text-lg font-semibold">Exchange Rates</h3>
         <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-2">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -179,28 +141,8 @@ export function MarketOverview() {
                   <p className="text-xs font-medium text-muted-foreground">
                     {item.pair}
                   </p>
-                  <div className="flex items-center">
-                    <button
-                      onClick={() => toggleWatchlist(item.pair)}
-                      className="p-1 text-muted-foreground hover:text-yellow-400 transition-colors rounded-full -m-1 mr-1"
-                      aria-label={
-                        isInWatchlist(item.pair)
-                          ? "Remove from watchlist"
-                          : "Add to watchlist"
-                      }
-                    >
-                      <Star
-                        className={`h-5 w-5 ${
-                          isInWatchlist(item.pair) ? "text-yellow-400" : ""
-                        }`}
-                        fill={
-                          isInWatchlist(item.pair) ? "currentColor" : "none"
-                        }
-                      />
-                    </button>
-                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs">
-                      {item.icon}
-                    </div>
+                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs">
+                    {item.icon}
                   </div>
                 </div>
 

@@ -1,80 +1,74 @@
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps, @typescript-eslint/no-explicit-any */
-'use client';
+"use client";
 
-import { useState, useEffect } from "react";
-import { Loader2, ListFilter } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { TableTransaction } from "@/components/admin/transaction/TableTransaction";
 import { TransactionFilters } from "@/components/admin/transaction/TransactionFilters";
-import { getAdminTransactions, AdminTransaction } from "@/lib/api/admin";
-import { EmptyState } from "@/components/shared/empty-state";
-import { AdminTableRowSkeleton } from "@/components/shared/page-skeletons";
-
-const ITEMS_PER_PAGE = 10;
+import { getAdminTransactions, type AdminTransaction } from "@/lib/api/admin";
 
 export default function TransactionPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [activeFilter, setActiveFilter] = useState("All");
-  const [currentPage, setCurrentPage] = useState(1);
   const [transactions, setTransactions] = useState<AdminTransaction[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Debounce search query
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setCurrentPage(1);
-    }, 350);
-
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
-
-  const loadTransactions = async () => {
-    try {
-      setLoading(true);
-      const res = await getAdminTransactions({
-        page: currentPage,
-        limit: ITEMS_PER_PAGE,
-        search: debouncedSearch,
-        type: activeFilter,
-      });
-      setTransactions(res.data);
-      setTotalCount(res.total);
-      setError(null);
-    } catch (err: any) {
-      console.error("Failed to load admin transactions", err);
-      setError(err?.message || "Failed to fetch transactions. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("All");
 
   useEffect(() => {
-    loadTransactions();
-  }, [currentPage, debouncedSearch, activeFilter]);
-
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
-  const startEntry = totalCount === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
-  const endEntry = Math.min(currentPage * ITEMS_PER_PAGE, totalCount);
-
-  const handleFilterChange = (filter: string) => {
-    setActiveFilter(filter);
-    setCurrentPage(1);
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+    async function fetchTransactions() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getAdminTransactions();
+        setTransactions(data);
+      } catch (err: unknown) {
+        console.error("Error fetching transactions:", err);
+        setError(err instanceof Error ? err.message : "Failed to load transactions.");
+      } finally {
+        setLoading(false);
+      }
     }
-  };
+    fetchTransactions();
+  }, []);
 
-  const handleSeeAll = () => {
-    setCurrentPage(1);
-    setSearchQuery("");
-    setActiveFilter("All");
-  };
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((tx) => {
+      // Search by username or txId
+      const matchesSearch =
+        !searchQuery.trim() ||
+        tx.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tx.txId.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Filter by active type (backend withdrawal maps to Withdraw)
+      const matchesFilter =
+        activeFilter === "All" ||
+        tx.type.toLowerCase() === activeFilter.toLowerCase() ||
+        (activeFilter === "Withdrawal" && tx.type === "Withdraw");
+      
+      return matchesSearch && matchesFilter;
+    });
+  }, [transactions, searchQuery, activeFilter]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg max-w-lg mx-auto mt-8">
+        <p className="font-semibold">Error Loading Transactions</p>
+        <p className="text-sm">{error}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-2 text-xs font-semibold underline hover:text-red-800"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -82,63 +76,10 @@ export default function TransactionPage() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         activeFilter={activeFilter}
-        onFilterChange={handleFilterChange}
-        totalCount={totalCount}
+        onFilterChange={setActiveFilter}
+        totalCount={filteredTransactions.length}
       />
-      
-      {error ? (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center text-red-600">
-          <p className="font-semibold">{error}</p>
-          <button 
-            onClick={loadTransactions} 
-            className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            Retry
-          </button>
-        </div>
-      ) : loading ? (
-        <AdminTableRowSkeleton rows={5} columns={6} />
-      ) : transactions.length === 0 && (searchQuery || activeFilter !== "All") ? (
-        <EmptyState
-          icon={<ListFilter className="h-16 w-16" />}
-          title="No transactions found"
-          description="No transactions match the current filters."
-          action={{ label: "Clear filters", onClick: handleSeeAll }}
-        />
-      ) : transactions.length === 0 ? (
-        <EmptyState
-          icon={<ListFilter className="h-16 w-16" />}
-          title="No transactions yet"
-          description="Transactions will appear here once users start making deposits and conversions."
-        />
-      ) : (
-        <>
-          <TableTransaction transactions={transactions} />
-          
-          {/* Pagination */}
-          <div className="flex items-center justify-between mt-4">
-            <p className="text-sm text-gray-600">
-              Showing {startEntry} to {endEntry} of {totalCount} entries
-            </p>
-            
-            <div className="flex gap-3">
-              <button
-                onClick={handleSeeAll}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-              >
-                See All
-              </button>
-              <button
-                onClick={handleNextPage}
-                disabled={currentPage >= totalPages || totalCount === 0}
-                className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      <TableTransaction transactions={filteredTransactions} />
     </div>
   );
 }

@@ -1,7 +1,5 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import * as Sentry from "@sentry/nextjs";
-import { setTokens as storeTokens, clearTokens as removeTokens } from "@/lib/utils/token";
 
 export interface UserProfileStore {
   id: string;
@@ -44,17 +42,24 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       isAuthenticated: false,
       setAuth: (user, accessToken, refreshToken) => {
-        storeTokens(accessToken, refreshToken);
-        Sentry.setUser({ id: user.id, email: user.email });
+        if (typeof window !== "undefined") {
+          localStorage.setItem("access_token", accessToken);
+          localStorage.setItem("refresh_token", refreshToken);
+        }
         set({ user, accessToken, refreshToken, isAuthenticated: true });
       },
       setTokens: (accessToken, refreshToken) => {
-        storeTokens(accessToken, refreshToken);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("access_token", accessToken);
+          localStorage.setItem("refresh_token", refreshToken);
+        }
         set({ accessToken, refreshToken });
       },
       logout: () => {
-        removeTokens();
-        Sentry.setUser(null);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+        }
         set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
       },   
       setProfile: (profile) => set({ profile }),

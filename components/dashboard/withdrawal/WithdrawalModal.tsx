@@ -6,13 +6,12 @@ import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { WithdrawalMethodSelect } from "./WithdrawalMethodSelect";
 import { WithdrawalForm } from "./WithdrawalForm";
 import { WithdrawalReview } from "./WithdrawalReview";
-import { WithdrawalSuccess } from "@/components/dashboard/withdraw/withdrawal-success";
-import type { Transaction } from "@/lib/api/transactions";
+import { WithdrawalSuccess } from "./WithdrawalSuccess";
 import { cn } from "@/lib/utils";
-import { X, XCircle } from "lucide-react";
+import { X } from "lucide-react";
 
 export function WithdrawalModal() {
-  const { isOpen, step, close, reset, amount, currency, walletAddress, transactionId, errorMessage } = useWithdrawalStore();
+  const { isOpen, step, close, reset } = useWithdrawalStore();
   const isProcessing = step === "processing";
   const desktopModalRef = useRef<HTMLDivElement>(null);
   const mobileModalRef = useRef<HTMLDivElement>(null);
@@ -37,18 +36,6 @@ export function WithdrawalModal() {
     }
   };
 
-  const successTransaction: Transaction = {
-    id: transactionId ?? "",
-    type: "Withdraw",
-    currency,
-    amount: parseFloat(amount) || 0,
-    amountString: `${parseFloat(amount).toLocaleString()} ${currency}`,
-    date: new Date().toISOString(),
-    status: "Pending",
-    reference: transactionId ?? "",
-    walletAddress,
-  };
-
   const renderStep = () => {
     switch (step) {
       case "select":
@@ -59,37 +46,12 @@ export function WithdrawalModal() {
       case "processing":
         return <WithdrawalReview />;
       case "success":
-        return <WithdrawalSuccess transaction={successTransaction} />;
       case "error":
-        return <WithdrawalErrorDisplay message={errorMessage} onRetry={() => close()} />;
+        return <WithdrawalSuccess />;
       default:
         return <WithdrawalMethodSelect />;
     }
   };
-
-  function WithdrawalErrorDisplay({ message, onRetry }: { message: string | null; onRetry: () => void }) {
-    return (
-      <div className="p-6 space-y-6">
-        <div className="flex flex-col items-center pt-8 pb-4">
-          <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4 bg-red-500/10">
-            <XCircle className="size-10 text-red-500" />
-          </div>
-          <h2 className="text-xl font-bold text-red-500">Withdrawal Failed</h2>
-          <p className="text-sm text-muted-foreground mt-1 text-center">
-            {message || "Something went wrong. Please try again."}
-          </p>
-        </div>
-        <div className="space-y-3 pt-2">
-          <button
-            onClick={onRetry}
-            className="w-full py-3.5 rounded-xl font-semibold bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all duration-200"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>

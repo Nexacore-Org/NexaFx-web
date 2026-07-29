@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, AlertCircle, Calendar, Trash2 } from "lucide-react";
+import { Download, AlertCircle, Calendar } from "lucide-react";
 import { KycIcon, SwapIcon } from "@/components/icons";
 import { Notification, NotificationType } from "@/types/notification";
 import { cn } from "@/lib/utils";
@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 interface NotificationItemProps {
   notification: Notification;
   onClick?: () => void;
-  onDelete?: (id: string) => void;
 }
 
 function getNotificationIcon(type: NotificationType) {
@@ -71,14 +70,8 @@ function highlightBoldText(text: string) {
 export function NotificationItem({
   notification,
   onClick,
-  onDelete,
 }: NotificationItemProps) {
-  const { type, message, timestamp, isRead, id } = notification;
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onDelete?.(id);
-  };
+  const { type, message, timestamp, isRead } = notification;
 
   return (
     <button
@@ -110,14 +103,6 @@ export function NotificationItem({
       {!isRead && (
         <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-2" />
       )}
-
-      <button
-        onClick={handleDelete}
-        className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive shrink-0"
-        aria-label="Delete notification"
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
     </button>
   );
 }

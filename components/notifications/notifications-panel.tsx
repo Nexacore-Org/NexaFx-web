@@ -1,16 +1,26 @@
 "use client";
 
 import { useEffect } from "react";
-import { Settings, Bell } from "lucide-react";
+import { Settings } from "lucide-react";
 import Link from "next/link";
 import { useNotificationsStore } from "@/hooks/use-notifications-store";
 import { NotificationItem } from "./notification-item";
 import { Checkbox } from "@/components/ui/checkbox";
-import { EmptyState } from "@/components/shared/empty-state";
-import { NotificationListSkeleton } from "@/components/shared/page-skeletons";
 
 function PanelSkeleton() {
-  return <NotificationListSkeleton rows={4} />;
+  return (
+    <div className="divide-y divide-border">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="flex items-start gap-3 p-4 animate-pulse">
+          <div className="h-9 w-9 rounded-full bg-muted shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3.5 w-1/3 rounded bg-muted" />
+            <div className="h-3 w-2/3 rounded bg-muted" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function NotificationsPanel() {
@@ -23,14 +33,13 @@ export function NotificationsPanel() {
     markAllAsRead,
     fetchNotifications,
     unreadCount,
-    removeNotification,
   } = useNotificationsStore();
+
   useEffect(() => {
     if (isOpen) {
       fetchNotifications();
     }
   }, [isOpen, fetchNotifications]);
-
 
   if (!isOpen) return null;
 
@@ -42,9 +51,6 @@ export function NotificationsPanel() {
     markAllAsRead();
   };
 
-  const handleDelete = (id: string) => {
-    removeNotification(id);
-  };
   return (
     <>
       {/* Backdrop */}
@@ -83,11 +89,9 @@ export function NotificationsPanel() {
           {isLoading ? (
             <PanelSkeleton />
           ) : notifications.length === 0 ? (
-            <EmptyState
-              icon={<Bell className="h-12 w-12" />}
-              title="You're all caught up"
-              description="You'll see notifications here when there's activity on your account."
-            />
+            <div className="p-8 text-center text-muted-foreground">
+              <p>No notifications yet</p>
+            </div>
           ) : (
             <div className="divide-y divide-border">
               {notifications.map((notification) => (
@@ -95,7 +99,6 @@ export function NotificationsPanel() {
                   key={notification.id}
                   notification={notification}
                   onClick={() => handleNotificationClick(notification.id)}
-                  onDelete={handleDelete}
                 />
               ))}
             </div>

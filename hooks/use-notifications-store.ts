@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { Notification } from "@/types/notification";
 import * as api from "@/lib/api/notifications";
-import { getRequestErrorMessage } from "@/lib/api-client";
 
 interface NotificationsStore {
   notifications: Notification[];
@@ -54,10 +53,7 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
     } catch (err) {
       set({
         isLoading: false,
-        error: getRequestErrorMessage(err, {
-          fallback: "Failed to load notifications",
-          hasCachedData: get().notifications.length > 0,
-        }),
+        error: err instanceof Error ? err.message : "Failed to load notifications",
       });
     }
   },
@@ -66,13 +62,14 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
     try {
       const count = await api.getUnreadCount();
       set({ unreadCount: count });
-    } catch {}
+    } catch {
+    }
   },
 
   markAsRead: (id) => {
     set((state) => {
       const updated = state.notifications.map((n) =>
-        n.id === id ? { ...n, isRead: true } : n,
+        n.id === id ? { ...n, isRead: true } : n
       );
       return {
         notifications: updated,

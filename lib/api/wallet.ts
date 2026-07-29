@@ -16,11 +16,3 @@ export async function getBalances(): Promise<WalletBalance[]> {
   });
   return Array.isArray(data) ? data : (data.data ?? data.balances ?? []);
 }
-
-export async function importWallet(payload: { encryptedSecretKey: string; publicKey: string }): Promise<void> {
-  await apiClient<void>("/users/wallet/import", {
-    method: "POST",
-    useProxy: false,
-    body: JSON.stringify(payload),
-  });
-}

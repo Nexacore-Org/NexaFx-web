@@ -1,112 +1,101 @@
-# NexaFx v2
+# NexaFX
 
-NexaFx is a web app for currency exchange, crypto payments, wallet operations, invoices, KYC, and admin operations. The v2 branch is the active rebuild of the product frontend.
+## Next-Generation Web3 Currency Exchange Platform
 
-## Tech Stack
+NexaFX is a cutting-edge currency exchange platform that bridges traditional finance with blockchain technology, offering seamless conversions between the Nigerian Naira, global currencies, and cryptocurrencies. Built on Web3 principles and integrated with the Stellar ecosystem, NexaFX delivers a secure, transparent, and cost-effective solution for all your financial exchange needs.
 
-- Next.js 16 App Router
-- React 19 and TypeScript
-- Tailwind CSS
-- Zustand for client state
-- Stellar blockchain integrations
-- Vitest, Testing Library, Playwright, and Storybook
+## 🌟 Key Features
 
-## Live App
+- **Multi-Currency Support**: Convert between Naira, USD, EUR, GBP, Bitcoin, Ethereum, and popular stablecoins
+- **Real-Time Exchange Rates**: Access accurate, up-to-the-minute conversion rates
+- **Blockchain Security**: Enjoy enhanced protection through distributed ledger technology
+- **Cross-Border Transactions**: Send and receive funds globally without traditional banking limitations
+- **Web3 Wallet Integration**: Connect directly with MetaMask and other popular crypto wallets
+- **Smart Contract Efficiency**: Reduce costs and processing times by eliminating intermediaries
 
-The production URL is managed by the NexaCore team. Ask a maintainer for the current deployed v2 URL before testing production-only flows.
+## 🛠️ Technology Stack
 
-## Branch Strategy
+NexaFX is built on a robust technological foundation:
 
-- `main`: production branch
-- `v1`: final touches on the original codebase
-- `v2`: full rebuild and active frontend development
+- Web3 architecture for decentralized operations
+- Smart contracts for autonomous transaction processing
+- Stellar blockchain integration for rapid settlement
+- Advanced encryption protocols for maximum security
+- Real-time API connections to global financial exchanges
 
-Always target pull requests to `v2` unless a maintainer explicitly says otherwise.
+## 🚀 Getting Started
 
-## Prerequisites
+### Prerequisites
 
-- Node.js 20 or newer
-- npm 10 or newer
-- GitHub CLI (`gh`) for issue and PR workflows
-- A NexaFx test account. Use the configured backend in `NEXT_PUBLIC_API_URL` to register one for local testing.
+- A Web3-compatible browser (Chrome, Firefox, Brave)
+- MetaMask or similar Web3 wallet extension installed
+- Basic understanding of cryptocurrency transactions
 
-## Environment Setup
+### Installation
 
-```bash
-git clone https://github.com/Nexacore-Org/NexaFx-web
-cd NexaFx-web
-git checkout v2
-npm install
-cp .env.example .env.local
-npm run dev
-```
+1. Clone the repository:
 
-Fill in required values in `.env.local` before testing authenticated, payment, notification, or e2e flows.
+   ```
+   git clone https://github.com/yourusername/nexafx.git
+   cd nexafx
+   ```
 
-## Environment Variables
+2. Install dependencies:
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `NEXT_PUBLIC_API_URL` | Yes | Backend API origin used by direct API calls and the local proxy. |
-| `NEXT_PUBLIC_MOONPAY_API_KEY` | For MoonPay deposits | MoonPay publishable key from the MoonPay dashboard. |
-| `TEST_ACCESS_TOKEN` | Development only | Optional local development fallback token for the API proxy. Never set in staging or production. |
-| `NEXT_PUBLIC_SESSION_TIMEOUT_MS` | Optional | Session timeout in milliseconds. Defaults should match product requirements. |
-| `NEXT_PUBLIC_CRISP_WEBSITE_ID` | For support chat | Crisp website ID from the Crisp dashboard. |
-| `E2E_TEST_EMAIL` | For e2e tests | Test user email used by Playwright flows. |
-| `E2E_TEST_PASSWORD` | For e2e tests | Test user password used by Playwright flows. |
-| `E2E_TEST_OTP` | For e2e tests | OTP value for test login flows. |
-| `E2E_BASE_URL` | For e2e tests | App URL used by Playwright, usually `http://localhost:3000`. |
+   ```
+   npm install
+   ```
 
-## Available Scripts
+3. Configure your environment variables:
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the local Next.js development server. |
-| `npm run build` | Create a production build. |
-| `npm run start` | Start the production server after a build. |
-| `npm run lint` | Run ESLint. |
-| `npm run test` | Run unit tests with Vitest. |
-| `npm run test:ui` | Launch the Vitest UI. |
-| `npm run test:watch` | Run Vitest in watch mode. |
-| `npm run test:coverage` | Run unit tests with coverage. |
-| `npm run e2e` | Run Playwright end-to-end tests. |
-| `npm run storybook` | Launch Storybook on port 6006. |
-| `npm run build-storybook` | Build Storybook. |
+   ```
+   cp .env.example .env
+   ```
 
-## How To Pick Up An Issue
+   Edit the `.env` file with your specific configuration details.
 
-1. Browse open GitHub issues and filter by the `frontend` label.
-2. Comment `I'll take this` on the issue before starting work.
-3. Create a branch from `v2`:
+4. Start the development server:
 
-```bash
-git checkout v2
-git pull origin v2
-git checkout -b feat/issue-123-your-description
-```
+   ```
+   npm run dev
+   ```
 
-4. Make the smallest complete change that satisfies the issue.
-5. Run the required checks:
+5. Open your browser and navigate to `http://localhost:3000`
 
-```bash
-npm run build
-npm run lint
-npm run test
-```
+## 🔐 Security
 
-6. Open a PR targeting `v2`.
-7. Add `Closes #123` to the PR description.
+NexaFX prioritizes the security of user funds and data:
 
-## PR Checklist
+- All transactions are verified and recorded on the blockchain
+- Smart contracts undergo rigorous testing and auditing
+- Multi-signature authentication for sensitive operations
+- Regular security assessments and penetration testing
 
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
-- [ ] `npm run test` passes when code is changed
-- [ ] No hardcoded balances, users, wallet addresses, or mock-only data in production paths
-- [ ] No imports from `lib/admin-mock-data.ts`
-- [ ] PR targets the `v2` branch
-- [ ] PR description references the issue with `Closes #<issue-number>`
+## 💼 Use Cases
 
-## Notes For Contributors
+- **Individual Users**: Convert currencies for personal use, travel, or investment
+- **Traders**: Capitalize on exchange rate fluctuations across multiple markets
+- **Businesses**: Simplify international payments and reduce transaction costs
+- **Remittance**: Send money to family and friends across borders with minimal fees
 
-This project uses Next.js 16. Read the relevant local guide in `node_modules/next/dist/docs/` before changing Next-specific APIs, routing conventions, or configuration.
+## 🤝 Contributing
+
+We welcome contributions from the community! Please read our [Contributing Guidelines](https://github.com/Nexacore-Org/NexaFx-web/blob/main/Contribution.md) before submitting pull requests.
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📞 Support
+
+Having trouble? Reach out to us:
+
+- Submit an issue on GitHub
+- Telegram: [https://t.me/NexaFx](https://t.me/+WkWO3kNnA-1mYzVk)
+- Email us at [contact@nexacore.org](mailto:nexacore.org@gmail.com)
+
+## 📧 Contact
+
+---
+
+**NexaFX** - Bridging Traditional Finance and DeFi for a Borderless Financial Future

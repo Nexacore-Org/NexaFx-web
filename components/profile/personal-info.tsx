@@ -1,11 +1,10 @@
-"use client";
+'use client';
 
-import { UserProfile, getProfile } from "@/lib/api/users";
-import { useEffect, useState } from "react";
+import { UserProfile, getProfile } from '@/lib/api/users';
+import { useEffect, useState } from 'react';
 
-import { Eye } from "lucide-react";
-import { useAuthStore } from "@/hooks/use-auth-store";
-import { getRequestErrorMessage } from "@/lib/api-client";
+import { Eye } from 'lucide-react';
+import { useAuthStore } from '@/hooks/use-auth-store';
 
 export function PersonalInfo() {
   const user = useAuthStore((s) => s.user);
@@ -22,14 +21,7 @@ export function PersonalInfo() {
           const data = await getProfile();
           if (!cancelled) setProfile(data);
         } catch (e) {
-          if (!cancelled) {
-            setError(
-              getRequestErrorMessage(e, {
-                fallback: "Failed to load profile",
-                hasCachedData: Boolean(user),
-              }),
-            );
-          }
+          if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load profile');
         } finally {
           if (!cancelled) setLoading(false);
         }
@@ -42,9 +34,9 @@ export function PersonalInfo() {
   }, [user]);
 
   const name =
-    user?.name || (profile ? `${profile.firstName} ${profile.lastName}` : "");
-  const email = user?.email || profile?.email || "";
-  const phone = profile?.phone || "";
+    user?.name || (profile ? `${profile.firstName} ${profile.lastName}` : '');
+  const email = user?.email || profile?.email || '';
+  const phone = profile?.phone || '';
 
   if (loading) {
     return (
