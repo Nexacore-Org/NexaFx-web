@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FeeEstimatorModal } from "@/components/shared/fee-estimator-modal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +29,14 @@ function toCurrencyOption(
   return { id: c.code, name: c.name, balance: balanceMap[c.code] ?? "0.00" };
 }
 
+function SkeletonBar({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn("animate-pulse rounded-xl bg-muted", className)}
+    />
+  );
+}
+
 export function WithdrawalForm() {
   const { currency, setStep, setFormData, close, reset } = useWithdrawalStore();
 
@@ -49,7 +57,7 @@ export function WithdrawalForm() {
     defaultValues: { walletAddress: "", amount: "" },
   });
 
-  const fetchCurrenciesAndBalances = async () => {
+  const fetchCurrenciesAndBalances = useCallback(async () => {
     setIsLoadingCurrencies(true);
     setCurrencyError(null);
     try {
@@ -61,47 +69,28 @@ export function WithdrawalForm() {
       for (const b of balanceData) balanceMap[b.currency] = b.balance;
       setCurrencies(currencyData.map((c) => toCurrencyOption(c, balanceMap)));
     } catch {
-      setCurrencyError(
-        "Unable to load currencies or balances. Please try again.",
-      );
+      setCurrencyError("Unable to load your balances. Please refresh the page.");
     } finally {
       setIsLoadingCurrencies(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setIsLoadingCurrencies(true);
-      setCurrencyError(null);
-      try {
-        const [currencyData, balanceData] = await Promise.all([
-          getCurrencies(),
-          getBalances(),
-        ]);
-        if (cancelled) return;
-        const balanceMap: Record<string, string> = {};
-        for (const b of balanceData) balanceMap[b.currency] = b.balance;
-        setCurrencies(currencyData.map((c) => toCurrencyOption(c, balanceMap)));
-      } catch {
-        if (!cancelled)
-          setCurrencyError(
-            "Unable to load currencies or balances. Please try again.",
-          );
-      } finally {
-        if (!cancelled) setIsLoadingCurrencies(false);
-      }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    fetchCurrenciesAndBalances();
+  }, [fetchCurrenciesAndBalances]);
 
   const selectedCurrency =
     currencies.find((c) => c.id === currency) || currencies[0];
   const walletAddress = watch("walletAddress");
   const showMemoWarning = requiresMemo(walletAddress ?? "");
+
+  const hasBalanceData =
+    !isLoadingCurrencies && !currencyError && currencies.length > 0;
+  const hasAnyPositiveBalance = currencies.some(
+    (c) => parseFloat(c.balance.replace(",", "")) > 0,
+  );
+  const isEmptyBalance = hasBalanceData && !hasAnyPositiveBalance;
+  const canSubmit = hasBalanceData && !isEmptyBalance;
 
   const onSubmit = (data: WithdrawalFormValues) => {
     if (selectedCurrency) {
@@ -148,65 +137,102 @@ export function WithdrawalForm() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Wallet Address */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">
-            Wallet Address
-          </label>
-          <Input
-            {...register("walletAddress")}
-            type="text"
-            placeholder="Enter wallet address or username"
-            error={errors.walletAddress?.message}
-            className={cn(
-              "rounded-xl bg-muted/50 border",
-              errors.walletAddress ? "border-destructive" : "border-border",
-            )}
-          />
-          {showMemoWarning && (
-            <p className="text-xs text-amber-700">
-              This address appears to belong to an exchange. You may need to include a memo/tag with your transfer. Please check with the recipient.
-            </p>
-          )}
+      {isLoadingCurrencies && (
+        <div className="space-y-4" data-testid="withdrawal-skeleton">
+          <div className="space-y-2">
+            <SkeletonBar className="h-4 w-28" />
+            <SkeletonBar className="h-11 w-full" />
+          </div>
+          <div className="space-y-2">
+            <SkeletonBar className="h-4 w-20" />
+            <SkeletonBar className="h-11 w-full" />
+          </div>
+          <div className="space-y-2">
+            <SkeletonBar className="h-4 w-16" />
+            <SkeletonBar className="h-11 w-full" />
+          </div>
+          <SkeletonBar className="h-12 w-full mt-4" />
         </div>
+      )}
 
-        {/* Currency Selector */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">
-            Currency
-          </label>
-          <div className="relative">
-            {currencyError ? (
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-destructive/10 border border-destructive">
-                <div className="flex items-center gap-2 text-destructive">
-                  <AlertCircle className="size-4 shrink-0" />
-                  <span className="text-sm">{currencyError}</span>
-                </div>
+      {!isLoadingCurrencies && currencyError && (
+        <div className="space-y-4">
+          <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive">
+            <AlertCircle className="size-4 shrink-0 text-destructive mt-0.5" />
+            <div className="flex-1 space-y-2">
+              <span className="text-sm text-destructive">{currencyError}</span>
+              <div>
                 <button
                   type="button"
                   onClick={fetchCurrenciesAndBalances}
-                  className="text-xs font-semibold text-destructive underline underline-offset-2 hover:opacity-70 transition-opacity shrink-0"
+                  className="text-xs font-semibold text-destructive underline underline-offset-2 hover:opacity-70 transition-opacity"
                 >
                   Retry
                 </button>
               </div>
-            ) : (
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {!isLoadingCurrencies && !currencyError && isEmptyBalance && (
+        <div className="space-y-4">
+          <div className="px-4 py-3 rounded-xl bg-muted/50 border border-border text-sm text-muted-foreground">
+            Your balance is empty. Make a deposit first.
+          </div>
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {!isLoadingCurrencies && !currencyError && !isEmptyBalance && (
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Wallet Address */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Wallet Address
+            </label>
+            <Input
+              {...register("walletAddress")}
+              type="text"
+              placeholder="Enter wallet address or username"
+              error={errors.walletAddress?.message}
+              className={cn(
+                "rounded-xl bg-muted/50 border",
+                errors.walletAddress ? "border-destructive" : "border-border",
+              )}
+            />
+            {showMemoWarning && (
+              <p className="text-xs text-amber-700">
+                This address appears to belong to an exchange. You may need to include a memo/tag with your transfer. Please check with the recipient.
+              </p>
+            )}
+          </div>
+
+          {/* Currency Selector */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Currency
+            </label>
+            <div className="relative">
               <button
                 type="button"
-                disabled={isLoadingCurrencies}
                 onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
-                className={cn(
-                  "w-full flex items-center justify-between px-4 py-3 rounded-xl",
-                  "bg-muted/50 border border-border hover:bg-muted transition-colors",
-                  isLoadingCurrencies && "opacity-60 cursor-wait",
-                )}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-muted/50 border border-border hover:bg-muted transition-colors"
               >
-                {isLoadingCurrencies ? (
-                  <span className="text-sm text-muted-foreground animate-pulse">
-                    Loading currencies…
-                  </span>
-                ) : selectedCurrency ? (
+                {selectedCurrency ? (
                   <span className="font-medium text-foreground">
                     {selectedCurrency.id}
                   </span>
@@ -218,98 +244,94 @@ export function WithdrawalForm() {
                   )}
                 />
               </button>
-            )}
 
-            {showCurrencyDropdown && !isLoadingCurrencies && !currencyError && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10">
-                {currencies.map((curr) => (
-                  <button
-                    key={curr.id}
-                    type="button"
-                    onClick={() => {
-                      setFormData({ currency: curr.id });
-                      setShowCurrencyDropdown(false);
-                    }}
-                    className={cn(
-                      "w-full flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors",
-                      curr.id === currency && "bg-primary/10",
-                    )}
-                  >
-                    <div className="text-left">
-                      <p className="font-medium text-foreground">{curr.id}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {curr.name}
-                      </p>
-                    </div>
-                    <span className="text-sm text-muted-foreground">
-                      {curr.balance}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Amount */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-foreground">
-              Amount
-            </label>
-            <span className="text-xs text-muted-foreground">
-              Balance: {selectedCurrency?.balance ?? "—"}{" "}
-              {selectedCurrency?.id ?? ""}
-            </span>
-          </div>
-          <div className="relative">
-            <Input
-              {...register("amount")}
-              type="text"
-              inputMode="decimal"
-              placeholder="0.00"
-              error={errors.amount?.message}
-              className={cn(
-                "pr-16 rounded-xl bg-muted/50 border",
-                errors.amount ? "border-destructive" : "border-border",
+              {showCurrencyDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10">
+                  {currencies.map((curr) => (
+                    <button
+                      key={curr.id}
+                      type="button"
+                      onClick={() => {
+                        setFormData({ currency: curr.id });
+                        setShowCurrencyDropdown(false);
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors",
+                        curr.id === currency && "bg-primary/10",
+                      )}
+                    >
+                      <div className="text-left">
+                        <p className="font-medium text-foreground">{curr.id}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {curr.name}
+                        </p>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {curr.balance}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               )}
-            />
+            </div>
+          </div>
+
+          {/* Amount */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-foreground">
+                Amount
+              </label>
+              <span className="text-xs text-muted-foreground">
+                Balance: {selectedCurrency?.balance ?? "—"}{" "}
+                {selectedCurrency?.id ?? ""}
+              </span>
+            </div>
+            <div className="relative">
+              <Input
+                {...register("amount")}
+                type="text"
+                inputMode="decimal"
+                placeholder="0.00"
+                error={errors.amount?.message}
+                className={cn(
+                  "pr-16 rounded-xl bg-muted/50 border",
+                  errors.amount ? "border-destructive" : "border-border",
+                )}
+              />
+              <button
+                type="button"
+                onClick={handleMaxClick}
+                className="absolute right-3 top-2.5 px-2 py-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                MAX
+              </button>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <FeeEstimatorModal />
+          </div>
+
+          <div className="space-y-3 pt-2">
+            {canSubmit && (
+              <button
+                type="submit"
+                className="w-full py-3.5 rounded-xl font-semibold bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all duration-200"
+              >
+                Withdraw
+              </button>
+            )}
             <button
               type="button"
-              onClick={handleMaxClick}
-              className="absolute right-3 top-2.5 px-2 py-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+              onClick={handleCancel}
+              className="w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
-              MAX
+              Cancel
             </button>
           </div>
-        </div>
-
-        <div className="text-center">
-          <FeeEstimatorModal />
-        </div>
-
-        <div className="space-y-3 pt-2">
-          <button
-            type="submit"
-            disabled={isLoadingCurrencies || !!currencyError}
-            className={cn(
-              "w-full py-3.5 rounded-xl font-semibold",
-              "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all duration-200",
-              (isLoadingCurrencies || currencyError) &&
-                "opacity-50 cursor-not-allowed",
-            )}
-          >
-            Withdraw
-          </button>
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
+        </form>
+      )}
     </div>
   );
 }
