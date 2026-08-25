@@ -7,6 +7,7 @@ import { Topbar } from "../../components/dashboard/topbar";
 import { NetworkStatusBanner } from "@/components/shared/network-status-banner";
 import { SessionTimeoutModal } from "@/components/shared/session-timeout-modal";
 import { AuthGuard } from "@/components/shared/auth-guard";
+import { DashboardErrorBoundary } from "@/components/shared/error-boundary";
 import { cn } from "../../lib/utils";
 import { useAuthStore } from "../../lib/store/auth-store";
 import { useRouter } from "next/navigation";
@@ -113,7 +114,7 @@ export default function DashboardLayout({
             <Topbar />
           </div>
           <main className="flex-1 overflow-y-auto px-4 md:px-8 pb-4">
-            {children}
+            <DashboardErrorBoundary>{children}</DashboardErrorBoundary>
           </main>
         </div>
 

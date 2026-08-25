@@ -86,3 +86,25 @@ export class ErrorBoundary extends React.Component<
     return this.props.children;
   }
 }
+
+/**
+ * Wraps the dashboard layout so a render error in any dashboard section shows
+ * the fallback instead of blanking the whole page. The class boundary above is
+ * fully supported in React 19, so no extra dependency is required.
+ */
+export function DashboardErrorBoundary({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <ErrorBoundary sectionName="Dashboard">{children}</ErrorBoundary>;
+}
+
+/** Same as {@link DashboardErrorBoundary}, scoped to the admin layout. */
+export function AdminErrorBoundary({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <ErrorBoundary sectionName="Admin">{children}</ErrorBoundary>;
+}

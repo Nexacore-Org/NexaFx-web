@@ -30,6 +30,27 @@ function formatCurrency(amount: string | number | undefined, currency: string) {
   }
 }
 
+/**
+ * Build a currency→balance lookup from the `getBalances()` response shape
+ * ({ currency, balance }[]) and pull out the NGN and USD figures. Keys are
+ * upper-cased so a lower/mixed-case `currency` (e.g. "ngn") still resolves —
+ * the case-insensitive fallback the old `balanceMap["NGN"] ?? balanceMap["NGN"]`
+ * no-op was meant to provide but never did.
+ */
+export function resolveBalances(
+  balances:
+    | { currency?: string; balance?: string | number }[]
+    | null
+    | undefined,
+): { ngn: string; usd: string } {
+  const balanceMap: Record<string, string> = {};
+  for (const b of balances ?? []) {
+    if (!b || !b.currency) continue;
+    balanceMap[String(b.currency).toUpperCase()] = String(b.balance ?? "");
+  }
+  return { ngn: balanceMap["NGN"] ?? "", usd: balanceMap["USD"] ?? "" };
+}
+
 type AccountOverviewTypes = {
   openDeposit: boolean;
   onDepositClick?: () => void;
@@ -95,14 +116,7 @@ export function AccountOverview({
         const addr = profile?.walletAddress ?? "";
         setWalletAddress(addr);
 
-        const balanceMap: Record<string, string> = {};
-        for (const b of balances ?? []) {
-          if (!b || !b.currency) continue;
-          balanceMap[String(b.currency).toUpperCase()] = String(b.balance ?? "");
-        }
-
-        const ngn = balanceMap["NGN"] ?? balanceMap["NGN"];
-        const usd = balanceMap["USD"] ?? balanceMap["USD"];
+        const { ngn, usd } = resolveBalances(balances);
 
         const formattedNgn = ngn ? formatCurrency(ngn, "NGN") : "";
         const formattedUsd = usd ? formatCurrency(usd, "USD") : "";
