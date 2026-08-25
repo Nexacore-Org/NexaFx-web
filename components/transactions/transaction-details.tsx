@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Copy, X, ArrowDownLeft, ArrowUpRight, RefreshCw } from "lucide-react";
+import { Copy, X, ArrowDownLeft, ArrowUpRight, RefreshCw, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Transaction, getTransactionById } from "@/lib/api/transactions";
+import { downloadReceipt } from "@/lib/utils/receipt-generator";
 
 interface TransactionDetailsProps {
     transaction: Transaction | null;
@@ -165,9 +166,13 @@ export function TransactionDetails({ transaction, open, onClose }: TransactionDe
                             </div>
 
                             {/* Actions */}
-                            <div className="flex flex-row items-center gap-4 pt-4">
-                                <button className="flex-1 bg-[#FFD552] text-primary-foreground font-semibold py-2 px-3 text-sm rounded-[18px] hover:opacity-90 transition-opacity whitespace-nowrap">
-                                    Share Transaction
+                            <div className="flex flex-row items-center gap-3 pt-4 flex-wrap">
+                                <button
+                                    onClick={() => downloadReceipt(tx)}
+                                    className="flex-1 flex items-center justify-center gap-2 bg-[#FFD552] text-primary-foreground font-semibold py-2 px-3 text-sm rounded-[18px] hover:opacity-90 transition-opacity whitespace-nowrap"
+                                >
+                                    <Download className="h-4 w-4" />
+                                    Download Receipt
                                 </button>
                                 <button
                                     onClick={onClose}

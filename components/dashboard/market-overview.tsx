@@ -6,9 +6,17 @@ import {
   DollarSign,
   PoundSterling,
   Euro,
+  Star,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getExchangeRate } from "@/lib/api/exchange-rates";
+import {
+  getWatchlist,
+  isInWatchlist,
+  addToWatchlist,
+  removeFromWatchlist,
+} from "@/lib/utils/watchlist";
+import { RateAlertModal } from "@/components/dashboard/rate-alert-modal";
 
 interface RateData {
   pair: string;
@@ -43,6 +51,23 @@ export function MarketOverview() {
   const [marketData, setMarketData] = useState<RateData[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+
+  useEffect(() => {
+    setWatchlist(getWatchlist());
+    const handler = () => setWatchlist(getWatchlist());
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+  }, []);
+
+  const toggleWatchlist = (pair: string) => {
+    if (isInWatchlist(pair)) {
+      removeFromWatchlist(pair);
+    } else {
+      addToWatchlist(pair);
+    }
+    setWatchlist(getWatchlist());
+  };
 
   const fetchRates = async () => {
     try {
@@ -141,8 +166,33 @@ export function MarketOverview() {
                   <p className="text-xs font-medium text-muted-foreground">
                     {item.pair}
                   </p>
-                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs">
-                    {item.icon}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => toggleWatchlist(item.pair)}
+                      className="p-1 rounded-full hover:bg-muted transition-colors"
+                      aria-label={
+                        isInWatchlist(item.pair)
+                          ? `Remove ${item.pair} from watchlist`
+                          : `Add ${item.pair} to watchlist`
+                      }
+                    >
+                      <Star
+                        className={`h-4 w-4 transition-colors ${
+                          watchlist.includes(item.pair)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-muted-foreground"
+                        }`}
+                      />
+                    </button>
+                    <RateAlertModal
+                      pair={item.pair}
+                      currentRate={
+                        parseFloat(item.rate.replace(/[^0-9.]/g, "")) || 0
+                      }
+                    />
+                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs">
+                      {item.icon}
+                    </div>
                   </div>
                 </div>
 
