@@ -2,10 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
-import { ChevronDown, ChevronLeft, AlertCircle,  } from "lucide-react";
+import { ChevronDown, ChevronLeft, AlertCircle, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCurrencies, type Currency } from "@/lib/api/currencies";
 import { getBalances } from "@/lib/api/wallet";
+import {
+  getSavedRecipients,
+  type SavedRecipient,
+} from "@/lib/utils/saved-recipients";
 
 interface CurrencyOption {
     id: string;
@@ -34,6 +38,8 @@ export function WithdrawalForm() {
     const [currencyError, setCurrencyError] = useState<string | null>(null);
     const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
     const [errors, setErrors] = useState<{ address?: string; amount?: string }>({});
+    const [savedRecipients, setSavedRecipients] = useState<SavedRecipient[]>([]);
+    const [showRecipientsDropdown, setShowRecipientsDropdown] = useState(false);
 
 const fetchCurrenciesAndBalances = async () => {
         setIsLoadingCurrencies(true);
@@ -56,6 +62,13 @@ const fetchCurrenciesAndBalances = async () => {
             setIsLoadingCurrencies(false);
         }
     };
+
+    useEffect(() => {
+        setSavedRecipients(getSavedRecipients());
+        const handler = () => setSavedRecipients(getSavedRecipients());
+        window.addEventListener("storage", handler);
+        return () => window.removeEventListener("storage", handler);
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -149,6 +162,57 @@ const fetchCurrenciesAndBalances = async () => {
 
             {/* Form */}
             <div className="space-y-4">
+                {/* Saved Recipients */}
+                {savedRecipients.length > 0 && (
+                    <div className="space-y-2">
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setShowRecipientsDropdown(!showRecipientsDropdown)}
+                                className={cn(
+                                    "w-full flex items-center justify-between px-4 py-3 rounded-xl",
+                                    "bg-muted/50 border border-border",
+                                    "hover:bg-muted transition-colors"
+                                )}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <Users className="size-4 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">
+                                        Select from saved recipients
+                                    </span>
+                                </div>
+                                <ChevronDown className={cn(
+                                    "size-5 text-muted-foreground transition-transform",
+                                    showRecipientsDropdown && "rotate-180"
+                                )} />
+                            </button>
+
+                            {showRecipientsDropdown && (
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10 max-h-48 overflow-y-auto">
+                                    {savedRecipients.map((recipient) => (
+                                        <button
+                                            key={recipient.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setFormData({ walletAddress: recipient.walletAddress, currency: recipient.currency });
+                                                setShowRecipientsDropdown(false);
+                                                if (errors.address) setErrors(prev => ({ ...prev, address: undefined }));
+                                            }}
+                                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors text-left"
+                                        >
+                                            <div className="min-w-0">
+                                                <p className="font-medium text-foreground text-sm truncate">{recipient.label}</p>
+                                                <p className="text-xs text-muted-foreground truncate">{recipient.walletAddress}</p>
+                                            </div>
+                                            <span className="text-xs text-muted-foreground ml-2 shrink-0">{recipient.currency}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Wallet Address */}
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">
