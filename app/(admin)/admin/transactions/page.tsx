@@ -1,9 +1,23 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { Download } from "lucide-react";
 import { TableTransaction } from "@/components/admin/transaction/TableTransaction";
 import { TransactionFilters } from "@/components/admin/transaction/TransactionFilters";
 import { getAdminTransactions, type AdminTransaction } from "@/lib/api/admin";
+import { exportTransactionsToCSV } from "@/app/lib/utils/csv-export";
+
+function adminToTransactionCSV(tx: AdminTransaction) {
+  return {
+    date: tx.date,
+    type: tx.type,
+    currency: tx.currency,
+    amount: tx.amount,
+    status: tx.status,
+    reference: tx.txId,
+    description: "",
+  };
+}
 
 export default function TransactionPage() {
   const [transactions, setTransactions] = useState<AdminTransaction[]>([]);
@@ -72,13 +86,25 @@ export default function TransactionPage() {
 
   return (
     <div className="space-y-6">
-      <TransactionFilters 
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
-        totalCount={filteredTransactions.length}
-      />
+      <div className="flex items-center justify-between">
+        <TransactionFilters 
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+          totalCount={filteredTransactions.length}
+        />
+        <button
+          onClick={() => {
+            const csvData = filteredTransactions.map(adminToTransactionCSV);
+            exportTransactionsToCSV(csvData as never);
+          }}
+          className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Export CSV
+        </button>
+      </div>
       <TableTransaction transactions={filteredTransactions} />
     </div>
   );
