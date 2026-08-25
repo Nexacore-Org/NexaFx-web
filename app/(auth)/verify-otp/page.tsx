@@ -8,17 +8,31 @@ import Link from 'next/link';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { useRouter } from 'next/navigation';
 
+const COOLDOWN_SECONDS = 60;
+
 export default function VerifyOtpPage() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [cooldown, setCooldown] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((prev) => {
+        if (prev <= 1) return 0;
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   const handleChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
@@ -96,8 +110,15 @@ export default function VerifyOtpPage() {
     }
     try {
       await resendLoginOtp({ email: storedEmail });
-    } catch {
-      setError('Failed to resend code');
+      setCooldown(COOLDOWN_SECONDS);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '';
+      if (message.toLowerCase().includes('rate') || message.toLowerCase().includes('too many')) {
+        setError('Too many requests. Please wait before trying again.');
+        setCooldown(COOLDOWN_SECONDS);
+      } else {
+        setError(message || 'Failed to resend code');
+      }
     }
   };
 
@@ -160,14 +181,14 @@ export default function VerifyOtpPage() {
               ))}
             </div>
 
-            <div className="text-center">
+              <div className="text-center">
               <button
                 type="button"
                 onClick={handleResend}
-                className="text-xs text-gray-600 hover:text-gray-800"
-                disabled={isLoading}
+                className="text-xs text-gray-600 hover:text-gray-800 disabled:cursor-not-allowed"
+                disabled={isLoading || cooldown > 0}
               >
-                Resend code
+                {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
               </button>
             </div>
 
@@ -258,10 +279,10 @@ export default function VerifyOtpPage() {
                 <button
                   type="button"
                   onClick={handleResend}
-                  className="text-xs text-gray-600 hover:text-gray-800"
-                  disabled={isLoading}
+                  className="text-xs text-gray-600 hover:text-gray-800 disabled:cursor-not-allowed"
+                  disabled={isLoading || cooldown > 0}
                 >
-                  Resend code
+                  {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
                 </button>
               </div>
 

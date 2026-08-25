@@ -3,19 +3,17 @@
 import {
   TrendingUp,
   TrendingDown,
-  DollarSign,
-  PoundSterling,
-  Euro,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getExchangeRate } from "@/lib/api/exchange-rates";
+import { CurrencyIcon } from "@/components/ui/currency-icon";
 
 interface RateData {
   pair: string;
   rate: string;
   change: string;
   up: boolean;
-  icon: React.ReactNode;
+  toCurrency: string;
 }
 
 const defaultPairs = [
@@ -23,19 +21,16 @@ const defaultPairs = [
     to: "USD",
     from: "NGN",
     pair: "NGN/USD",
-    icon: <DollarSign className="w-4 h-4" />,
   },
   {
     to: "GBP",
     from: "NGN",
     pair: "NGN/GBP",
-    icon: <PoundSterling className="w-4 h-4" />,
   },
   {
     to: "EUR",
     from: "NGN",
     pair: "NGN/EUR",
-    icon: <Euro className="w-4 h-4" />,
   },
 ];
 
@@ -69,7 +64,7 @@ export function MarketOverview() {
                   ? `${parseFloat(changeValue) >= 0 ? "+" : ""}${changeValue}%`
                   : "N/A",
               up: isPositive ?? true,
-              icon: p.icon,
+              toCurrency: p.to,
             };
           } catch {
             return {
@@ -77,7 +72,7 @@ export function MarketOverview() {
               rate: "...",
               change: "N/A",
               up: true,
-              icon: p.icon,
+              toCurrency: p.to,
             };
           }
         }),
@@ -141,9 +136,7 @@ export function MarketOverview() {
                   <p className="text-xs font-medium text-muted-foreground">
                     {item.pair}
                   </p>
-                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center font-bold text-xs">
-                    {item.icon}
-                  </div>
+                  <CurrencyIcon code={item.toCurrency} />
                 </div>
 
                 <div className="flex items-center justify-between gap-4 w-full">

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { resetPassword } from "@/lib/api/auth";
+import { PasswordStrengthIndicator } from "@/components/ui/password-strength-indicator";
 
 import Image from "next/image";
 
@@ -198,6 +199,9 @@ function ResetPasswordContent() {
                     {errors.newPassword}
                   </p>
                 )}
+                <div className="mt-2">
+                  <PasswordStrengthIndicator password={newPassword} />
+                </div>
               </div>
             </div>
 

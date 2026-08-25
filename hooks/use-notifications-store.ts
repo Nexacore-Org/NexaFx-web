@@ -2,12 +2,26 @@ import { create } from "zustand";
 import { Notification } from "@/types/notification";
 import * as api from "@/lib/api/notifications";
 
+const UNDO_DELAY = 5000;
+
+interface PendingDelete {
+  notification: Notification;
+  timer: ReturnType<typeof setTimeout>;
+}
+
+interface PendingClearAll {
+  notifications: Notification[];
+  timer: ReturnType<typeof setTimeout>;
+}
+
 interface NotificationsStore {
   notifications: Notification[];
   isOpen: boolean;
   unreadCount: number;
   isLoading: boolean;
   error: string | null;
+  pendingDeletes: Map<string, PendingDelete>;
+  pendingClearAll: PendingClearAll | null;
 
   // Panel actions
   open: () => void;
@@ -22,14 +36,19 @@ interface NotificationsStore {
   markAllAsRead: () => void;
   addNotification: (notification: Notification) => void;
   removeNotification: (id: string) => void;
+  undoDelete: (id: string) => void;
+  clearAllNotifications: () => void;
+  undoClearAll: () => void;
 }
 
-export const useNotificationsStore = create<NotificationsStore>((set) => ({
+export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
   notifications: [],
   isOpen: false,
   unreadCount: 0,
-  isLoading: false, 
+  isLoading: false,
   error: null,
+  pendingDeletes: new Map(),
+  pendingClearAll: null,
 
   open: () => set({ isOpen: true }),
   close: () => set({ isOpen: false }),
@@ -102,19 +121,90 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
     })),
 
   removeNotification: (id) => {
-    const prevNotifications = useNotificationsStore.getState().notifications;
-    const prevUnreadCount = useNotificationsStore.getState().unreadCount;
-    set((state) => {
-      const notification = state.notifications.find((n) => n.id === id);
-      const updated = state.notifications.filter((n) => n.id !== id);
+    const state = get();
+    if (state.pendingDeletes.has(id)) return;
+
+    const notification = state.notifications.find((n) => n.id === id);
+    if (!notification) return;
+
+    set((s) => ({
+      notifications: s.notifications.filter((n) => n.id !== id),
+      unreadCount: s.unreadCount - (!notification.isRead ? 1 : 0),
+    }));
+
+    const timer = setTimeout(() => {
+      const current = get();
+      if (current.pendingDeletes.has(id)) {
+        api.deleteNotification(id).catch(() => {});
+        set((s) => {
+          const next = new Map(s.pendingDeletes);
+          next.delete(id);
+          return { pendingDeletes: next };
+        });
+      }
+    }, UNDO_DELAY);
+
+    set((s) => {
+      const next = new Map(s.pendingDeletes);
+      const existing = next.get(id);
+      if (existing) clearTimeout(existing.timer);
+      next.set(id, { notification, timer });
+      return { pendingDeletes: next };
+    });
+  },
+
+  undoDelete: (id) => {
+    const state = get();
+    const pending = state.pendingDeletes.get(id);
+    if (!pending) return;
+
+    clearTimeout(pending.timer);
+
+    set((s) => {
+      const next = new Map(s.pendingDeletes);
+      next.delete(id);
       return {
-        notifications: updated,
-        unreadCount:
-          state.unreadCount - (notification && !notification.isRead ? 1 : 0),
+        pendingDeletes: next,
+        notifications: [pending.notification, ...s.notifications],
+        unreadCount: s.unreadCount + (!pending.notification.isRead ? 1 : 0),
       };
     });
-    api.deleteNotification(id).catch(() => {
-        set({ notifications: prevNotifications, unreadCount: prevUnreadCount });
+  },
+
+  clearAllNotifications: () => {
+    const state = get();
+    if (state.notifications.length === 0) return;
+
+    const notificationsCopy = [...state.notifications];
+
+    const timer = setTimeout(() => {
+      const current = get();
+      if (current.pendingClearAll) {
+        current.pendingClearAll.notifications.forEach((n) => {
+          api.deleteNotification(n.id).catch(() => {});
+        });
+        set({ pendingClearAll: null });
+      }
+    }, UNDO_DELAY);
+
+    set({
+      notifications: [],
+      unreadCount: 0,
+      pendingClearAll: { notifications: notificationsCopy, timer },
+    });
+  },
+
+  undoClearAll: () => {
+    const state = get();
+    if (!state.pendingClearAll) return;
+
+    clearTimeout(state.pendingClearAll.timer);
+
+    const restored = state.pendingClearAll.notifications;
+    set({
+      notifications: restored,
+      unreadCount: restored.filter((n) => !n.isRead).length,
+      pendingClearAll: null,
     });
   },
 }));

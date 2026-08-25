@@ -5,6 +5,7 @@ import { ChevronDown, AlertCircle, ArrowDownUp, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBalances } from "@/lib/api/wallet";
 import { createSwap } from "@/lib/api/transactions";
+import { CurrencyIcon } from "@/components/ui/currency-icon";
 
 interface CurrencyOption {
     id: string;
@@ -203,9 +204,7 @@ export function ConvertForm() {
                                 )}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary">
-                                        {fromCurrencyData.symbol.toUpperCase().substring(0, 1)}
-                                    </div>
+                                    <CurrencyIcon code={fromCurrency} />
                                     <div className="text-left">
                                         <p className="font-semibold text-foreground">{fromCurrency}</p>
                                         <p className="text-xs text-muted-foreground">{fromCurrencyData.name}</p>
@@ -236,9 +235,7 @@ export function ConvertForm() {
                                             )}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary">
-                                                    {curr.symbol.toUpperCase().substring(0, 1)}
-                                                </div>
+                                                <CurrencyIcon code={curr.id} />
                                                 <div>
                                                     <p className="font-medium text-foreground">{curr.id}</p>
                                                     <p className="text-xs text-muted-foreground">{curr.name}</p>
@@ -335,9 +332,7 @@ export function ConvertForm() {
                                 )}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary">
-                                        {toCurrencyData.symbol.toUpperCase().substring(0, 1)}
-                                    </div>
+                                    <CurrencyIcon code={toCurrency} />
                                     <div className="text-left">
                                         <p className="font-semibold text-foreground">{toCurrency}</p>
                                         <p className="text-xs text-muted-foreground">{toCurrencyData.name}</p>
@@ -367,9 +362,7 @@ export function ConvertForm() {
                                             )}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary">
-                                                    {curr.symbol.toUpperCase().substring(0, 1)}
-                                                </div>
+                                                <CurrencyIcon code={curr.id} />
                                                 <div>
                                                     <p className="font-medium text-foreground">{curr.id}</p>
                                                     <p className="text-xs text-muted-foreground">{curr.name}</p>

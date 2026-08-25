@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { signUp } from "@/lib/api/auth";
+import { PasswordStrengthIndicator } from "@/components/ui/password-strength-indicator";
 
 export default function CreateAccountPage() {
   const router = useRouter();
@@ -126,6 +127,9 @@ export default function CreateAccountPage() {
               {errors.password}
             </p>
           )}
+          <div className="mt-2">
+            <PasswordStrengthIndicator password={formData.password} />
+          </div>
         </div>
 
         <div className="relative">
