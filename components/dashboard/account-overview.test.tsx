@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { AccountOverview } from "./account-overview";
+import { AccountOverview, resolveBalances } from "./account-overview";
 import { formatCurrency } from "@/lib/utils/format";
 import { server } from "@/__tests__/msw-server";
 
@@ -60,6 +60,29 @@ describe("AccountOverview", () => {
 
     // The old v1 UI hardcoded "325,980" — it must never appear.
     expect(document.body.textContent).not.toContain("325,980");
+  });
+
+  describe("resolveBalances (regression: no self-referential NGN/USD fallback)", () => {
+    it("resolves NGN and USD regardless of currency casing", () => {
+      const result = resolveBalances([
+        { currency: "ngn", balance: "15,000,000.00" },
+        { currency: "Usd", balance: "2,500.50" },
+      ]);
+      expect(result).toEqual({ ngn: "15,000,000.00", usd: "2,500.50" });
+    });
+
+    it("returns an empty string for a missing currency instead of a no-op fallback", () => {
+      const result = resolveBalances([{ currency: "NGN", balance: "100" }]);
+      expect(result.ngn).toBe("100");
+      expect(result.usd).toBe("");
+    });
+
+    it("tolerates empty, nullish and malformed input", () => {
+      expect(resolveBalances([])).toEqual({ ngn: "", usd: "" });
+      expect(resolveBalances(undefined)).toEqual({ ngn: "", usd: "" });
+      expect(resolveBalances(null)).toEqual({ ngn: "", usd: "" });
+      expect(resolveBalances([{ balance: "5" }])).toEqual({ ngn: "", usd: "" });
+    });
   });
 
   describe("formatCurrency", () => {
