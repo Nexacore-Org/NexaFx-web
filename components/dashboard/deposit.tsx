@@ -12,7 +12,6 @@ import {
 import InstantModalDeposit from "./InstantDepositModal";
 import { DepositInfoCard } from "./deposit/deposit-info-card";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
-import { MobileNotificationBanner } from "./notification";
 
 import { getProfile } from "@/lib/api/users";
 
@@ -31,7 +30,6 @@ type DepositMethodTypes = {
 
 const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
-  const [showNotification] = useState(false);
   const [moonPayError, setMoonPayError] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const desktopModalRef = useRef<HTMLDivElement>(null);
@@ -276,13 +274,6 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
               className="md:hidden p-2 fixed inset-0 bg-[#00000071] bg-opacity-50 flex items-center justify-center z-50"
               onClick={() => setIsQRModalOpen(false)}
             >
-{!showNotification && (
-                <MobileNotificationBanner
-                  message='Your deposit of'
-                  amount='₦50,000'
-                />
-              )}
-
               <div
                 className="bg-card text-card-foreground w-full mt-8 rounded-2xl max-h-[90vh] overflow-auto"
                 onClick={(e) => e.stopPropagation()}
