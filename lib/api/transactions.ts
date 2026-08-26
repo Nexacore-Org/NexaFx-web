@@ -20,6 +20,7 @@ export interface Transaction {
     amount: number;
     amountString: string;
     date: string;
+    rawDate?: string;
     status: TransactionStatus;
     reference: string;
     description?: string;
@@ -94,6 +95,10 @@ function mapTransaction(dto: Record<string, any>): Transaction {
         amount,
         amountString,
         date,
+        // Display "date" is locale-formatted (DD/MM/YYYY) and isn't safely
+        // re-parseable for sorting — keep the original ISO-ish value around
+        // for that purpose.
+        rawDate: rawDate ?? '',
         status,
         reference: (dto.reference ?? dto.transactionRef ?? dto.transaction_ref ?? '') as string,
         description: dto.description as string | undefined,

@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { vi } from "vitest";
 import { TransactionTable } from "./transaction-table";
 import { Transaction } from "@/lib/api/transactions";
 
@@ -109,5 +110,39 @@ describe("TransactionTable", () => {
   it("never renders a hardcoded '80 USD' string", () => {
     renderTable(allTransactions);
     expect(document.body.textContent).not.toContain("80 USD");
+  });
+
+  describe("sort controls", () => {
+    it("does not render sort buttons when onSortChange is omitted", () => {
+      renderTable(allTransactions);
+      expect(screen.queryByLabelText(/Sort by Date/i)).toBeNull();
+    });
+
+    it("calls onSortChange with the column when a sortable header is clicked", () => {
+      const onSortChange = vi.fn();
+      render(
+        <TransactionTable
+          transactions={allTransactions}
+          onSelectTransaction={() => {}}
+          onSortChange={onSortChange}
+        />
+      );
+      screen.getByRole("button", { name: /Sort by Amount/i }).click();
+      expect(onSortChange).toHaveBeenCalledWith("amount");
+    });
+
+    it("marks the active sort column with aria-sort", () => {
+      render(
+        <TransactionTable
+          transactions={allTransactions}
+          onSelectTransaction={() => {}}
+          sortBy="date"
+          sortDir="desc"
+          onSortChange={() => {}}
+        />
+      );
+      const dateHeader = screen.getByRole("button", { name: /Sort by Date/i }).closest("th");
+      expect(dateHeader).toHaveAttribute("aria-sort", "descending");
+    });
   });
 });
