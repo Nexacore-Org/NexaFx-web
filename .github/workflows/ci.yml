@@ -28,7 +28,13 @@ jobs:
         run: npm run lint
 
       - name: Type check
-        run: npx tsc --noEmit
+        run: npm run type-check
+
+      - name: Smoke tests
+        run: npm run smoke
+
+      - name: Unit tests
+        run: npm test
 
       - name: Build
         run: npm run build
