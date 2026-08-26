@@ -6,6 +6,11 @@ import { ChevronLeft, Coins, CircleDollarSign, BadgeDollarSign } from "lucide-re
 import { cn } from "@/lib/utils";
 import { createWithdrawal } from "@/lib/api/transactions";
 import { WithdrawalConfirmationModal } from "@/components/dashboard/withdraw/withdrawal-confirmation-modal";
+import {
+  calculateWithdrawalFee,
+  formatWithdrawalFee,
+  type WithdrawalNetwork,
+} from "@/lib/utils/withdrawal-fee";
 
 const currencies = [
     { id: 'USDC', name: 'USD Coin', icon: <CircleDollarSign className="w-8 h-8 text-blue-500" /> },
@@ -20,6 +25,9 @@ export function WithdrawalReview() {
 
     const isProcessingStep = step === 'processing';
     const selectedCurrency = currencies.find(c => c.id === currency) || currencies[0];
+    const network: WithdrawalNetwork =
+        currency === 'ETH' ? 'Ethereum' : currency === 'BNB' ? 'BSC' : 'Stellar';
+    const fee = calculateWithdrawalFee(currency, amount, network);
 
     const truncateAddress = (addr: string) => {
         if (addr.length <= 16) return addr;
@@ -116,13 +124,16 @@ export function WithdrawalReview() {
                     <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Network</span>
                         <span className="text-sm font-medium text-foreground">
-                            {currency === 'ETH' ? 'Ethereum' : currency === 'BNB' ? 'BSC' : 'Stellar'}
+                            {network}
                         </span>
                     </div>
                     <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Fee</span>
-                        <span className="text-sm font-medium text-green-500">
-                            Free
+                        <span className={cn(
+                            "text-sm font-medium",
+                            fee.amount <= 0 ? "text-green-500" : "text-foreground",
+                        )}>
+                            {formatWithdrawalFee(fee)}
                         </span>
                     </div>
                 </div>

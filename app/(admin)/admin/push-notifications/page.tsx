@@ -126,6 +126,7 @@ export default function PushNotificationsPage() {
           <input
             type="text"
             id="notificationSearch"
+            name="notificationSearch"
             placeholder="Search"
             className="outline-0 py-2 h-full"
             value={search}
