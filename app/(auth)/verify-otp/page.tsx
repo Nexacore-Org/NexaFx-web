@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import OtpInput from "@/components/auth/otp-input";
 import { resendLoginOtp, verifyLoginOtp } from "@/lib/api/auth";
 import { useAuthStore } from "@/hooks/use-auth-store";
+
+const COOLDOWN_SECONDS = 60;
 
 export default function VerifyOtpPage() {
   const router = useRouter();
@@ -15,6 +17,8 @@ export default function VerifyOtpPage() {
   const [isResending, setIsResending] = useState(false);
   const [apiError, setApiError] = useState("");
   const [resendMessage, setResendMessage] = useState("");
+  const [cooldown, setCooldown] = useState(0);
+  const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const storedEmail = sessionStorage.getItem("login-email");
@@ -25,6 +29,22 @@ export default function VerifyOtpPage() {
 
     setEmail(storedEmail);
   }, [router]);
+
+  useEffect(() => {
+    if (cooldown <= 0) {
+      if (cooldownTimerRef.current) {
+        clearInterval(cooldownTimerRef.current);
+        cooldownTimerRef.current = null;
+      }
+      return;
+    }
+    cooldownTimerRef.current = setInterval(() => {
+      setCooldown((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => {
+      if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+    };
+  }, [cooldown]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -88,7 +108,7 @@ export default function VerifyOtpPage() {
   };
 
   const handleResend = async () => {
-    if (!email) return;
+    if (!email || cooldown > 0) return;
 
     setIsResending(true);
     setApiError("");
@@ -97,6 +117,7 @@ export default function VerifyOtpPage() {
     try {
       await resendLoginOtp({ email });
       setResendMessage("A new code has been sent.");
+      setCooldown(COOLDOWN_SECONDS);
     } catch (error) {
       setApiError(
         error instanceof Error ? error.message : "Failed to resend code",
@@ -146,10 +167,14 @@ export default function VerifyOtpPage() {
           <button
             type="button"
             onClick={handleResend}
-            disabled={isResending || !email}
+            disabled={isResending || !email || cooldown > 0}
             className="text-sm font-medium text-zinc-500 transition-colors hover:text-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isResending ? "Resending..." : "Didn't receive code? Resend"}
+            {isResending
+              ? "Resending..."
+              : cooldown > 0
+                ? `Resend in ${cooldown}s`
+                : "Didn't receive code? Resend"}
           </button>
         </div>
       </form>

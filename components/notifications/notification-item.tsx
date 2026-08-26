@@ -1,14 +1,16 @@
 "use client";
 
-import { Download, AlertCircle, Calendar, Trash2 } from "lucide-react";
-import { KycIcon, SwapIcon } from "@/components/icons";
+import { Download, AlertCircle, Calendar, X } from "lucide-react";
+import { KycIcon } from "@/components/icons/kyc-icon";
+import { SwapIcon } from "@/components/icons/swap-icon";
 import { Notification, NotificationType } from "@/types/notification";
+import { useNotificationsStore } from "@/hooks/use-notifications-store";
 import { cn } from "@/lib/utils";
 
 interface NotificationItemProps {
   notification: Notification;
   onClick?: () => void;
-  onDelete?: (id: string) => void;
+  isPendingDelete?: boolean;
 }
 
 function getNotificationIcon(type: NotificationType) {
@@ -71,53 +73,76 @@ function highlightBoldText(text: string) {
 export function NotificationItem({
   notification,
   onClick,
-  onDelete,
+  isPendingDelete,
 }: NotificationItemProps) {
+  const { undoDelete, removeNotification } = useNotificationsStore();
   const { type, message, timestamp, isRead, id } = notification;
+
+  if (isPendingDelete) {
+    return (
+      <div className="w-full px-4 py-3 flex items-center justify-between bg-muted/30">
+        <span className="text-sm text-muted-foreground">
+          Notification deleted.
+        </span>
+        <button
+          onClick={() => undoDelete(id)}
+          className="text-sm font-medium hover:underline transition-colors"
+          style={{ color: "#F39A00" }}
+        >
+          Undo
+        </button>
+      </div>
+    );
+  }
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onDelete?.(id);
+    removeNotification(id);
   };
 
   return (
-    <button
-      onClick={onClick}
+    <div
       className={cn(
-        "w-full text-left px-4 py-5 min-h-16 flex items-start gap-3 transition-colors hover:bg-muted/50",
+        "w-full px-4 py-5 min-h-16 flex items-start gap-3 transition-colors hover:bg-muted/50",
         !isRead && "bg-primary/5"
       )}
     >
-      <div
-        className={cn(
-          "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
-          getIconBackgroundColor(type)
-        )}
-      >
-        {getNotificationIcon(type)}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-foreground leading-relaxed">
-          {highlightBoldText(message)}
-        </p>
-        <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted-foreground">
-          <Calendar className="w-3 h-3" />
-          <span>{formatRelativeTime(timestamp)}</span>
-        </div>
-      </div>
-
-      {!isRead && (
-        <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-2" />
-      )}
-
       <button
-        onClick={handleDelete}
-        className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-destructive shrink-0"
-        aria-label="Delete notification"
+        onClick={onClick}
+        className="flex items-start gap-3 flex-1 min-w-0 text-left"
       >
-        <Trash2 className="w-4 h-4" />
+        <div
+          className={cn(
+            "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+            getIconBackgroundColor(type)
+          )}
+        >
+          {getNotificationIcon(type)}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-foreground leading-relaxed">
+            {highlightBoldText(message)}
+          </p>
+          <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted-foreground">
+            <Calendar className="w-3 h-3" />
+            <span>{formatRelativeTime(timestamp)}</span>
+          </div>
+        </div>
       </button>
-    </button>
+
+      <div className="flex items-center gap-2 shrink-0">
+        {!isRead && (
+          <div className="w-2 h-2 rounded-full bg-primary" />
+        )}
+        <button
+          onClick={handleDelete}
+          className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Delete notification"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
   );
 }
