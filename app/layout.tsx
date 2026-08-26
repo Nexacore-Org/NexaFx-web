@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter, Manrope } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { ToastViewport } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";

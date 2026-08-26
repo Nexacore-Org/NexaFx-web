@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Bell, Menu, User, Moon, Sun, HelpCircle, Search } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
