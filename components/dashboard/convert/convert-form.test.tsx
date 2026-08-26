@@ -1,6 +1,6 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { ConvertForm } from "./convert-form";
+import { ConvertForm, getAmountFractionDigits } from "./convert-form";
 import { server } from "@/__tests__/msw-server";
 
 // The amount <input> is the only field with this placeholder (the "To" amount
@@ -15,6 +15,37 @@ const failExchangeRate = () =>
       HttpResponse.json({ message: "Internal Server Error" }, { status: 500 })
     )
   );
+
+describe("getAmountFractionDigits (ETH precision)", () => {
+  it("allows up to 8 decimals when ETH is the source currency", () => {
+    expect(getAmountFractionDigits("ETH", "NGN")).toEqual({
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 8,
+    });
+  });
+
+  it("allows up to 8 decimals when ETH is the target currency", () => {
+    expect(getAmountFractionDigits("USD", "ETH")).toEqual({
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 8,
+    });
+  });
+
+  it("keeps fiat pairs at 2 decimals", () => {
+    expect(getAmountFractionDigits("USD", "NGN")).toEqual({
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  });
+
+  it("renders an ETH amount with more precision than a fiat amount", () => {
+    const value = 0.00012345;
+    const eth = value.toLocaleString(undefined, getAmountFractionDigits("ETH", "NGN"));
+    const fiat = value.toLocaleString(undefined, getAmountFractionDigits("USD", "NGN"));
+    expect(eth).toBe("0.00012345");
+    expect(fiat).toBe("0.00"); // rounded to 2 dp, hiding the small amount
+  });
+});
 
 describe("ConvertForm", () => {
   describe("submit button state", () => {
