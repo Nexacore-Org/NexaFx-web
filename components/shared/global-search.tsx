@@ -1,316 +1,374 @@
-"use client";
+'use client';
 
-import {
-  useState,
-  useEffect,
-  Dispatch,
-  SetStateAction,
-  useCallback,
-  useRef,
-} from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Search,
-  Loader2,
-  FileBox,
-  Navigation,
-  ArrowRightLeft,
-  History,
+  LayoutDashboard,
+  Shield,
+  ArrowUpDown,
+  Mail,
+  CircleUserRound,
+  Settings,
+  BarChart3,
+  Users,
+  Bell,
+  FileText,
+  Flag,
+  AlertTriangle,
+  Clock,
   X,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useDebounce } from "@/hooks/use-debounce";
-import { Transaction } from "@/lib/types";
-import { apiClient } from "@/lib/api-client";
+  CornerDownLeft,
+  ChevronUp,
+  ChevronDown,
+} from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { cn } from '@/lib/utils';
 
-interface GlobalSearchProps {
-  isOpen: boolean;
-  setIsOpen: Dispatch<SetStateAction<boolean>>;
+interface SearchResult {
+  id: string;
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  section: string;
 }
 
-const CURRENCY_CODES = ["USD", "EUR", "NGN", "GBP", "CAD", "AUD", "JPY"];
+interface SearchSection {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  items: SearchResult[];
+}
 
-export function GlobalSearch({ isOpen, setIsOpen }: GlobalSearchProps) {
-  const [query, setQuery] = useState("");
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [exchangeRate, setExchangeRate] = useState<{
-    from: string;
-    to: string;
-    rate: number;
-  } | null>(null);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
+const dashboardItems: SearchResult[] = [
+  { id: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, section: 'Dashboard' },
+  { id: 'convert', label: 'Convert', href: '/convert', icon: ArrowUpDown, section: 'Dashboard' },
+  { id: 'transactions', label: 'Transactions', href: '/transactions', icon: Mail, section: 'Dashboard' },
+  { id: 'settings', label: 'Settings', href: '/settings', icon: Settings, section: 'Dashboard' },
+  { id: 'profile', label: 'Profile', href: '/profile', icon: CircleUserRound, section: 'Dashboard' },
+  { id: 'notifications', label: 'Notifications', href: '/notifications', icon: Bell, section: 'Dashboard' },
+];
+
+const adminItems: SearchResult[] = [
+  { id: 'admin-dashboard', label: 'Admin Dashboard', href: '/admin', icon: LayoutDashboard, section: 'Admin' },
+  { id: 'admin-analytics', label: 'Analytics', href: '/admin/analytics', icon: BarChart3, section: 'Admin' },
+  { id: 'admin-transactions', label: 'Transactions', href: '/admin/transactions', icon: Mail, section: 'Admin' },
+  { id: 'admin-users', label: 'Users', href: '/admin/users', icon: Users, section: 'Admin' },
+  { id: 'admin-push', label: 'Push Notifications', href: '/admin/push-notifications', icon: Bell, section: 'Admin' },
+  { id: 'admin-reports', label: 'Reports', href: '/admin/reports', icon: FileText, section: 'Admin' },
+  { id: 'admin-flagged', label: 'Flagged', href: '/admin/flagged', icon: Flag, section: 'Admin' },
+  { id: 'admin-disputes', label: 'Disputes', href: '/admin/disputes', icon: AlertTriangle, section: 'Admin' },
+];
+
+const RECENT_SEARCHES_KEY = 'nexafx-recent-searches';
+const MAX_RECENT = 5;
+
+function getRecentSearches(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function addRecentSearch(query: string): string[] {
+  const recent = getRecentSearches().filter((r) => r !== query);
+  recent.unshift(query);
+  const updated = recent.slice(0, MAX_RECENT);
+  localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+  return updated;
+}
+
+function removeRecentSearch(query: string): string[] {
+  const recent = getRecentSearches().filter((r) => r !== query);
+  localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(recent));
+  return recent;
+}
+
+export function GlobalSearch() {
   const router = useRouter();
-  const debouncedQuery = useDebounce(query, 300);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const resultsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  const { isAdmin } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const storedRecents = localStorage.getItem("recentSearches");
-    if (storedRecents) {
-      setRecentSearches(JSON.parse(storedRecents));
-    }
-  }, []);
+  const sections = useMemo<SearchSection[]>(() => {
+    const sections: SearchSection[] = [];
 
-  const addRecentSearch = useCallback((searchQuery: string) => {
-    if (!searchQuery || searchQuery.length < 2) return;
-    setRecentSearches((prev) => {
-      const newRecents = [
-        searchQuery,
-        ...prev.filter((s) => s !== searchQuery),
-      ].slice(0, 5);
-      localStorage.setItem("recentSearches", JSON.stringify(newRecents));
-      return newRecents;
+    sections.push({
+      title: 'Dashboard',
+      icon: LayoutDashboard,
+      items: dashboardItems,
     });
-  }, []);
 
-  const pageResults = [
-    { label: "Dashboard", path: "/dashboard" },
-    { label: "Convert Currency", path: "/dashboard/convert" },
-    { label: "Deposit Funds", path: "/dashboard/deposit" },
-    { label: "Withdraw Funds", path: "/dashboard/withdraw" },
-    { label: "Transactions History", path: "/dashboard/transactions" },
-    { label: "Settings & Profile", path: "/dashboard/settings" },
-  ].filter((item) => item.label.toLowerCase().includes(query.toLowerCase()));
+    if (isAdmin) {
+      sections.push({
+        title: 'Admin',
+        icon: Shield,
+        items: adminItems,
+      });
+    }
 
-  const allResults = [
-    ...(!query && recentSearches.length > 0 ? recentSearches : []),
-    ...(query ? pageResults : []),
-    ...(query ? transactions : []),
-  ];
+    return sections;
+  }, [isAdmin]);
+
+  const filteredSections = useMemo(() => {
+    if (!query.trim()) return sections;
+
+    const lowerQuery = query.toLowerCase();
+    return sections
+      .map((section) => ({
+        ...section,
+        items: section.items.filter(
+          (item) =>
+            item.label.toLowerCase().includes(lowerQuery) ||
+            item.href.toLowerCase().includes(lowerQuery)
+        ),
+      }))
+      .filter((section) => section.items.length > 0);
+  }, [sections, query]);
+
+  const allFilteredItems = useMemo(
+    () => filteredSections.flatMap((section) => section.items),
+    [filteredSections]
+  );
 
   useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setIsOpen((open) => !open);
-      } else if (e.key === "Escape") {
-        setIsOpen(false);
-      } else if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % allResults.length);
-      } else if (e.key === "ArrowUp") {
+    if (open) {
+      setRecentSearches(getRecentSearches());
+    }
+  }, [open]);
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [query]);
+
+  const handleSelect = useCallback(
+    (item: SearchResult) => {
+      if (query.trim()) {
+        setRecentSearches(addRecentSearch(query.trim()));
+      }
+      setOpen(false);
+      setQuery('');
+      router.push(item.href);
+    },
+    [query, router]
+  );
+
+  const handleRecentSelect = useCallback(
+    (search: string) => {
+      setQuery(search);
+    },
+    []
+  );
+
+  const handleRemoveRecent = useCallback((search: string) => {
+    setRecentSearches(removeRecentSearch(search));
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'ArrowDown') {
         e.preventDefault();
         setSelectedIndex((prev) =>
-          prev > 0 ? prev - 1 : allResults.length - 1,
+          prev < allFilteredItems.length - 1 ? prev + 1 : 0
         );
-      } else if (e.key === "Enter" && selectedIndex !== -1) {
+      } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        const selectedItem = allResults[selectedIndex];
-        if (typeof selectedItem === "string") {
-          setQuery(selectedItem);
-        } else if ("path" in selectedItem) {
-          handleSelect(selectedItem.path);
-        } else if ("id" in selectedItem) {
-          handleSelect(`/transactions?id=${selectedItem.id}`);
+        setSelectedIndex((prev) =>
+          prev > 0 ? prev - 1 : allFilteredItems.length - 1
+        );
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (allFilteredItems[selectedIndex]) {
+          handleSelect(allFilteredItems[selectedIndex]);
         }
+      } else if (e.key === 'Escape') {
+        setOpen(false);
+        setQuery('');
       }
-    };
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
-  }, [setIsOpen, selectedIndex, allResults]);
+    },
+    [allFilteredItems, selectedIndex, handleSelect]
+  );
 
   useEffect(() => {
-    if (selectedIndex !== -1 && resultsRef.current[selectedIndex]) {
-      resultsRef.current[selectedIndex]?.scrollIntoView({
-        block: "nearest",
-      });
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      inputRef.current?.focus();
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (selectedIndex >= 0 && listRef.current) {
+      const items = listRef.current.querySelectorAll('[data-search-item]');
+      items[selectedIndex]?.scrollIntoView({ block: 'nearest' });
     }
   }, [selectedIndex]);
 
-  useEffect(() => {
-    setSelectedIndex(-1);
-  }, [query]);
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-2 rounded-lg border bg-white dark:bg-muted/20 px-4 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+      >
+        <Search className="h-4 w-4" />
+        <span className="hidden sm:inline">Search pages, transactions, actions...</span>
+        <span className="sm:hidden">Search...</span>
+        <kbd className="pointer-events-none hidden sm:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 select-none">
+          <span className="text-xs">⌘</span>K
+        </kbd>
+      </button>
+    );
+  }
 
-  useEffect(() => {
-    const upperQuery = debouncedQuery.toUpperCase();
-    if (CURRENCY_CODES.includes(upperQuery)) {
-      setLoading(true);
-      addRecentSearch(debouncedQuery);
-      apiClient
-        .get(`/exchange-rates?base=${upperQuery}`)
-        .then((response) => {
-          setExchangeRate({
-            from: upperQuery,
-            to: "NGN",
-            rate: response.data.rates.NGN,
-          });
-        })
-        .catch(console.error)
-        .finally(() => setLoading(false));
-    } else {
-      setExchangeRate(null);
-    }
-
-    if (debouncedQuery.length > 1) {
-      setLoading(true);
-      addRecentSearch(debouncedQuery);
-      apiClient
-        .get(`/transactions?search=${debouncedQuery}`)
-        .then((response) => {
-          setTransactions(response.data.slice(0, 5));
-        })
-        .catch(console.error)
-        .finally(() => setLoading(false));
-    } else {
-      setTransactions([]);
-    }
-  }, [debouncedQuery, addRecentSearch]);
-
-  const handleSelect = (path: string) => {
-    setIsOpen(false);
-    setQuery("");
-    router.push(path);
-  };
-
-  const clearRecentSearches = () => {
-    setRecentSearches([]);
-    localStorage.removeItem("recentSearches");
-  };
-
-  const hasResults =
-    pageResults.length > 0 || transactions.length > 0 || !!exchangeRate;
-
-  if (!isOpen) return null;
+  let flatIndex = 0;
 
   return (
-    <>
+    <div className="fixed inset-0 z-50">
       <div
-        className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
-        onClick={() => setIsOpen(false)}
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={() => {
+          setOpen(false);
+          setQuery('');
+        }}
       />
-      <div className="fixed left-[50%] top-[20%] z-50 w-full max-w-lg translate-x-[-50%] bg-card border border-border shadow-2xl rounded-2xl overflow-hidden animate-in fade-in zoom-in-95">
-        <div className="flex items-center border-b border-border px-4 py-3 gap-3">
-          <Search className="h-5 w-5 text-muted-foreground shrink-0" />
-          <input
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for pages, transactions, or currency rates..."
-            className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground outline-none text-base"
-          />
-          {loading && (
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          )}
-          <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-            <span className="text-xs">⌘</span>K
-          </kbd>
-        </div>
+      <div className="fixed inset-x-0 top-[15%] mx-auto max-w-lg px-4">
+        <div className="rounded-xl border bg-white dark:bg-background shadow-2xl overflow-hidden">
+          <div className="flex items-center border-b px-4">
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Search pages, transactions, actions..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="flex-1 bg-transparent px-3 py-4 text-sm outline-none placeholder:text-muted-foreground"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                className="rounded-md p-1 hover:bg-accent"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setOpen(false);
+                setQuery('');
+              }}
+              className="ml-2 rounded-md border px-2 py-1 text-xs text-muted-foreground hover:bg-accent"
+            >
+              ESC
+            </button>
+          </div>
 
-        <div ref={scrollRef} className="max-h-[400px] overflow-y-auto p-2">
-          {!query && recentSearches.length > 0 && (
-            <div className="mb-2">
-              <div className="flex items-center justify-between px-4 py-2">
-                <h3 className="text-xs font-semibold text-muted-foreground">
-                  Recent
-                </h3>
-                <button
-                  onClick={clearRecentSearches}
-                  className="text-xs text-muted-foreground hover:text-foreground"
-                >
-                  Clear
-                </button>
+          <div ref={listRef} className="max-h-[300px] overflow-y-auto p-2">
+            {!query.trim() && recentSearches.length > 0 && (
+              <div className="mb-2">
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                  Recent Searches
+                </div>
+                {recentSearches.map((search) => (
+                  <div key={search} className="flex items-center">
+                    <button
+                      onClick={() => handleRecentSelect(search)}
+                      className="flex flex-1 items-center gap-2 rounded-lg px-2 py-2 text-sm hover:bg-accent text-left"
+                    >
+                      <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{search}</span>
+                    </button>
+                    <button
+                      onClick={() => handleRemoveRecent(search)}
+                      className="rounded-md p-1 hover:bg-accent"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
               </div>
-              {recentSearches.map((recent, i) => (
-                <button
-                  key={i}
-                  ref={(el) => (resultsRef.current[i] = el)}
-                  data-selected={selectedIndex === i}
-                  onClick={() => setQuery(recent)}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted rounded-xl transition-colors text-left data-[selected=true]:bg-muted"
-                >
-                  <History className="h-4 w-4 text-muted-foreground" />
-                  {recent}
-                </button>
-              ))}
+            )}
+
+            {filteredSections.length === 0 && (
+              <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                No results found for &quot;{query}&quot;
+              </div>
+            )}
+
+            {filteredSections.map((section) => (
+              <div key={section.title} className="mb-2">
+                <div className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                  <section.icon className="h-3.5 w-3.5" />
+                  {section.title}
+                </div>
+                {section.items.map((item) => {
+                  const currentIndex = flatIndex++;
+                  const isSelected = currentIndex === selectedIndex;
+                  return (
+                    <button
+                      key={item.id}
+                      data-search-item
+                      onClick={() => handleSelect(item)}
+                      onMouseEnter={() => setSelectedIndex(currentIndex)}
+                      className={cn(
+                        'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors text-left',
+                        isSelected
+                          ? 'bg-accent text-accent-foreground'
+                          : 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                      )}
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      <span className="flex-1 truncate">{item.label}</span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {item.href}
+                      </span>
+                      {isSelected && (
+                        <CornerDownLeft className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between border-t px-4 py-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1">
+                <ChevronUp className="h-3 w-3" />
+                <ChevronDown className="h-3 w-3" />
+                Navigate
+              </span>
+              <span className="flex items-center gap-1">
+                <CornerDownLeft className="h-3 w-3" />
+                Select
+              </span>
             </div>
-          )}
-          {!hasResults && !loading && query ? (
-            <p className="p-4 text-center text-sm text-muted-foreground">
-              No results found for &quot;{query}&quot;
-            </p>
-          ) : (
-            query && (
-              <>
-                {exchangeRate && (
-                  <div className="mb-2">
-                    <h3 className="px-4 py-2 text-xs font-semibold text-muted-foreground">
-                      Currency Rate
-                    </h3>
-                    <div className="px-4 py-3 text-sm text-foreground bg-muted rounded-xl flex items-center gap-3">
-                      <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
-                      1 {exchangeRate.from} = {exchangeRate.rate.toFixed(2)}{" "}
-                      {exchangeRate.to}
-                    </div>
-                  </div>
-                )}
-                {pageResults.length > 0 && (
-                  <div className="mb-2">
-                    <h3 className="px-4 py-2 text-xs font-semibold text-muted-foreground">
-                      Pages
-                    </h3>
-                    {pageResults.map((result, i) => (
-                      <button
-                        key={i}
-                        ref={(el) =>
-                          (resultsRef.current[recentSearches.length + i] = el)
-                        }
-                        data-selected={
-                          selectedIndex === recentSearches.length + i
-                        }
-                        onClick={() => handleSelect(result.path)}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted rounded-xl transition-colors text-left data-[selected=true]:bg-muted"
-                      >
-                        <Navigation className="h-4 w-4 text-muted-foreground" />
-                        {result.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {transactions.length > 0 && (
-                  <div>
-                    <h3 className="px-4 py-2 text-xs font-semibold text-muted-foreground">
-                      Transactions
-                    </h3>
-                    {transactions.map((txn, i) => (
-                      <button
-                        key={txn.id}
-                        ref={(el) =>
-                          (resultsRef.current[
-                            recentSearches.length + pageResults.length + i
-                          ] = el)
-                        }
-                        data-selected={
-                          selectedIndex ===
-                          recentSearches.length + pageResults.length + i
-                        }
-                        onClick={() =>
-                          handleSelect(`/transactions?id=${txn.id}`)
-                        }
-                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted rounded-xl transition-colors text-left data-[selected=true]:bg-muted"
-                      >
-                        <FileBox className="h-4 w-4 text-muted-foreground" />
-                        <div className="flex-1">
-                          <p className="font-medium">{txn.type}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(txn.date).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-mono">{txn.amount.toFixed(2)}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {txn.currency}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </>
-            )
-          )}
+            <span>
+              <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px]">⌘</kbd>
+              +
+              <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px]">K</kbd>
+              {' '}to toggle
+            </span>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
