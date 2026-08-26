@@ -2,12 +2,25 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { Loader2, ListFilter } from "lucide-react";
+import { Loader2, ListFilter, Download } from "lucide-react";
 import { TableTransaction } from "@/components/admin/transaction/TableTransaction";
 import { TransactionFilters } from "@/components/admin/transaction/TransactionFilters";
 import { getAdminTransactions, AdminTransaction } from "@/lib/api/admin";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AdminTableRowSkeleton } from "@/components/shared/page-skeletons";
+import { exportTransactionsToCSV } from "@/app/lib/utils/csv-export";
+
+function adminToTransactionCSV(tx: AdminTransaction) {
+  return {
+    date: tx.date,
+    type: tx.type,
+    currency: tx.currency,
+    amount: tx.amount,
+    status: tx.status,
+    reference: tx.txId,
+    description: "",
+  };
+}
 
 const ITEMS_PER_PAGE = 10;
 
@@ -78,14 +91,26 @@ export default function TransactionPage() {
 
   return (
     <div className="space-y-6">
-      <TransactionFilters 
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        activeFilter={activeFilter}
-        onFilterChange={handleFilterChange}
-        totalCount={totalCount}
-      />
-      
+      <div className="flex items-center justify-between">
+        <TransactionFilters 
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          activeFilter={activeFilter}
+          onFilterChange={handleFilterChange}
+          totalCount={totalCount}
+        />
+        <button
+          onClick={() => {
+            const csvData = transactions.map(adminToTransactionCSV);
+            exportTransactionsToCSV(csvData as never);
+          }}
+          className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Export CSV
+        </button>
+      </div>
+
       {error ? (
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center text-red-600">
           <p className="font-semibold">{error}</p>
