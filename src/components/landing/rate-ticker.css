@@ -1,0 +1,46 @@
+.rate-ticker-container {
+  position: fixed;
+  top: 60px; /* Assuming nav bar height is 60px */
+  left: 0;
+  width: 100%;
+  height: 40px;
+  background-color: #333;
+  color: white;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.rate-ticker {
+  display: inline-block;
+  padding-left: 100%;
+  animation: scroll 30s linear infinite;
+}
+
+.rate-pill {
+  display: inline-block;
+  padding: 0 20px;
+  border-right: 1px solid #555;
+}
+
+.rate-pill:last-child {
+  border-right: none;
+}
+
+.rate-ticker-container:hover .rate-ticker {
+  animation-play-state: paused;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@media (prefers-reduced-motion) {
+  .rate-ticker {
+    animation: none;
+  }
+}

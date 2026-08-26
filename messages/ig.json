@@ -1,0 +1,10 @@
+{
+  "Navigation": {
+    "dashboard": "Nchịkọta",
+    "convert": "Gbanwee",
+    "deposit": "Nkwụnye ego",
+    "withdraw": "Wepụ ego",
+    "transactions": "Azụmahịa",
+    "settings": "Ntọala"
+  }
+}
