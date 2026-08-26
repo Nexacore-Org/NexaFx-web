@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Bell, User, Menu } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -43,9 +44,7 @@ export default function AdminLayoutClient({
               >
                 <Menu size={22} />
               </button>
-              <h1 className="text-md font-semibold text-gray-900 md:text-lg">
-                {capitalisedTitle}
-              </h1>
+              <AdminBreadcrumbs />
             </div>
 
             <div className="flex items-center gap-4">
