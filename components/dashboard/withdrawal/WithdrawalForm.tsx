@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import { FeeEstimatorModal } from "@/components/shared/fee-estimator-modal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
+import { getBalances } from "@/lib/api/wallet";
+import { useWithdrawalStore } from "@/hooks/use-withdrawal-store";
 import { ChevronDown, ChevronLeft, AlertCircle } from "lucide-react";
+import { useWithdrawalLimits } from "@/hooks/use-withdrawal-limits";
 import { cn } from "@/lib/utils";
 import { getCurrencies, type Currency } from "@/lib/api/currencies";
 import { getBalances } from "@/lib/api/wallet";
@@ -105,6 +107,7 @@ export function WithdrawalForm() {
 
   const selectedCurrency =
     currencies.find((c) => c.id === currency) || currencies[0];
+  const { remainingDaily, remainingMonthly, isLoading: limitsLoading } = useWithdrawalLimits(currency);
   const walletAddress = watch("walletAddress");
   const showMemoWarning = requiresMemo(walletAddress ?? "");
 
@@ -338,6 +341,29 @@ export function WithdrawalForm() {
               </button>
             </div>
           </div>
+
+          {/* Withdrawal Limits */}
+          {!limitsLoading && currency && (remainingDaily !== null || remainingMonthly !== null) && (
+            <div className="p-3 rounded-xl bg-muted/50 border border-border space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Withdrawal Limits</p>
+              {remainingDaily !== null && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Daily remaining</span>
+                  <span className="font-medium text-foreground">
+                    {remainingDaily} {currency}
+                  </span>
+                </div>
+              )}
+              {remainingMonthly !== null && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Monthly remaining</span>
+                  <span className="font-medium text-foreground">
+                    {remainingMonthly} {currency}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="text-center">
             <FeeEstimatorModal />

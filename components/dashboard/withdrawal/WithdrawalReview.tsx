@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
+import { useWithdrawalLimits } from "@/hooks/use-withdrawal-limits";
 import { ChevronLeft, Coins, CircleDollarSign, BadgeDollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createWithdrawal } from "@/lib/api/transactions";
@@ -22,6 +23,7 @@ export function WithdrawalReview() {
     const { currency, amount, walletAddress, step, setStep, setTransactionResult, close, reset } = useWithdrawalStore();
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const { remainingDaily, remainingMonthly, isLoading: limitsLoading } = useWithdrawalLimits(currency);
 
     const isProcessingStep = step === 'processing';
     const selectedCurrency = currencies.find(c => c.id === currency) || currencies[0];
@@ -138,6 +140,29 @@ export function WithdrawalReview() {
                     </div>
                 </div>
             </div>
+
+            {/* Withdrawal Limits */}
+            {!limitsLoading && currency && (remainingDaily !== null || remainingMonthly !== null) && (
+                <div className="p-3 rounded-xl bg-muted/50 border border-border space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Remaining Limits</p>
+                    {remainingDaily !== null && (
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">Daily</span>
+                            <span className="font-medium text-foreground">
+                                {remainingDaily} {currency}
+                            </span>
+                        </div>
+                    )}
+                    {remainingMonthly !== null && (
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">Monthly</span>
+                            <span className="font-medium text-foreground">
+                                {remainingMonthly} {currency}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Warning */}
             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
