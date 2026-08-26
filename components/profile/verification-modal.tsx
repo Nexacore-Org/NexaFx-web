@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useAuthStore } from '@/hooks/use-auth-store';
 
 interface VerificationModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface VerificationModalProps {
 export function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
   const [status, setStatus] = useState<'idle' | 'success'>('idle');
   const [isLoading, setIsLoading] = useState(false);
+  const user = useAuthStore((state) => state.user);
 
   if (!isOpen) return null;
 
@@ -60,7 +62,8 @@ export function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
                   <div className='relative'>
                     <input
                       type='text'
-                      defaultValue='Myname'
+                      defaultValue={user?.firstName ?? ''}
+                      placeholder='First name'
                       className='flex h-12 w-full rounded-lg border-none bg-muted/50 px-4 text-sm font-medium focus-visible:ring-2 focus-visible:ring-primary/50 transition-all'
                     />
                   </div>
@@ -73,7 +76,8 @@ export function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
                   <div className='relative'>
                     <input
                       type='text'
-                      defaultValue='Lastname'
+                      defaultValue={user?.lastName ?? ''}
+                      placeholder='Last name'
                       className='flex h-12 w-full rounded-lg border-none bg-muted/50 px-4 text-sm font-medium focus-visible:ring-2 focus-visible:ring-primary/50 transition-all'
                     />
                   </div>
@@ -86,7 +90,8 @@ export function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
                   <div className='relative'>
                     <input
                       type='email'
-                      defaultValue='Cersei414@hotmail.com'
+                      defaultValue={user?.email ?? ''}
+                      placeholder='Email'
                       readOnly
                       className='flex h-12 w-full rounded-lg border-none bg-muted/50 px-4 text-sm font-medium text-muted-foreground cursor-not-allowed'
                     />
@@ -125,7 +130,7 @@ export function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
                     </div>
                     <input
                       type='tel'
-                      defaultValue='3605226458'
+                      placeholder='Phone number'
                       className='flex h-12 w-full rounded-lg border-none bg-muted/50 px-4 text-sm font-medium focus-visible:ring-2 focus-visible:ring-primary/50 transition-all'
                     />
                   </div>
@@ -138,7 +143,7 @@ export function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
                   <div className='relative'>
                     <input
                       type='text'
-                      defaultValue='houseaddress at street road'
+                      placeholder='Address'
                       className='flex h-12 w-full rounded-lg border-none bg-muted/50 px-4 text-sm font-medium focus-visible:ring-2 focus-visible:ring-primary/50 transition-all'
                     />
                   </div>
