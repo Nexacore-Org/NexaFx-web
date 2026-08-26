@@ -1,9 +1,15 @@
 "use client";
 
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
+import { CheckCircle2, XCircle, ExternalLink, Coins, CircleDollarSign, BadgeDollarSign } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { CopyButton } from "@/components/ui/copy-button";
+import { useEffect } from "react";
+import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import { CheckCircle2, XCircle, Copy, ExternalLink, Coins, CircleDollarSign, BadgeDollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { toast } from "@/hooks/use-toast-store";
 
 const currencies = [
     { id: 'USDC', name: 'USD Coin', icon: <CircleDollarSign className="w-8 h-8 text-blue-500" /> },
@@ -13,15 +19,24 @@ const currencies = [
 
 export function WithdrawalSuccess() {
     const { currency, amount, transactionId, transactionStatus, errorMessage, close, reset, setStep } = useWithdrawalStore();
+    const { currency, amount, transactionId, transactionStatus, errorMessage, close, reset, setStep, setFormData } = useWithdrawalStore();
     const [copied, setCopied] = useState(false);
 
     const selectedCurrency = currencies.find(c => c.id === currency) || currencies[0];
     const isSuccess = transactionStatus === 'success';
 
+    useEffect(() => {
+        if (isSuccess) {
+            toast("Withdrawal submitted", "success");
+            setFormData({ amount: "", walletAddress: "" });
+        }
+    }, [isSuccess, setFormData]);
+
     const handleCopyTxId = () => {
         if (transactionId) {
             navigator.clipboard.writeText(transactionId);
             setCopied(true);
+            haptics.light();
             setTimeout(() => setCopied(false), 2000);
         }
     };
@@ -80,11 +95,18 @@ export function WithdrawalSuccess() {
                     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
                         <div className="space-y-0.5">
                             <p className="text-xs text-muted-foreground">Transaction ID</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-sm font-mono font-medium text-foreground">{transactionId}</p>
+                                <CopyButton value={transactionId} label="Copy transaction ID" size="sm" />
+                            </div>
+                        </div>
                             <p className="text-sm font-mono font-medium text-foreground">{transactionId}</p>
                         </div>
                         <button
+                            type="button"
                             onClick={handleCopyTxId}
                             className="p-2 hover:bg-muted rounded-lg transition-colors"
+                            aria-label={copied ? "Transaction ID copied" : "Copy transaction ID"}
                         >
                             <Copy className={cn(
                                 "size-4",

@@ -61,7 +61,7 @@
   --secondary: #FFFFFF;
   --secondary-foreground: #0A0A0A;
   --muted: #F1F1F1;
-  --muted-foreground: #666666;
+  --muted-foreground: #525252;
   --accent: #FFD552;
   --accent-foreground: #0A0A0A;
   --destructive: #FF4D4F;
@@ -79,6 +79,12 @@
   --sidebar-accent: #FFF9E6;
   --sidebar-accent-foreground: #0A0A0A;
   --sidebar-border: #E5E5E5;
+
+  --chart-1: #FFD552;
+  --chart-2: #A0C3FD;
+  --chart-3: #0A0A0A;
+  --chart-4: #666666;
+  --chart-5: #FF4D4F;
 }
 
 .dark {
@@ -123,8 +129,17 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  input, textarea {
+    @apply max-md:min-h-[44px];
+  }
 }
 
+@media print {
+  body * { visibility: hidden; }
+  #print-receipt, #print-receipt * { visibility: visible; }
+  #print-receipt { position: absolute; left: 0; top: 0; }
+}
 
 .exchange-rates::-webkit-scrollbar {
   display: none !important;
@@ -134,27 +149,23 @@
   background: var(--overview-gradient);
 }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
-/* Hide scrollbar for IE, Edge and Firefox */
 .no-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-/* Global scrollbar hide as requested */
 ::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 * {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-
 
 .button-verify {
   background: linear-gradient(240.3deg, #a0c3fd -1.74%, #ffe79c 99.3%);
