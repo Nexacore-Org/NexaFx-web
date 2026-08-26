@@ -29,6 +29,11 @@ function toCurrencyOption(
   return { id: c.code, name: c.name, balance: balanceMap[c.code] ?? "0.00" };
 }
 
+// GET /currencies currently returns 500 (backend bug) — fall back to this
+// static list so the dropdown is never empty for users.
+// TODO: remove FALLBACK_CURRENCIES once the backend /currencies 500 is fixed.
+const FALLBACK_CURRENCIES = ["NGN", "USD", "EUR", "GBP", "USDC"];
+
 function SkeletonBar({ className }: { className?: string }) {
   return (
     <div
@@ -43,6 +48,7 @@ export function WithdrawalForm() {
   const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
   const [isLoadingCurrencies, setIsLoadingCurrencies] = useState(true);
   const [currencyError, setCurrencyError] = useState<string | null>(null);
+  const [usedFallbackCurrencies, setUsedFallbackCurrencies] = useState(false);
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
 
   const {
@@ -60,16 +66,34 @@ export function WithdrawalForm() {
   const fetchCurrenciesAndBalances = useCallback(async () => {
     setIsLoadingCurrencies(true);
     setCurrencyError(null);
+    setUsedFallbackCurrencies(false);
+
+    // Balances are the real blocker — if they fail we can't safely show amounts.
+    let balanceMap: Record<string, string> = {};
     try {
-      const [currencyData, balanceData] = await Promise.all([
-        getCurrencies(),
-        getBalances(),
-      ]);
-      const balanceMap: Record<string, string> = {};
+      const balanceData = await getBalances();
       for (const b of balanceData) balanceMap[b.currency] = b.balance;
-      setCurrencies(currencyData.map((c) => toCurrencyOption(c, balanceMap)));
     } catch {
       setCurrencyError("Unable to load your balances. Please refresh the page.");
+      setIsLoadingCurrencies(false);
+      return;
+    }
+
+    // GET /currencies currently 500s — degrade gracefully to a fallback list
+    // instead of leaving the dropdown empty.
+    try {
+      const currencyData = await getCurrencies();
+      setCurrencies(currencyData.map((c) => toCurrencyOption(c, balanceMap)));
+    } catch (error) {
+      console.error("[NexaFx] GET /currencies failed:", error);
+      setCurrencies(
+        FALLBACK_CURRENCIES.map((code) => ({
+          id: code,
+          name: code,
+          balance: balanceMap[code] ?? "0.00",
+        })),
+      );
+      setUsedFallbackCurrencies(true);
     } finally {
       setIsLoadingCurrencies(false);
     }
@@ -274,6 +298,12 @@ export function WithdrawalForm() {
                 </div>
               )}
             </div>
+            {usedFallbackCurrencies && (
+              <p className="text-xs text-amber-700">
+                Currency list is temporarily limited. Contact support if your
+                currency is missing.
+              </p>
+            )}
           </div>
 
           {/* Amount */}

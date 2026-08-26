@@ -30,6 +30,19 @@ const CURRENCIES: CurrencyOption[] = [
   { id: "ETH", name: "Ethereum", symbol: "ETH" },
 ];
 
+/**
+ * Decimal precision for a converted amount. Crypto (ETH) is shown with up to 8
+ * decimals while fiat stays at 2, so small ETH amounts aren't rounded away.
+ * Replaces the old `... ? 2 : 2` dead ternary that applied fiat precision to ETH.
+ */
+export function getAmountFractionDigits(
+  fromCurrency: string,
+  toCurrency: string,
+): { minimumFractionDigits: number; maximumFractionDigits: number } {
+  const involvesEth = fromCurrency === "ETH" || toCurrency === "ETH";
+  return { minimumFractionDigits: 2, maximumFractionDigits: involvesEth ? 8 : 2 };
+}
+
 export function ConvertForm() {
   const [fromCurrency, setFromCurrency] = useState("USD");
   const [toCurrency, setToCurrency] = useState("NGN");
@@ -100,11 +113,10 @@ export function ConvertForm() {
   const convertedAmount = useMemo(() => {
     if (!amount || isNaN(parseFloat(amount)) || exchangeRate === 0) return "";
     const result = parseFloat(amount) * exchangeRate;
-    return result.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits:
-        fromCurrency === "ETH" || toCurrency === "ETH" ? 8 : 2,
-    });
+    return result.toLocaleString(
+      undefined,
+      getAmountFractionDigits(fromCurrency, toCurrency),
+    );
   }, [amount, exchangeRate, fromCurrency, toCurrency]);
 
   const handleSwap = () => {
