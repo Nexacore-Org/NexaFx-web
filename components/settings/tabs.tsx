@@ -1,3 +1,9 @@
+/**
+ * Settings-specific tabs component used on the /settings route.
+ * This is intentionally separate from components/profile/settings-tabs.tsx
+ * which serves the /profile route with a smaller tab set
+ * (Account Info, Security, Notification, Identity Verification).
+ */
 "use client";
 
 import { useEffect, useState } from "react";

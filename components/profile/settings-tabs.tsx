@@ -1,3 +1,9 @@
+/**
+ * Profile-specific tabs component used on the /profile route.
+ * This is intentionally separate from components/settings/tabs.tsx
+ * which serves the /settings route with a different tab set
+ * (includes Danger Zone, Language, Activity tabs).
+ */
 import { VerificationBanner } from "@/components/profile/verification-banner";
 import { FAQSection } from "@/components/profile/faq-section";
 import { ProfileOverview } from "@/components/profile/profile-overview";
