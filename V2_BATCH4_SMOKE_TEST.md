@@ -14,7 +14,7 @@
 - [ ] Multi-step KYC wizard completes end-to-end (6 steps)
 - [ ] BVN verification returns name on record
 - [ ] NIN verification offered as alternative
-- [ ] Document upload with image preview works
+- [ ] Document upload with image preview works.
 
 ### Landing Page
 - [ ] Currency calculator works without login

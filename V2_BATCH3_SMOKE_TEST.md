@@ -14,7 +14,7 @@ This document summarizes the results of the smoke test for the V2 Batch 3 featur
 - **[FAIL]** 2FA disable flow is broken.
 - **[PASS]** Passkey registration flow works correctly.
 - **[FAIL]** Passkey login is not integrated into the login page.
-- **[PASS]** Session timeout warning appears 2 minutes before expiry.
+- **[PASS]** Session timeout warning appears 2 minutes before expiry..
 
 ## User Features
 

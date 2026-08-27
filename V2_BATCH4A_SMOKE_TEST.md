@@ -4,7 +4,7 @@
 **Branch:** v2  
 **Scope:** Issues 111-148
 
-This smoke test was completed by inspecting the v2 code paths and running available project checks. Full browser verification is blocked by existing unrelated build and lint failures listed in the Build section.
+This smoke test was completed by inspecting the v2 code paths and running available project checks. Full browser verification is blocked by existing unrelated build and lint failures listed in the Build section..
 
 ## KYC Flow
 

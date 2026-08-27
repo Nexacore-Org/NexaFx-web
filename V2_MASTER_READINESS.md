@@ -3,7 +3,7 @@
 **Date:** 2026-06-27
 **Branch:** v2
 
-This document serves as the master readiness checklist for merging the `v2` branch to `main`. It summarises the completion of all three batch smoke tests and the current system status.
+This document serves as the master readiness checklist for merging the `v2` branch to `main`. It summarises the completion of all three batch smoke tests and the current system status..
 
 ## Prerequisites Checklist
 - [x] V2_SMOKE_TEST.md committed

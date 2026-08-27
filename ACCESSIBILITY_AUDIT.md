@@ -1,6 +1,6 @@
 # Accessibility Audit — v2 Pages
 
-Audit scope: dashboard, transactions, settings, auth (sign-in, verify-otp, forgot-password, reset-password), and shared UI components.
+Audit scope: dashboard, transactions, settings, auth (sign-in, verify-otp, forgot-password, reset-password), and shared UI components..
 
 ## Violations Found & Fixes Applied
 

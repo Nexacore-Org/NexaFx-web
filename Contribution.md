@@ -142,6 +142,7 @@ The platform should now be running at `http://localhost:3000/`.
 ### Pull Requests
 - **Follow the coding standards** outlined below.
 - **Reference related issues** in the PR description.
+- **Add a changelog entry** under `Unreleased` in [CHANGELOG.md](CHANGELOG.md) for user-visible changes, behavior changes, fixes, or contributor-facing changes. Keep entries concise and remove them from `Unreleased` when preparing a release.
 - **Ensure your code is well-tested** before submitting.
 - **Keep pull requests focused** on a single change or feature.
 - **Use a descriptive title** and provide necessary context.
