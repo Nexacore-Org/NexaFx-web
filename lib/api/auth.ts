@@ -16,7 +16,7 @@ export function verifyLoginOtp(payload: { email: string; otp: string }) {
   });
 }
 
-export function signUp(payload: {
+export function signup(payload: {
   email: string;
   phone: string;
   password: string;
@@ -36,6 +36,8 @@ export function verifySignupOtp(payload: { email: string; otp: string }) {
   });
 }
 
+export const signUp = signup;
+
 export function resendSignupOtp(payload: { email: string }) {
   return apiClient("/auth/resend-signup-otp", {
     method: "POST",
@@ -51,6 +53,21 @@ export function resendLoginOtp(payload: { email: string }) {
     useProxy: false,
   });
 }
+
+export interface TwoFactorSetup {
+  qrCodeUrl: string
+  secret: string
+  backupCodes: string[]
+}
+
+export const setup2FA = (): Promise<TwoFactorSetup> =>
+  apiClient('/auth/2fa/setup', { method: 'POST', useProxy: false })
+
+export const verify2FA = (code: string): Promise<{ backupCodes: string[] }> =>
+  apiClient('/auth/2fa/verify', { method: 'POST', useProxy: false, body: JSON.stringify({ code }) })
+
+export const disable2FA = (code: string): Promise<void> =>
+  apiClient('/auth/2fa/disable', { method: 'POST', useProxy: false, body: JSON.stringify({ code }) })
 
 export function forgotPassword(payload: { email: string }) {
   return apiClient("/auth/forgot-password", {
