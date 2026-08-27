@@ -7,6 +7,7 @@ import { Copy } from "lucide-react";
 import Image from "next/image";
 import { useAuthStore } from "@/hooks/use-auth-store";
 import { getRequestErrorMessage } from "@/lib/api-client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function ProfileOverview() {
   const [loading, setLoading] = useState(true);
@@ -57,9 +58,9 @@ export function ProfileOverview() {
   if (loading) {
     return (
       <div className="bg-white dark:bg-card rounded-xl p-8 border border-border/50 shadow-sm flex flex-col items-center text-center space-y-4 h-full min-h-[300px] justify-center animate-pulse">
-        <div className="h-24 w-24 rounded-2xl bg-muted" />
-        <div className="h-6 w-32 bg-muted rounded mb-2" />
-        <div className="h-4 w-24 bg-muted rounded" />
+        <Skeleton className="h-24 w-24 rounded-2xl" />
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-4 w-24" />
       </div>
     );
   }

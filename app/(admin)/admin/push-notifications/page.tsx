@@ -11,6 +11,7 @@ import {
 import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
 import { Search, Plus } from "lucide-react";
 import { PushNotificationListSkeleton } from "@/components/shared/page-skeletons";
+import { AsyncBoundary } from "@/components/shared/async-boundary";
 
 export default function PushNotificationsPage() {
   const [notifications, setNotifications] = useState<PushNotification[]>([]);
@@ -87,26 +88,20 @@ export default function PushNotificationsPage() {
     }
   };
 
-  if (loading) {
+  if (loading || error) {
     return (
-      <div className="md:p-6 space-y-6">
-        <PushNotificationListSkeleton rows={5} />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg max-w-lg mx-auto mt-8">
-        <p className="font-semibold">Error Loading Push Notifications</p>
-        <p className="text-sm">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-2 text-xs font-semibold underline hover:text-red-800"
-        >
-          Try Again
-        </button>
-      </div>
+      <AsyncBoundary
+        loading={loading}
+        error={error}
+        onRetry={() => window.location.reload()}
+        loadingSkeleton={
+          <div className="md:p-6 space-y-6">
+            <PushNotificationListSkeleton rows={5} />
+          </div>
+        }
+      >
+        <div />
+      </AsyncBoundary>
     );
   }
 
