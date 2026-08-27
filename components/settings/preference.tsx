@@ -28,9 +28,15 @@ export function Preference() {
               <SelectValue className="" />
             </SelectTrigger>
             <SelectContent>
+              {/* English is the only supported language today. The previous
+                  "Frances"/"Portuges" options were copy-pasted theme values
+                  (dark/system) with misspelt labels and no i18n behind them, so
+                  they are replaced with a clear "coming soon" placeholder until
+                  real internationalization exists. */}
               <SelectItem value="english">English</SelectItem>
-              <SelectItem value="dark">Frances</SelectItem>
-              <SelectItem value="system">Portuges</SelectItem>
+              <SelectItem value="coming-soon" disabled>
+                More languages coming soon
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>

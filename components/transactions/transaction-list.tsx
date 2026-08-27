@@ -13,10 +13,11 @@ export function TransactionList({ transactions, onSelectTransaction }: Transacti
     return (
         <div className="md:hidden space-y-4">
             {transactions.map((tx) => (
-                <div 
-                    key={tx.id} 
+                <button
+                    type="button"
+                    key={tx.id}
                     onClick={() => onSelectTransaction(tx)}
-                    className="flex items-center justify-between cursor-pointer active:scale-[0.99] transition-transform"
+                    className="w-full flex items-center justify-between cursor-pointer active:scale-[0.99] transition-transform text-left"
                 >
                     <div className="flex items-center gap-4">
                         <div className={cn(
@@ -34,17 +35,20 @@ export function TransactionList({ transactions, onSelectTransaction }: Transacti
                             <p className="text-xs text-muted-foreground">{tx.date}</p>
                         </div>
                     </div>
-                    <div className={cn(
+                    <div
+                        className={cn(
                         "flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold",
-                        tx.status === "Success" ? "bg-green-500/10 text-green-600 dark:text-green-400" : 
-                        tx.status === "Pending" ? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400" :
-                        "bg-red-500/10 text-red-600 dark:text-red-400"
-                    )}>
+                        tx.status === "Success" ? "bg-green-500/10 text-green-700 dark:text-green-400" :
+                        tx.status === "Pending" ? "bg-yellow-600/10 text-yellow-700 dark:text-yellow-400" :
+                        "bg-red-500/10 text-red-700 dark:text-red-400"
+                    )}
+                        aria-label={`Transaction status: ${tx.status}`}
+                    >
                         {tx.status === "Success" && <Check className="h-3 w-3" />}
                         {tx.status === "Failed" && <X className="h-3 w-3" />}
                         {tx.status}
                     </div>
-                </div>
+                </button>
             ))}
         </div>
     );

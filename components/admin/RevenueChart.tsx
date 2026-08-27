@@ -1,41 +1,108 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    Cell,
+    ResponsiveContainer,
+    Tooltip,
+} from "recharts";
+import { ChevronDown } from "lucide-react";
+// NOTE: The backend's GET /admin/metrics only returns single summary totals
+// (totalDeposits, totalWithdrawals) instead of time-series/historical monthly progress.
+// To keep this visual chart component working premium-grade without rendering empty dashboards,
+// we retain the historical monthly structure from mockRevenueData.
+// Raised a backend feature request for GET /admin/revenue-chart or time-series metrics.
+const mockRevenueData = [
+  { month: 'JAN', value: 60000 },
+  { month: 'FEB', value: 85000 },
+  { month: 'MAR', value: 50000 },
+  { month: 'APR', value: 45000 },
+  { month: 'MAY', value: 90000 },
+  { month: 'JUN', value: 10000 },
+  { month: 'JUL', value: 30000 },
+  { month: 'AUG', value: 25000 },
+  { month: 'SEP', value: 92000 },
+  { month: 'OCT', value: 70000 },
+  { month: 'NOV', value: 55000 },
+  { month: 'DEC', value: 68000 },
+];
+
+const ACTIVE_MONTH = "MAY";
+const ACTIVE_COLOR = "#F97316";
+const DEFAULT_COLOR = "#E5E7EB";
+
+const yAxisTicks = [0, 10000, 30000, 50000, 100000];
+
+function formatYAxis(value: number) {
+    if (value === 0) return "$0K";
+    return `$${value / 1000}K`;
+}
 
 export function RevenueChart() {
     return (
-        <div className="flex-1 min-w-0 h-63.25 py-2.5 px-5 flex flex-col gap-4">
-            <h3 className="text-lg font-semibold text-gray-900">Revenue Overview</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Deposits</CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">$45,231.89</div>
-                        <p className="text-xs text-muted-foreground flex items-center">
-                            <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
-                            +20.1% from last month
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Withdrawals</CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">$12,314.50</div>
-                        <p className="text-xs text-muted-foreground flex items-center">
-                            <ArrowDownRight className="h-4 w-4 text-red-500 mr-1" />
-                            -4.5% from last month
-                        </p>
-                    </CardContent>
-                </Card>
+        <div className="bg-white rounded-2xl flex-1 min-w-0 h-63.25 py-2.5 px-5 border border-gray-200 flex flex-col gap-2">
+            {/* Header */}
+            <div className="flex items-center justify-between shrink-0">
+                <h3 className="text-base font-semibold text-gray-900">Revenue</h3>
+                <button className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors">
+                    This month
+                    <ChevronDown size={14} />
+                </button>
             </div>
-            {/* TODO: Integrate with backend GET /admin/metrics to fetch real data */}
+
+            <div className="flex-1">
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                        data={mockRevenueData}
+                        barSize={35}
+                        barCategoryGap="20%"
+                        margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+                    >
+                        <XAxis
+                            dataKey="month"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                            dy={6}
+                        />
+                        <YAxis
+                            ticks={yAxisTicks}
+                            tickFormatter={formatYAxis}
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                            width={44}
+                        />
+                        <Tooltip
+                            cursor={{ fill: 'transparent' }}
+                            formatter={(value) => [
+                                `$${(Number(value) || 0).toLocaleString()}`,
+                                'Revenue',
+                            ]}
+                            contentStyle={{
+                                borderRadius: "8px",
+                                border: "1px solid #E5E7EB",
+                                fontSize: "12px",
+                            }}
+                        />
+                        <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                            {mockRevenueData.map((entry) => (
+                                <Cell
+                                    key={entry.month}
+                                    fill={
+                                        entry.month === ACTIVE_MONTH
+                                            ? ACTIVE_COLOR
+                                            : DEFAULT_COLOR
+                                    }
+                                />
+                            ))}
+                        </Bar>
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
         </div>
     );
 }

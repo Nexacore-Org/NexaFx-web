@@ -44,7 +44,7 @@ export default function Navbar() {
         {/* Mobile Menu Button */}
         <button
           onClick={() => setOpen(!open)}
-          className="md:hidden flex items-center"
+          className="md:hidden flex items-center justify-center min-h-[44px] min-w-[44px]"
         >
           <span className="text-2xl">
             {open ? <X /> : <Menu />}
@@ -56,22 +56,22 @@ export default function Navbar() {
       {open && (
         <div className="md:hidden px-4 pb-6 pt-2 bg-white rounded-b-2xl shadow-lg">
           <div className="flex flex-col text-center gap-4 text-slate-600 font-medium">
-            <a href="#solutions" onClick={() => setOpen(false)}>Solutions</a>
-            <a href="#exchange" onClick={() => setOpen(false)}>Exchange</a>
-            <a href="#security" onClick={() => setOpen(false)}>Security</a>
+            <a href="#solutions" className="py-3" onClick={() => setOpen(false)}>Solutions</a>
+            <a href="#exchange" className="py-3" onClick={() => setOpen(false)}>Exchange</a>
+            <a href="#security" className="py-3" onClick={() => setOpen(false)}>Security</a>
           </div>
 
           <div className="flex flex-col gap-3 mt-6">
             <Link
               href="/sign-in"
-              className="text-center font-semibold py-2 border rounded-lg"
+              className="text-center font-semibold py-3 border rounded-lg"
             >
               Sign In
             </Link>
 
             <Link
               href="/signup"
-              className="text-center bg-[#F39A00] text-white py-2 rounded-lg font-bold"
+              className="text-center bg-[#F39A00] text-white py-3 rounded-lg font-bold"
             >
               Sign Up
             </Link>

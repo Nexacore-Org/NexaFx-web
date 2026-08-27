@@ -1,26 +1,25 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { login } from '@/lib/api/auth';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import Image from "next/image";
+import Link from "next/link";
+import { login } from "@/lib/api/auth";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function SignInPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading) return;
-    setError('');
+    setError("");
 
     if (!email || !password) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       return;
     }
 
@@ -29,11 +28,11 @@ export default function SignInPage() {
     try {
       await login({ email, password });
       setIsLoading(false);
-      sessionStorage.setItem('login-email', email);
-      router.push('/verify-otp');
+      sessionStorage.setItem("login-email", email);
+      router.push("/verify-otp");
     } catch (err: unknown) {
       setIsLoading(false);
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : "Login failed");
     }
   };
 
@@ -44,13 +43,13 @@ export default function SignInPage() {
         <div className="flex justify-between items-center px-8 py-6 backdrop-blur-sm bg-white/10">
           <Image
             src="/logo.png"
-            alt="NexaFX"
+            alt="NexaFX logo"
             width={120}
             height={40}
             priority
           />
           <div className="text-sm text-gray-700">
-            Don&apos;t have an account?{' '}
+            Don&apos;t have an account?{" "}
             <Link
               href="/sign-up"
               className="text-[#FFA200] hover:underline font-medium"
@@ -99,7 +98,7 @@ export default function SignInPage() {
               </label>
               <div className="relative">
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
@@ -166,12 +165,12 @@ export default function SignInPage() {
               disabled={isLoading}
               className="w-full py-2.5 bg-[#F39A00] hover:bg-[#da8a00] text-black font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-6"
             >
-              {isLoading ? 'Logging in...' : 'Log in'}
+              {isLoading ? "Logging in..." : "Log in"}
             </button>
           </form>
 
           <div className="mt-4 text-center text-xs text-muted-foreground">
-            Don&apos;t have an account?{' '}
+            Don&apos;t have an account?{" "}
             <Link
               href="/sign-up"
               className="text-[#FFA200] hover:underline font-medium"
@@ -189,7 +188,7 @@ export default function SignInPage() {
             <div className="flex justify-center mb-6">
               <Image
                 src="/logo.png"
-                alt="NexaFX"
+                alt="NexaFX logo"
                 width={120}
                 height={40}
                 priority
@@ -230,7 +229,7 @@ export default function SignInPage() {
               </label>
               <div className="relative">
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
@@ -297,12 +296,12 @@ export default function SignInPage() {
               disabled={isLoading}
               className="w-full py-2.5 bg-[#F39A00] hover:bg-[#da8a00] text-black font-semibold rounded-md transition-colors disabled:opacity-50 text-sm mt-6"
             >
-              {isLoading ? 'Logging in...' : 'Log in'}
+              {isLoading ? "Logging in..." : "Log in"}
             </button>
           </form>
 
           <div className="mt-4 text-center text-xs text-muted-foreground">
-            Don&apos;t have an account?{' '}
+            Don&apos;t have an account?{" "}
             <Link
               href="/sign-up"
               className="text-[#FFA200] hover:underline font-medium"
