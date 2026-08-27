@@ -45,33 +45,33 @@ Fill in required values in `.env.local` before testing authenticated, payment, n
 
 ## Environment Variables
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `NEXT_PUBLIC_API_URL` | Yes | Backend API origin used by direct API calls and the local proxy. |
-| `NEXT_PUBLIC_MOONPAY_API_KEY` | For MoonPay deposits | MoonPay publishable key from the MoonPay dashboard. |
-| `TEST_ACCESS_TOKEN` | Development only | Optional local development fallback token for the API proxy. Never set in staging or production. |
-| `NEXT_PUBLIC_SESSION_TIMEOUT_MS` | Optional | Session timeout in milliseconds. Defaults should match product requirements. |
-| `NEXT_PUBLIC_CRISP_WEBSITE_ID` | For support chat | Crisp website ID from the Crisp dashboard. |
-| `E2E_TEST_EMAIL` | For e2e tests | Test user email used by Playwright flows. |
-| `E2E_TEST_PASSWORD` | For e2e tests | Test user password used by Playwright flows. |
-| `E2E_TEST_OTP` | For e2e tests | OTP value for test login flows. |
-| `E2E_BASE_URL` | For e2e tests | App URL used by Playwright, usually `http://localhost:3000`. |
+| Variable                         | Required             | Description                                                                                      |
+| -------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_API_URL`            | Yes                  | Backend API origin used by direct API calls and the local proxy.                                 |
+| `NEXT_PUBLIC_MOONPAY_API_KEY`    | For MoonPay deposits | MoonPay publishable key from the MoonPay dashboard.                                              |
+| `TEST_ACCESS_TOKEN`              | Development only     | Optional local development fallback token for the API proxy. Never set in staging or production. |
+| `NEXT_PUBLIC_SESSION_TIMEOUT_MS` | Optional             | Session timeout in milliseconds. Defaults should match product requirements.                     |
+| `NEXT_PUBLIC_CRISP_WEBSITE_ID`   | For support chat     | Crisp website ID from the Crisp dashboard.                                                       |
+| `E2E_TEST_EMAIL`                 | For e2e tests        | Test user email used by Playwright flows.                                                        |
+| `E2E_TEST_PASSWORD`              | For e2e tests        | Test user password used by Playwright flows.                                                     |
+| `E2E_TEST_OTP`                   | For e2e tests        | OTP value for test login flows.                                                                  |
+| `E2E_BASE_URL`                   | For e2e tests        | App URL used by Playwright, usually `http://localhost:3000`.                                     |
 
 ## Available Scripts
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the local Next.js development server. |
-| `npm run build` | Create a production build. |
-| `npm run start` | Start the production server after a build. |
-| `npm run lint` | Run ESLint. |
-| `npm run test` | Run unit tests with Vitest. |
-| `npm run test:ui` | Launch the Vitest UI. |
-| `npm run test:watch` | Run Vitest in watch mode. |
-| `npm run test:coverage` | Run unit tests with coverage. |
-| `npm run e2e` | Run Playwright end-to-end tests. |
-| `npm run storybook` | Launch Storybook on port 6006. |
-| `npm run build-storybook` | Build Storybook. |
+| Command                   | Description                                 |
+| ------------------------- | ------------------------------------------- |
+| `npm run dev`             | Start the local Next.js development server. |
+| `npm run build`           | Create a production build.                  |
+| `npm run start`           | Start the production server after a build.  |
+| `npm run lint`            | Run ESLint.                                 |
+| `npm run test`            | Run unit tests with Vitest.                 |
+| `npm run test:ui`         | Launch the Vitest UI.                       |
+| `npm run test:watch`      | Run Vitest in watch mode.                   |
+| `npm run test:coverage`   | Run unit tests with coverage.               |
+| `npm run e2e`             | Run Playwright end-to-end tests.            |
+| `npm run storybook`       | Launch Storybook on port 6006.              |
+| `npm run build-storybook` | Build Storybook.                            |
 
 ## How To Pick Up An Issue
 
@@ -110,3 +110,7 @@ npm run test
 ## Notes For Contributors
 
 This project uses Next.js 16. Read the relevant local guide in `node_modules/next/dist/docs/` before changing Next-specific APIs, routing conventions, or configuration.
+
+For product and exchange terminology, see the [contributor glossary](docs/glossary.md).
+
+Commits run ESLint and Prettier on staged files through Husky. Bypass the hook with `git commit --no-verify` only when a genuine exception is necessary; the normal expectation is to fix the reported issues before committing.

@@ -15,6 +15,17 @@ export class RateLimitError extends Error {
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const PROXY_URL = "/api/proxy";
 
+/**
+ * API modules should use the default `useProxy: true` for requests that can be
+ * routed through Next.js. The proxy translates the browser's `x-client-token`
+ * into the backend's `Authorization` header and keeps that token forwarding in
+ * one place. Use `useProxy: false` only for modules that call the backend
+ * directly and therefore depend on backend CORS configuration (currently auth,
+ * users, notifications, currencies, and similar user-scoped APIs). See the
+ * "Proxy and Token Behaviour" section of API_AUDIT.md for the module list and
+ * the security rationale behind this distinction.
+ */
+
 export const OFFLINE_STALE_DATA_MESSAGE =
   "You're offline. This data may be out of date.";
 export const OFFLINE_EMPTY_DATA_MESSAGE =
@@ -194,7 +205,10 @@ export async function apiClient<T>(
           .clone()
           .json()
           .catch(() => ({}));
-        const error = new ApiError(data?.message || "Unauthorized", response.status);
+        const error = new ApiError(
+          data?.message || "Unauthorized",
+          response.status,
+        );
         captureApiError(error, finalUrl);
         throw error;
       }
@@ -226,7 +240,7 @@ export async function apiClient<T>(
   }
 
   if (response.status === 429) {
-    const retryAfterHeader = response.headers.get('Retry-After');
+    const retryAfterHeader = response.headers.get("Retry-After");
     const retryAfterSeconds = parseRetryAfter(retryAfterHeader);
     throw new RateLimitError(retryAfterSeconds);
   }
