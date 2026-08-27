@@ -1,0 +1,10 @@
+{
+  "Navigation": {
+    "dashboard": "Tableau de bord",
+    "convert": "Convertir",
+    "deposit": "Dépôt",
+    "withdraw": "Retirer",
+    "transactions": "Transactions",
+    "settings": "Paramètres"
+  }
+}

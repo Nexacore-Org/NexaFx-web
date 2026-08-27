@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Settings } from "lucide-react";
 import Link from "next/link";
 import { useNotificationsStore } from "@/hooks/use-notifications-store";
@@ -33,7 +33,42 @@ export function NotificationsPanel() {
     markAllAsRead,
     fetchNotifications,
     unreadCount,
+    pendingDeletes,
+    pendingClearAll,
+    clearAllNotifications,
+    undoClearAll,
   } = useNotificationsStore();
+
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const container = listRef.current;
+      if (!container) return;
+
+      const items = Array.from(
+        container.querySelectorAll<HTMLElement>('[role="option"]')
+      );
+      if (items.length === 0) return;
+
+      const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+
+      let nextIndex = -1;
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+      }
+
+      if (nextIndex >= 0) {
+        items[nextIndex].focus();
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -74,6 +109,13 @@ export function NotificationsPanel() {
               />
               <span>Mark all as read</span>
             </label>
+            <button
+              onClick={() => setShowClearConfirm(true)}
+              disabled={notifications.length === 0 || !!pendingClearAll}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Clear all
+            </button>
             <Link
               href="/settings"
               onClick={close}
@@ -88,12 +130,55 @@ export function NotificationsPanel() {
         <div className="max-h-100 overflow-y-auto">
           {isLoading ? (
             <PanelSkeleton />
-          ) : notifications.length === 0 ? (
+          ) : showClearConfirm ? (
+            <div className="p-6 text-center">
+              <p className="text-sm text-foreground mb-4">
+                Clear all notifications?
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => setShowClearConfirm(false)}
+                  className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    clearAllNotifications();
+                    setShowClearConfirm(false);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          ) : pendingClearAll ? (
+            <div className="p-6 text-center">
+              <p className="text-sm text-muted-foreground mb-3">
+                All notifications cleared.
+              </p>
+              <button
+                onClick={undoClearAll}
+                className="text-sm font-medium hover:underline transition-colors"
+                style={{ color: "#F39A00" }}
+              >
+                Undo
+              </button>
+            </div>
+          ) : notifications.length === 0 && pendingDeletes.size === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               <p>No notifications yet</p>
             </div>
           ) : (
-            <div className="divide-y divide-border">
+            <div
+              ref={listRef}
+              role="listbox"
+              aria-label="Notifications"
+              tabIndex={0}
+              onKeyDown={handleKeyDown}
+              className="divide-y divide-border outline-none"
+            >
               {notifications.map((notification) => (
                 <NotificationItem
                   key={notification.id}
@@ -101,6 +186,15 @@ export function NotificationsPanel() {
                   onClick={() => handleNotificationClick(notification.id)}
                 />
               ))}
+              {Array.from(pendingDeletes.entries()).map(
+                ([id, { notification }]) => (
+                  <NotificationItem
+                    key={`pending-${id}`}
+                    notification={notification}
+                    isPendingDelete
+                  />
+                )
+              )}
             </div>
           )}
         </div>

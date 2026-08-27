@@ -7,6 +7,7 @@ import {
   Wallet,
   ArrowLeftRight,
   ExternalLink,
+  Loader2,
   X,
 } from "lucide-react";
 import InstantModalDeposit from "./InstantDepositModal";
@@ -32,17 +33,35 @@ type DepositMethodTypes = {
 const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [moonPayError, setMoonPayError] = useState(false);
+  const [isMoonPayLoading, setIsMoonPayLoading] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const desktopModalRef = useRef<HTMLDivElement>(null);
   const mobileMethodsModalRef = useRef<HTMLDivElement>(null);
   const mobileQRModalRef = useRef<HTMLDivElement>(null);
   const isMobile = useMediaQuery("(max-width: 767px)");
+  const moonPayPollRef = useRef<number | null>(null);
+  const moonPayTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     getProfile()
       .then((profile) => setWalletAddress(profile.walletAddress ?? null))
       .catch(() => setWalletAddress(null));
   }, []);
+
+  const clearMoonPayLoading = () => {
+    setIsMoonPayLoading(false);
+    if (moonPayPollRef.current !== null) {
+      window.clearInterval(moonPayPollRef.current);
+      moonPayPollRef.current = null;
+    }
+    if (moonPayTimeoutRef.current !== null) {
+      window.clearTimeout(moonPayTimeoutRef.current);
+      moonPayTimeoutRef.current = null;
+    }
+  };
+
+  // Clear any pending timers if the user navigates away mid-flow.
+  useEffect(() => clearMoonPayLoading, []);
 
   const handleCloseDepositFlow = () => {
     setIsQRModalOpen(false);
@@ -95,23 +114,54 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
       return;
     }
     setMoonPayError(false);
+    setIsMoonPayLoading(true);
+
     const url = new URL("https://buy.moonpay.com");
     url.searchParams.set("apiKey", apiKey);
     url.searchParams.set("walletAddress", walletAddress!);
     url.searchParams.set("currencyCode", "usdc");
     url.searchParams.set("baseCurrencyCode", "ngn");
-    window.open(url.toString(), "_blank");
+
+    const popup = window.open(url.toString(), "_blank");
+
+    if (!popup) {
+      // Browser blocked the popup — this reads identically to a failed
+      // click if we leave the button spinning, so surface it right away.
+      setMoonPayError(true);
+      clearMoonPayLoading();
+      return;
+    }
+
+    // Keep the loading state up briefly so a near-instant open still
+    // registers as "your click did something", then clear it once the
+    // widget has had time to render.
+    moonPayTimeoutRef.current = window.setTimeout(() => {
+      setIsMoonPayLoading(false);
+    }, 1200);
+
+    // If the user cancels by closing the popup before that timeout
+    // elapses, clear the loading state immediately rather than waiting.
+    moonPayPollRef.current = window.setInterval(() => {
+      if (popup.closed) {
+        clearMoonPayLoading();
+      }
+    }, 300);
   };
 
   const MethodCard: React.FC<{ method: DepositMethod }> = ({ method }) => {
     const isMoonPay = method.id === "exchange";
-    const moonPayDisabled = isMoonPay && !walletAddress;
+    const moonPayDisabled = isMoonPay && (!walletAddress || isMoonPayLoading);
 
     return (
       <button
         className="w-full text-left p-4 bg-card border border-border rounded-lg hover:border-border/70 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={moonPayDisabled}
-        title={moonPayDisabled ? "Wallet address is loading…" : undefined}
+        aria-busy={isMoonPay && isMoonPayLoading}
+        title={
+          isMoonPay && !walletAddress && !isMoonPayLoading
+            ? "Wallet address is loading…"
+            : undefined
+        }
         onClick={() => {
           if (method.id === "instant") {
             setIsQRModalOpen(true);
@@ -133,14 +183,23 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
             ) : (
               method.icon
             )} */}
-            {method.icon}
+            {isMoonPay && isMoonPayLoading ? (
+              <Loader2
+                className="w-5 h-5 animate-spin text-muted-foreground"
+                data-testid="moonpay-loading-spinner"
+              />
+            ) : (
+              method.icon
+            )}
           </div>
           <div className="flex-1">
             <h3 className="font-medium text-foreground mb-1 text-sm md:text-base">
               {method.title}
             </h3>
             <p className="text-xs md:text-sm text-muted-foreground mb-2">
-              {method.description}
+              {isMoonPay && isMoonPayLoading
+                ? "Opening MoonPay…"
+                : method.description}
             </p>
             <p className="text-xs md:text-sm font-medium text-foreground">
               Fee: {method.fee}

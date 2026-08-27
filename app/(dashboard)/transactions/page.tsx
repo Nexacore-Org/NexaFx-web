@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Transaction, getTransactions } from "@/lib/api/transactions";
 import { TransactionFilters } from "@/components/transactions/transaction-filters";
-import { TransactionTable } from "@/components/transactions/transaction-table";
+import {
+  TransactionTable,
+  TransactionSortColumn,
+  TransactionSortDirection,
+} from "@/components/transactions/transaction-table";
 import { TransactionList } from "@/components/transactions/transaction-list";
 import { TransactionPagination } from "@/components/transactions/pagination";
 import { TransactionEmptyState } from "@/components/transactions/empty-state";
@@ -12,7 +16,6 @@ import { TransactionDetails } from "@/components/transactions/transaction-detail
 import { exportTransactionsToCSV, generateCSVFilename } from "@/app/lib/utils/csv-export";
 import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
 import { TransactionTableSkeleton } from "@/components/shared/page-skeletons";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -26,8 +29,14 @@ function TransactionsContent() {
   const currentPage = Number(searchParams.get("page")) || 1;
   const dateFrom = searchParams.get("from") || "";
   const dateTo = searchParams.get("to") || "";
+  const sortByParam = searchParams.get("sort");
+  const sortBy: TransactionSortColumn | null =
+    sortByParam === "date" || sortByParam === "amount" || sortByParam === "status"
+      ? sortByParam
+      : null;
+  const sortDir: TransactionSortDirection = searchParams.get("dir") === "desc" ? "desc" : "asc";
 
-  const debouncedSearch = useDebouncedValue(searchQuery, 400);
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,6 +45,7 @@ function TransactionsContent() {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cachedTransactionsRef = useRef<Transaction[]>([]);
 
   const updateQueryParams = useCallback(
@@ -55,6 +65,10 @@ function TransactionsContent() {
 
   const handleSearchChange = (q: string) => {
     updateQueryParams({ search: q, page: "1" });
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearch(q);
+    }, 400);
   };
 
   const handleFilterChange = (f: string) => {
@@ -73,10 +87,44 @@ function TransactionsContent() {
     updateQueryParams({ from: null, to: null, page: "1" });
   };
 
+  // Sorting composes with search/filter/date-range via updateQueryParams,
+  // which merges into the existing query string rather than replacing it —
+  // and deliberately doesn't touch "page", so it doesn't reset pagination.
+  const handleSortChange = (column: TransactionSortColumn) => {
+    if (sortBy === column) {
+      updateQueryParams({ dir: sortDir === "asc" ? "desc" : "asc" });
+    } else {
+      updateQueryParams({ sort: column, dir: "asc" });
+    }
+  };
+
+  const sortedTransactions = useMemo(() => {
+    if (!sortBy) return transactions;
+
+    const getDateValue = (tx: Transaction) => {
+      const parsed = new Date(tx.rawDate || tx.date).getTime();
+      return Number.isNaN(parsed) ? 0 : parsed;
+    };
+
+    const sorted = [...transactions].sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === "date") {
+        comparison = getDateValue(a) - getDateValue(b);
+      } else if (sortBy === "amount") {
+        comparison = a.amount - b.amount;
+      } else if (sortBy === "status") {
+        comparison = a.status.localeCompare(b.status);
+      }
+      return sortDir === "asc" ? comparison : -comparison;
+    });
+
+    return sorted;
+  }, [transactions, sortBy, sortDir]);
+
   const handleExportCSV = () => {
-    if (transactions.length > 0) {
+    if (sortedTransactions.length > 0) {
       const filename = generateCSVFilename(dateFrom, dateTo);
-      exportTransactionsToCSV(transactions, filename);
+      exportTransactionsToCSV(sortedTransactions, filename);
     }
   };
 
@@ -185,6 +233,7 @@ function TransactionsContent() {
             <button
               onClick={() => {
                 setError(null);
+                setDebouncedSearch(searchQuery);
               }}
               className="text-sm font-medium text-primary hover:underline px-4 py-2 border rounded-md"
             >
@@ -194,11 +243,14 @@ function TransactionsContent() {
         ) : transactions.length > 0 ? (
           <>
             <TransactionTable
-              transactions={transactions}
+              transactions={sortedTransactions}
               onSelectTransaction={handleTransactionClick}
+              sortBy={sortBy}
+              sortDir={sortDir}
+              onSortChange={handleSortChange}
             />
             <TransactionList
-              transactions={transactions}
+              transactions={sortedTransactions}
               onSelectTransaction={handleTransactionClick}
             />
             <TransactionPagination
