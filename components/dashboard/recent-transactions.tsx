@@ -13,6 +13,11 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Transaction, getTransactions } from "@/lib/api/transactions";
 import { TransactionEmptyState } from "@/components/transactions/empty-state";
+import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
+import { TransactionDetailModal } from "./transaction-detail-modal";
+import { TransactionTableSkeleton } from "@/components/shared/page-skeletons";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { useAuthStore } from "@/hooks/use-auth-store";
 export function RecentTransactions() {
   type State =
     | { status: "loading" }
@@ -22,19 +27,36 @@ export function RecentTransactions() {
   const [state, setState] = useState<State>({ status: "loading" });
   const [retryCount, setRetryCount] = useState(0);
 
+  const wsTransactions = useWebSocket((s) => s.transactions);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const subscribe = useWebSocket((s) => s.subscribe);
+
   useEffect(() => {
-    let cancelled = false;
-    getTransactions({ page: 1, limit: 5 })
+    if (accessToken) {
+      subscribe(accessToken);
+    }
+  }, [accessToken, subscribe]);
+
+  useEffect(() => {
+    if (wsTransactions.length > 0) {
+      setState({ status: "success", transactions: wsTransactions.slice(0, 5) });
+    }
+  }, [wsTransactions]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getTransactions({ page: 1, limit: 5 }, { signal: controller.signal })
       .then((result) => {
-        if (!cancelled)
+        if (!controller.signal.aborted)
           setState({ status: "success", transactions: result.data });
       })
-      .catch(() => {
-        if (!cancelled)
+      .catch((err) => {
+        if (err?.name === "AbortError") return;
+        if (!controller.signal.aborted)
           setState({ status: "error", message: "Failed to load transactions" });
       });
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [retryCount]);
 
@@ -50,7 +72,7 @@ export function RecentTransactions() {
           Recent Transactions
         </h3>
         <Link
-          href="/transactions"
+          href="/dashboard/transactions"
           className="text-xs md:text-sm font-semibold text-muted-foreground hover:text-primary transition-colors"
         >
           See All
@@ -59,21 +81,7 @@ export function RecentTransactions() {
 
       <div className="rounded-xl md:rounded-sm bg-card md:border md:border-border md:shadow-sm overflow-hidden p-2 md:p-0">
         {state.status === "loading" ? (
-          /* Skeleton rows — matches the shape of real transaction rows */
-          <div className="space-y-3 p-4 animate-pulse">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-muted" />
-                  <div className="space-y-1.5">
-                    <div className="h-3 w-24 bg-muted rounded" />
-                    <div className="h-3 w-16 bg-muted rounded" />
-                  </div>
-                </div>
-                <div className="h-3 w-16 bg-muted rounded" />
-              </div>
-            ))}
-          </div>
+          <TransactionTableSkeleton rows={5} />
         ) : state.status === "error" ? (
           <div className="flex flex-col items-center justify-center py-10 gap-3">
             <p className="text-sm text-red-500">{state.message}</p>
