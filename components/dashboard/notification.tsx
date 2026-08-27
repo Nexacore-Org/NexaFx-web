@@ -1,14 +1,21 @@
 import React from "react";
 import { Download } from "lucide-react";
 
-export interface NotificationProps {
+/**
+ * Naming note: this codebase has three unrelated "notification" concepts —
+ * (1) deposit banners (this file), (2) the bell/panel in-app notifications, and
+ * (3) settings notification toggles. To avoid shadowing the browser's global
+ * `Notification` Web API, the deposit-banner exports here are namespaced with a
+ * `DepositBanner` prefix.
+ */
+export interface DepositBannerNotificationProps {
   message: string;
   amount?: string;
   onViewTransaction?: () => void;
 }
 
-/* Desktop Notification */
-export const DepositNotification: React.FC<NotificationProps> = ({
+/* Desktop deposit banner */
+export const DepositBannerNotification: React.FC<DepositBannerNotificationProps> = ({
   message,
   amount,
   onViewTransaction,
@@ -37,21 +44,12 @@ export const DepositNotification: React.FC<NotificationProps> = ({
           View Transaction
         </button>
       )}
-
-      {/* {onClose && (
-        <button
-          onClick={onClose}
-          className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      )} */}
     </div>
   );
 };
 
 /* Mobile Banner Notification */
-export const MobileNotificationBanner: React.FC<NotificationProps> = ({
+export const MobileNotificationBanner: React.FC<DepositBannerNotificationProps> = ({
   message,
   amount,
 }) => {
@@ -70,15 +68,6 @@ export const MobileNotificationBanner: React.FC<NotificationProps> = ({
           successfully.
         </p>
       </div>
-      {/* 
-      {onClose && (
-        <button
-          onClick={onClose}
-          className="text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      )} */}
     </div>
   );
 };

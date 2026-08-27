@@ -5,7 +5,7 @@ import { type AdminUser, getAdminUserById, deleteAdminUser, updateUserKyc } from
 import { getRequestErrorMessage, isOfflineError } from '@/lib/api-client';
 import { X, Eye, EyeOff, Copy, Trash2, Loader2, Check, Ban } from 'lucide-react';
 import { TrustScoreBadge } from '@/components/admin/trust-score-badge';
-import { logger } from '@/utils/logger';
+import { logger } from '@/src/utils/logger';
 import { calculateTrustScore } from '@/lib/utils/trust-score';
 
 interface UserDetailPanelProps {

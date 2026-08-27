@@ -85,4 +85,61 @@ describe('apiClient', () => {
     expect(result).toEqual(mockData);
     expect(global.fetch).toHaveBeenCalledTimes(3);
   });
+
+  it('should route through /api/proxy when useProxy is true', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ proxy: true }),
+    });
+
+    const result = await apiClient('/test', { useProxy: true });
+    expect(result).toEqual({ proxy: true });
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/proxy/test',
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('should build query string from params option', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true }),
+    });
+
+    await apiClient('/test', { params: { foo: 'bar', baz: 'qux' } });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/proxy/test?foo=bar&baz=qux'),
+      expect.anything()
+    );
+  });
+
+  it('should handle empty params', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true }),
+    });
+
+    await apiClient('/test', { params: {} });
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/proxy/test',
+      expect.anything()
+    );
+  });
+
+  it('should URL-encode special characters in params', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true }),
+    });
+
+    await apiClient('/test', { params: { q: 'hello world&foo=bar' } });
+    const calledUrl = (global.fetch as jest.Mock).mock.calls[0][0];
+    expect(calledUrl).toContain('q=hello+world%26foo%3Dbar');
+  });
 });
