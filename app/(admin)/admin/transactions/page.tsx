@@ -98,6 +98,7 @@ export default function TransactionPage() {
           activeFilter={activeFilter}
           onFilterChange={handleFilterChange}
           totalCount={totalCount}
+          variant="admin"
         />
         <button
           onClick={() => {

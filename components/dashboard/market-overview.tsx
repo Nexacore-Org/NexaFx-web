@@ -141,10 +141,29 @@ export function MarketOverview() {
     const timer = setTimeout(() => {
       fetchRates();
     }, 0);
-    const interval = setInterval(fetchRates, 60000);
+    
+    let interval: ReturnType<typeof setInterval>;
+    
+    const startPolling = () => {
+      interval = setInterval(fetchRates, 60000);
+    };
+    
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        clearInterval(interval);
+      } else {
+        fetchRates();
+        startPolling();
+      }
+    };
+    
+    startPolling();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    
     return () => {
       clearTimeout(timer);
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 

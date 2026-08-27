@@ -110,7 +110,8 @@ function mapTransaction(dto: Record<string, any>): Transaction {
 }
 
 export async function getTransactions(
-  query: TransactionQueryDto & TransactionFilters = {}
+  query: TransactionQueryDto & TransactionFilters = {},
+  fetchOptions?: { signal?: AbortSignal },
 ): Promise<PaginatedTransactions> {
   const params: Record<string, string> = {};
   if (query.page) params.page = String(query.page);
@@ -137,6 +138,7 @@ export async function getTransactions(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const json = await apiClient<any>('/transactions', {
         params,
+        signal: fetchOptions?.signal,
     });
 
   let dataList: any[] = [];

@@ -44,18 +44,31 @@ export function RecentTransactions() {
   }, [wsTransactions]);
 
   useEffect(() => {
-    let cancelled = false;
-    getTransactions({ page: 1, limit: 5 })
+    if (accessToken) {
+      subscribe(accessToken);
+    }
+  }, [accessToken, subscribe]);
+
+  useEffect(() => {
+    if (wsTransactions.length > 0) {
+      setState({ status: "success", transactions: wsTransactions.slice(0, 5) });
+    }
+  }, [wsTransactions]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getTransactions({ page: 1, limit: 5 }, { signal: controller.signal })
       .then((result) => {
-        if (!cancelled)
+        if (!controller.signal.aborted)
           setState({ status: "success", transactions: result.data });
       })
-      .catch(() => {
-        if (!cancelled)
+      .catch((err) => {
+        if (err?.name === "AbortError") return;
+        if (!controller.signal.aborted)
           setState({ status: "error", message: "Failed to load transactions" });
       });
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [retryCount]);
 
