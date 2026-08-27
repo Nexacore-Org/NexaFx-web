@@ -44,6 +44,18 @@ export function RecentTransactions() {
   }, [wsTransactions]);
 
   useEffect(() => {
+    if (accessToken) {
+      subscribe(accessToken);
+    }
+  }, [accessToken, subscribe]);
+
+  useEffect(() => {
+    if (wsTransactions.length > 0) {
+      setState({ status: "success", transactions: wsTransactions.slice(0, 5) });
+    }
+  }, [wsTransactions]);
+
+  useEffect(() => {
     const controller = new AbortController();
     getTransactions({ page: 1, limit: 5 }, { signal: controller.signal })
       .then((result) => {
