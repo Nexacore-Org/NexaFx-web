@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { FeeEstimatorModal } from "@/components/shared/fee-estimator-modal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { getBalances } from "@/lib/api/wallet";
 import { useWithdrawalStore } from "@/hooks/use-withdrawal-store";
 import { ChevronDown, ChevronLeft, AlertCircle } from "lucide-react";
 import { useWithdrawalLimits } from "@/hooks/use-withdrawal-limits";
@@ -12,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { getCurrencies, type Currency } from "@/lib/api/currencies";
 import { getBalances } from "@/lib/api/wallet";
 import {
-  withdrawalSchema,
+  createWithdrawalSchema,
   type WithdrawalFormValues,
 } from "@/lib/validations/transactions";
 import { Input } from "@/components/ui/Input";
@@ -53,15 +52,30 @@ export function WithdrawalForm() {
   const [usedFallbackCurrencies, setUsedFallbackCurrencies] = useState(false);
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
 
+  const selectedCurrency =
+    currencies.find((c) => c.id === currency) || currencies[0];
+
+  // Recomputed whenever the selected currency's balance changes, so the
+  // resolver always validates "amount" against the currently-selected
+  // balance -- this is the same schema used at submit time, just with a
+  // live maxBalance plugged in, so the two never drift apart.
+  const maxBalance = selectedCurrency
+    ? parseFloat(selectedCurrency.balance.replace(",", ""))
+    : undefined;
+  const withdrawalSchema = useMemo(
+    () => createWithdrawalSchema(maxBalance),
+    [maxBalance],
+  );
+
   const {
     register,
     handleSubmit,
     setValue,
-    setError,
     watch,
     formState: { errors },
   } = useForm<WithdrawalFormValues>({
     resolver: zodResolver(withdrawalSchema),
+    mode: "onChange",
     defaultValues: { walletAddress: "", amount: "" },
   });
 
@@ -105,10 +119,9 @@ export function WithdrawalForm() {
     fetchCurrenciesAndBalances();
   }, [fetchCurrenciesAndBalances]);
 
-  const selectedCurrency =
-    currencies.find((c) => c.id === currency) || currencies[0];
   const { remainingDaily, remainingMonthly, isLoading: limitsLoading } = useWithdrawalLimits(currency);
   const walletAddress = watch("walletAddress");
+  const amount = watch("amount");
   const showMemoWarning = requiresMemo(walletAddress ?? "");
 
   const hasBalanceData =
@@ -119,14 +132,16 @@ export function WithdrawalForm() {
   const isEmptyBalance = hasBalanceData && !hasAnyPositiveBalance;
   const canSubmit = hasBalanceData && !isEmptyBalance;
 
+  // Same rules that gate submit also gate the button's enabled state, so
+  // there's no window where the button looks clickable but submit would
+  // just bounce straight back with an error.
+  const isFormValid =
+    Boolean(walletAddress) &&
+    Boolean(amount) &&
+    !errors.walletAddress &&
+    !errors.amount;
+
   const onSubmit = (data: WithdrawalFormValues) => {
-    if (selectedCurrency) {
-      const balance = parseFloat(selectedCurrency.balance.replace(",", ""));
-      if (parseFloat(data.amount) > balance) {
-        setError("amount", { message: "Insufficient balance" });
-        return;
-      }
-    }
     setFormData({ walletAddress: data.walletAddress, amount: data.amount });
     setStep("review");
   };
@@ -134,6 +149,7 @@ export function WithdrawalForm() {
   const handleMaxClick = () => {
     if (!selectedCurrency) return;
     setValue("amount", selectedCurrency.balance.replace(",", ""), {
+
       shouldValidate: true,
     });
   };
@@ -373,7 +389,8 @@ export function WithdrawalForm() {
             {canSubmit && (
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-xl font-semibold bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all duration-200"
+                disabled={!isFormValid}
+                className="w-full py-3.5 rounded-xl font-semibold bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
               >
                 Withdraw
               </button>

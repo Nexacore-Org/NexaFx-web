@@ -1,15 +1,79 @@
 "use client";
 
-import { ArrowDownLeft, ArrowUpRight, Check, RefreshCw, X } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Check, RefreshCw, X, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Transaction } from "@/lib/api/transactions";
+
+export type TransactionSortColumn = "date" | "amount" | "status";
+export type TransactionSortDirection = "asc" | "desc";
 
 interface TransactionTableProps {
     transactions: Transaction[];
     onSelectTransaction: (transaction: Transaction) => void;
+    sortBy?: TransactionSortColumn | null;
+    sortDir?: TransactionSortDirection;
+    onSortChange?: (column: TransactionSortColumn) => void;
 }
 
-export function TransactionTable({ transactions, onSelectTransaction }: TransactionTableProps) {
+function SortableHeader({
+    label,
+    column,
+    align = "left",
+    sortBy,
+    sortDir,
+    onSortChange,
+}: {
+    label: string;
+    column: TransactionSortColumn;
+    align?: "left" | "right";
+    sortBy?: TransactionSortColumn | null;
+    sortDir?: TransactionSortDirection;
+    onSortChange?: (column: TransactionSortColumn) => void;
+}) {
+    if (!onSortChange) {
+        return (
+            <th
+                scope="col"
+                className={cn(
+                    "px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
+                    align === "right" && "text-right",
+                )}
+            >
+                {label}
+            </th>
+        );
+    }
+
+    const isActive = sortBy === column;
+    const Icon = isActive ? (sortDir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+    const nextDir = isActive && sortDir === "asc" ? "descending" : "ascending";
+
+    return (
+        <th scope="col" className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider" aria-sort={isActive ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
+            <button
+                type="button"
+                onClick={() => onSortChange(column)}
+                aria-label={`Sort by ${label}, ${nextDir}`}
+                className={cn(
+                    "inline-flex items-center gap-1 hover:text-foreground transition-colors",
+                    align === "right" && "flex-row-reverse w-full justify-start",
+                    isActive && "text-foreground",
+                )}
+            >
+                {label}
+                <Icon className={cn("h-3.5 w-3.5", !isActive && "opacity-50")} />
+            </button>
+        </th>
+    );
+}
+
+export function TransactionTable({
+    transactions,
+    onSelectTransaction,
+    sortBy = null,
+    sortDir = "asc",
+    onSortChange,
+}: TransactionTableProps) {
     return (
         <div className="hidden md:block rounded-md border bg-card text-card-foreground shadow-sm overflow-x-auto">
             <table className="w-full min-w-[600px] text-left">
@@ -17,9 +81,9 @@ export function TransactionTable({ transactions, onSelectTransaction }: Transact
                     <tr className="border-b bg-muted/30">
                         <th scope="col" className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
                         <th scope="col" className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Currency</th>
-                        <th scope="col" className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
-                        <th scope="col" className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                        <th scope="col" className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Amount</th>
+                        <SortableHeader label="Date" column="date" sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
+                        <SortableHeader label="Status" column="status" sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
+                        <SortableHeader label="Amount" column="amount" align="right" sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
                     </tr>
                 </thead>
                 <tbody className="divide-y border-border">

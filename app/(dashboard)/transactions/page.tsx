@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Transaction, getTransactions } from "@/lib/api/transactions";
 import { TransactionFilters } from "@/components/transactions/transaction-filters";
-import { TransactionTable } from "@/components/transactions/transaction-table";
+import {
+  TransactionTable,
+  TransactionSortColumn,
+  TransactionSortDirection,
+} from "@/components/transactions/transaction-table";
 import { TransactionList } from "@/components/transactions/transaction-list";
 import { TransactionPagination } from "@/components/transactions/pagination";
 import { TransactionEmptyState } from "@/components/transactions/empty-state";
@@ -25,6 +29,12 @@ function TransactionsContent() {
   const currentPage = Number(searchParams.get("page")) || 1;
   const dateFrom = searchParams.get("from") || "";
   const dateTo = searchParams.get("to") || "";
+  const sortByParam = searchParams.get("sort");
+  const sortBy: TransactionSortColumn | null =
+    sortByParam === "date" || sortByParam === "amount" || sortByParam === "status"
+      ? sortByParam
+      : null;
+  const sortDir: TransactionSortDirection = searchParams.get("dir") === "desc" ? "desc" : "asc";
 
   const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -77,10 +87,44 @@ function TransactionsContent() {
     updateQueryParams({ from: null, to: null, page: "1" });
   };
 
+  // Sorting composes with search/filter/date-range via updateQueryParams,
+  // which merges into the existing query string rather than replacing it —
+  // and deliberately doesn't touch "page", so it doesn't reset pagination.
+  const handleSortChange = (column: TransactionSortColumn) => {
+    if (sortBy === column) {
+      updateQueryParams({ dir: sortDir === "asc" ? "desc" : "asc" });
+    } else {
+      updateQueryParams({ sort: column, dir: "asc" });
+    }
+  };
+
+  const sortedTransactions = useMemo(() => {
+    if (!sortBy) return transactions;
+
+    const getDateValue = (tx: Transaction) => {
+      const parsed = new Date(tx.rawDate || tx.date).getTime();
+      return Number.isNaN(parsed) ? 0 : parsed;
+    };
+
+    const sorted = [...transactions].sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === "date") {
+        comparison = getDateValue(a) - getDateValue(b);
+      } else if (sortBy === "amount") {
+        comparison = a.amount - b.amount;
+      } else if (sortBy === "status") {
+        comparison = a.status.localeCompare(b.status);
+      }
+      return sortDir === "asc" ? comparison : -comparison;
+    });
+
+    return sorted;
+  }, [transactions, sortBy, sortDir]);
+
   const handleExportCSV = () => {
-    if (transactions.length > 0) {
+    if (sortedTransactions.length > 0) {
       const filename = generateCSVFilename(dateFrom, dateTo);
-      exportTransactionsToCSV(transactions, filename);
+      exportTransactionsToCSV(sortedTransactions, filename);
     }
   };
 
@@ -199,11 +243,14 @@ function TransactionsContent() {
         ) : transactions.length > 0 ? (
           <>
             <TransactionTable
-              transactions={transactions}
+              transactions={sortedTransactions}
               onSelectTransaction={handleTransactionClick}
+              sortBy={sortBy}
+              sortDir={sortDir}
+              onSortChange={handleSortChange}
             />
             <TransactionList
-              transactions={transactions}
+              transactions={sortedTransactions}
               onSelectTransaction={handleTransactionClick}
             />
             <TransactionPagination

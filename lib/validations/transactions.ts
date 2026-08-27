@@ -32,3 +32,21 @@ export const withdrawalSchema = z.object({
 
 export type ConvertFormValues = z.infer<typeof convertSchema>;
 export type WithdrawalFormValues = z.infer<typeof withdrawalSchema>;
+
+// Wraps withdrawalSchema with a balance check so the same rule set powers
+// both as-you-type validation and submit-time validation. maxBalance is
+// omitted while balances are still loading, in which case the check is
+// skipped rather than blocking the user on a false 0-balance read.
+export function createWithdrawalSchema(maxBalance?: number) {
+  return withdrawalSchema.superRefine((data, context) => {
+    if (maxBalance === undefined) return;
+    const amountNum = parseFloat(data.amount);
+    if (!isNaN(amountNum) && amountNum > maxBalance) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Amount exceeds available balance",
+        path: ["amount"],
+      });
+    }
+  });
+}
