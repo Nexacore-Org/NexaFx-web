@@ -13,11 +13,12 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useAuthStore } from "@/hooks/use-auth-store";
+import { logger } from "@/src/utils/logger";
 
 const truncateAddress = (addr: string) =>
   `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
-function formatCurrency(amount: string | number | undefined, currency: string) {
+export function formatCurrency(amount: string | number | undefined, currency: string) {
   if (amount === undefined || amount === null || amount === "") return "";
   const raw = typeof amount === "string" ? amount.replace(/[^0-9.-]+/g, "") : String(amount);
   const num = Number(raw);
@@ -102,6 +103,7 @@ export function AccountOverview({
   }, [wsBalance]);
 
   useEffect(() => {
+    const controller = new AbortController();
     let cancelled = false;
 
     const fetchAccount = async () => {
@@ -124,9 +126,9 @@ export function AccountOverview({
         setNgnBalance(formattedNgn);
         setUsdBalance(formattedUsd);
 
-        // Use NGN as primary total if available, otherwise USD, otherwise blank
         setBalance(formattedNgn || formattedUsd || "");
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error("Failed to load account data", err);
         setError("Failed to load account data");
       } finally {
@@ -137,6 +139,7 @@ export function AccountOverview({
     fetchAccount();
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, []);
 

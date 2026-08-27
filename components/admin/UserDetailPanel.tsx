@@ -5,6 +5,7 @@ import { type AdminUser, getAdminUserById, deleteAdminUser, updateUserKyc } from
 import { getRequestErrorMessage, isOfflineError } from '@/lib/api-client';
 import { X, Eye, EyeOff, Copy, Trash2, Loader2, Check, Ban } from 'lucide-react';
 import { TrustScoreBadge } from '@/components/admin/trust-score-badge';
+import { logger } from '@/src/utils/logger';
 import { calculateTrustScore } from '@/lib/utils/trust-score';
 
 interface UserDetailPanelProps {
@@ -42,7 +43,7 @@ export function UserDetailPanel({ user: initialUser, onClose, onSuccess }: UserD
             }),
           );
         }
-        console.warn(
+        logger.warn(
           `Admin user details GET for ID ${initialUser.id} failed. Using prop data:`,
           err,
         );
@@ -71,7 +72,7 @@ export function UserDetailPanel({ user: initialUser, onClose, onSuccess }: UserD
       onSuccess();
       onClose();
     } catch (err) {
-      console.error('Failed to delete user', err);
+      logger.error('Failed to delete user', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete user. Please try again.';
       alert(errorMessage);
     } finally {
@@ -86,7 +87,7 @@ export function UserDetailPanel({ user: initialUser, onClose, onSuccess }: UserD
       setCurrentUser(prev => ({ ...prev, kycStatus: status }));
       onSuccess();
     } catch (err) {
-      console.error('Failed to update KYC status', err);
+      logger.error('Failed to update KYC status', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to update KYC status. Please try again.';
       alert(errorMessage);
     } finally {

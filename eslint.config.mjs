@@ -19,6 +19,16 @@ const eslintConfig = defineConfig([
     "public/sw.js",
     "public/workbox-*.js",
   ]),
+  {
+    rules: {
+      "no-restricted-imports": ["error", {
+        "patterns": [{
+          "group": ["app/lib/api/*", "app/lib/api"],
+          "message": "Please use the correct import path instead of app/lib/api."
+        }]
+      }]
+    }
+  },
   ...storybook.configs["flat/recommended"]
 ]);
 
