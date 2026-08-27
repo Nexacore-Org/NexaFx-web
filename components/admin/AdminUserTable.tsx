@@ -35,6 +35,8 @@ export function AdminUserTable({ users, onUserClick, selectedIds = [], onSelecti
     );
   }
 
+  const cappedUsers = users.slice(0, maxItems);
+
   const allSelected = cappedUsers.length > 0 && selectedIds.length === cappedUsers.length;
   const someSelected = selectedIds.length > 0 && !allSelected;
 
@@ -68,8 +70,6 @@ export function AdminUserTable({ users, onUserClick, selectedIds = [], onSelecti
       setSortDirection('asc');
     }
   };
-
-  const cappedUsers = users.slice(0, maxItems);
 
   const sortedUsers = [...cappedUsers].sort((a, b) => {
     let aVal: string | number = '';

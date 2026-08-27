@@ -1,3 +1,9 @@
+// Single source of truth for a transaction's status. Re-exported from the API
+// layer so admin transaction types share the exact same vocabulary rather than
+// re-declaring a divergent inline union.
+import type { TransactionStatus } from "@/lib/api/transactions";
+export type { TransactionStatus };
+
 export interface AdminUser {
   id: string;
   name: string;
@@ -14,7 +20,7 @@ export interface AdminTransaction {
   type: "Deposit" | "Withdraw" | "Convert";
   currency: string;
   amount: number;
-  status: "Pending" | "Success" | "Failed";
+  status: TransactionStatus;
   date: string;
 }
 

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpDown, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ArrowUpDown, ChevronLeft, ChevronRight, X, FileText, MessageSquare, Flag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
-import { BarChart3, Bell, Users } from "lucide-react";
+import { Activity, BarChart3, Bell, ShieldCheck, Users } from "lucide-react";
+import { getFlaggedTransactions } from "@/lib/api/admin";
 
 type Props = {
     isOpen: boolean;
@@ -17,13 +18,34 @@ type Props = {
 const adminMenuItems = [
     { icon: null, label: "Analytics", href: "/admin/analytics", lucide: BarChart3 },
     { icon: null, label: "Transaction", href: "/admin/transactions", lucide: ArrowUpDown },
+    { icon: null, label: "Flagged", href: "/admin/flagged", lucide: Flag, badge: true },
     { icon: null, label: "Push Notification", href: "/admin/push-notifications", lucide: Bell },
     { icon: null, label: "User list", href: "/admin/users", lucide: Users },
+    { icon: null, label: "Reports", href: "/admin/reports", lucide: FileText },
+    { icon: null, label: "Disputes", href: "/admin/disputes", lucide: MessageSquare },
 ];
 
 export function AdminSidebar({ isOpen, onClose }: Props) {
     const pathname = usePathname();
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [flaggedCount, setFlaggedCount] = useState<number | null>(null);
+
+    const fetchFlaggedCount = useCallback(async () => {
+        try {
+            const items = await getFlaggedTransactions();
+            setFlaggedCount(items.length);
+        } catch {
+            // Silently fail — the badge just won't show
+            setFlaggedCount(null);
+        }
+    }, []);
+
+    // Fetch on mount and every 5 minutes
+    useEffect(() => {
+        fetchFlaggedCount();
+        const interval = setInterval(fetchFlaggedCount, 5 * 60 * 1000);
+        return () => clearInterval(interval);
+    }, [fetchFlaggedCount]);
 
     return (
         <>
@@ -48,7 +70,7 @@ export function AdminSidebar({ isOpen, onClose }: Props) {
                         {!isCollapsed && (
                             <Image
                                 src="/icons/logo.svg"
-                                alt="NexaFX"
+                                alt="NexaFX logo"
                                 width={100}
                                 height={32}
                                 priority
@@ -112,6 +134,17 @@ export function AdminSidebar({ isOpen, onClose }: Props) {
                                 {!isCollapsed && (
                                     <span className="text-sm">{item.label}</span>
                                 )}
+                            {/* Badge for flagged count */}
+                            {item.badge && !isCollapsed && flaggedCount !== null && flaggedCount > 0 && (
+                                <span className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[11px] font-bold text-white bg-red-500 rounded-full">
+                                    {flaggedCount > 99 ? '99+' : flaggedCount}
+                                </span>
+                            )}
+                            {item.badge && isCollapsed && flaggedCount !== null && flaggedCount > 0 && (
+                                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-[9px] font-bold text-white bg-red-500 rounded-full pointer-events-none">
+                                    {flaggedCount > 9 ? '!' : flaggedCount}
+                                </span>
+                            )}
                             </Link>
                         );
                     })}
