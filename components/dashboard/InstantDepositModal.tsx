@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 import { CopyButton } from '@/components/ui/copy-button';
 import { haptics } from '@/lib/utils/haptics';
+import { toast } from '@/hooks/use-toast-store';
 import { getProfile } from '@/lib/api/users';
 
 const QRCodeSVG = dynamic(() => import('qrcode.react').then(mod => mod.QRCodeSVG), {
@@ -73,6 +74,7 @@ const InstantModalDeposit: React.FC<InstantDepositModalType> = ({
     navigator.clipboard.writeText(walletAddress);
     setCopied(true);
     haptics.light();
+    toast("Wallet address copied to clipboard", "success");
     setTimeout(() => setCopied(false), 2000);
   };
 

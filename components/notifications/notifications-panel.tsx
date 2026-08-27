@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Settings } from "lucide-react";
 import Link from "next/link";
 import { useNotificationsStore } from "@/hooks/use-notifications-store";
@@ -40,6 +40,35 @@ export function NotificationsPanel() {
   } = useNotificationsStore();
 
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const container = listRef.current;
+      if (!container) return;
+
+      const items = Array.from(
+        container.querySelectorAll<HTMLElement>('[role="option"]')
+      );
+      if (items.length === 0) return;
+
+      const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+
+      let nextIndex = -1;
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+      }
+
+      if (nextIndex >= 0) {
+        items[nextIndex].focus();
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -142,7 +171,14 @@ export function NotificationsPanel() {
               <p>No notifications yet</p>
             </div>
           ) : (
-            <div className="divide-y divide-border">
+            <div
+              ref={listRef}
+              role="listbox"
+              aria-label="Notifications"
+              tabIndex={0}
+              onKeyDown={handleKeyDown}
+              className="divide-y divide-border outline-none"
+            >
               {notifications.map((notification) => (
                 <NotificationItem
                   key={notification.id}
