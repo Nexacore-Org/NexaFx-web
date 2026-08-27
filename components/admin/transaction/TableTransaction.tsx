@@ -7,13 +7,18 @@ import { useState } from "react";
 
 interface TableTransactionProps {
   transactions: AdminTransaction[];
+  maxItems?: number;
 }
 
-export function TableTransaction({ transactions }: TableTransactionProps) {
+// Parent pages paginate server-side (typically 10 items/page).
+// maxItems is a safety net to cap rendering in case of stale/incorrect API response.
+export function TableTransaction({ transactions, maxItems = 50 }: TableTransactionProps) {
   const [flaggedIds, setFlaggedIds] = useState<Set<string>>(new Set())
   const [flagDialogId, setFlagDialogId] = useState<string | null>(null)
   const [flagReason, setFlagReason] = useState("")
   const [flagLoading, setFlagLoading] = useState(false)
+
+  const cappedTransactions = transactions.slice(0, maxItems)
 
   const handleFlag = async (id: string) => {
     if (!flagReason.trim()) return
@@ -65,14 +70,14 @@ export function TableTransaction({ transactions }: TableTransactionProps) {
           </tr>
         </thead>
         <tbody>
-          {transactions.length === 0 ? (
+          {cappedTransactions.length === 0 ? (
             <tr>
               <td colSpan={7} className="py-10 text-center text-gray-500">
                 No transactions found.
               </td>
             </tr>
           ) : (
-            transactions.map((item) => (
+            cappedTransactions.map((item) => (
               <tr
                 key={item.id}
                 className={`text-[14px] font-medium ${flaggedIds.has(item.id) ? 'bg-red-50' : ''}`}
@@ -148,7 +153,7 @@ export function TableTransaction({ transactions }: TableTransactionProps) {
           )}
         </tbody>
       </table>
-      {transactions.length === 0 && (
+      {cappedTransactions.length === 0 && (
         <EmptyState
           icon={<ListFilter className="h-16 w-16" />}
           title="No transactions found"

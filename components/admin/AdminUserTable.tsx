@@ -16,9 +16,12 @@ interface AdminUserTableProps {
   onUserClick: (user: AdminUser) => void;
   selectedIds?: string[];
   onSelectionChange?: (ids: string[]) => void;
+  maxItems?: number;
 }
 
-export function AdminUserTable({ users, onUserClick, selectedIds = [], onSelectionChange }: AdminUserTableProps) {
+// Parent pages paginate server-side (typically 10 items/page).
+// maxItems is a safety net to cap rendering in case of stale/incorrect API response.
+export function AdminUserTable({ users, onUserClick, selectedIds = [], onSelectionChange, maxItems = 50 }: AdminUserTableProps) {
   const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -32,7 +35,9 @@ export function AdminUserTable({ users, onUserClick, selectedIds = [], onSelecti
     );
   }
 
-  const allSelected = users.length > 0 && selectedIds.length === users.length;
+  const cappedUsers = users.slice(0, maxItems);
+
+  const allSelected = cappedUsers.length > 0 && selectedIds.length === cappedUsers.length;
   const someSelected = selectedIds.length > 0 && !allSelected;
 
   const handleSelectAll = () => {
@@ -40,7 +45,7 @@ export function AdminUserTable({ users, onUserClick, selectedIds = [], onSelecti
     if (allSelected) {
       onSelectionChange([]);
     } else {
-      onSelectionChange(users.map(u => u.id));
+      onSelectionChange(cappedUsers.map(u => u.id));
     }
   };
 
@@ -66,7 +71,7 @@ export function AdminUserTable({ users, onUserClick, selectedIds = [], onSelecti
     }
   };
 
-  const sortedUsers = [...users].sort((a, b) => {
+  const sortedUsers = [...cappedUsers].sort((a, b) => {
     let aVal: string | number = '';
     let bVal: string | number = '';
 
