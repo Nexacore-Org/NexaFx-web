@@ -13,6 +13,7 @@ import {
 import InstantModalDeposit from "./InstantDepositModal";
 import { DepositInfoCard } from "./deposit/deposit-info-card";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 import { getProfile } from "@/lib/api/users";
 
@@ -37,6 +38,7 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
   const desktopModalRef = useRef<HTMLDivElement>(null);
   const mobileMethodsModalRef = useRef<HTMLDivElement>(null);
   const mobileQRModalRef = useRef<HTMLDivElement>(null);
+  const isMobile = useMediaQuery("(max-width: 767px)");
   const moonPayPollRef = useRef<number | null>(null);
   const moonPayTimeoutRef = useRef<number | null>(null);
 
@@ -71,14 +73,14 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
 
   // Focus trap for mobile methods modal
   useFocusTrap(
-    !isQRModalOpen && typeof window !== "undefined" && window.innerWidth < 768,
+    !isQRModalOpen && isMobile,
     handleCloseDepositFlow,
     mobileMethodsModalRef,
   );
 
   // Focus trap for mobile QR modal
   useFocusTrap(
-    isQRModalOpen && typeof window !== "undefined" && window.innerWidth < 768,
+    isQRModalOpen && isMobile,
     handleCloseDepositFlow,
     mobileQRModalRef,
   );
@@ -274,7 +276,7 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
       </div>
 
       {/* Mobile View */}
-      {typeof window !== "undefined" && window.innerWidth < 768 && (
+      {isMobile && (
         <>
           {!isQRModalOpen ? (
             <div

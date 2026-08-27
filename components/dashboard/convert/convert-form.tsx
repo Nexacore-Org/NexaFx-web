@@ -14,21 +14,7 @@ import {
   type ConvertFormValues,
 } from "@/lib/validations/transactions";
 import { Input } from "@/components/ui/Input";
-
-interface CurrencyOption {
-  id: string;
-  name: string;
-  symbol: string;
-}
-
-const CURRENCIES: CurrencyOption[] = [
-  { id: "NGN", name: "Nigerian Naira", symbol: "₦" },
-  { id: "USD", name: "US Dollar", symbol: "$" },
-  { id: "EUR", name: "Euro", symbol: "€" },
-  { id: "GBP", name: "British Pound", symbol: "£" },
-  { id: "USDC", name: "USD Coin", symbol: "USDC" },
-  { id: "ETH", name: "Ethereum", symbol: "ETH" },
-];
+import { CURRENCIES, type CurrencyOption } from "@/lib/currencies";
 
 /**
  * Decimal precision for a converted amount. Crypto (ETH) is shown with up to 8
