@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, v2]
   pull_request:
-    branches: [main]
+    branches: [main, v2]
 
 jobs:
   ci:
@@ -36,5 +36,18 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Unit tests
+        run: npm run test
+
       - name: Build
         run: npm run build
+
+      - name: Accessibility scan (axe-core)
+        run: |
+          npm start &
+          npx wait-on http://localhost:3000 --timeout 30000
+          npx axe http://localhost:3000 --exit
+          kill %1 || true
+
+      - name: E2E Tests
+        run: npm run e2e
