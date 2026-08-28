@@ -14,6 +14,7 @@ import InstantModalDeposit from "./InstantDepositModal";
 import { DepositInfoCard } from "./deposit/deposit-info-card";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { toast } from "@/hooks/use-toast-store";
 
 import { getProfile } from "@/lib/api/users";
 
@@ -104,12 +105,12 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
     },
   ];
 
+  const moonPayAvailable = !!process.env.NEXT_PUBLIC_MOONPAY_API_KEY;
+
   const handleMoonPayOpen = () => {
     const apiKey = process.env.NEXT_PUBLIC_MOONPAY_API_KEY;
     if (!apiKey) {
-      if (process.env.NODE_ENV === "development") {
-        console.warn("MoonPay: NEXT_PUBLIC_MOONPAY_API_KEY is not set.");
-      }
+      toast.error("MoonPay is not configured — please contact support.");
       setMoonPayError(true);
       return;
     }
@@ -150,7 +151,8 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
 
   const MethodCard: React.FC<{ method: DepositMethod }> = ({ method }) => {
     const isMoonPay = method.id === "exchange";
-    const moonPayDisabled = isMoonPay && (!walletAddress || isMoonPayLoading);
+    const moonPayDisabled =
+      isMoonPay && (!walletAddress || isMoonPayLoading || !moonPayAvailable);
 
     return (
       <button
@@ -158,7 +160,9 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
         disabled={moonPayDisabled}
         aria-busy={isMoonPay && isMoonPayLoading}
         title={
-          isMoonPay && !walletAddress && !isMoonPayLoading
+          isMoonPay && !moonPayAvailable
+            ? "MoonPay is not currently available"
+            : isMoonPay && !walletAddress && !isMoonPayLoading
             ? "Wallet address is loading…"
             : undefined
         }

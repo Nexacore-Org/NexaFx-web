@@ -9,6 +9,7 @@ import { ChevronDown, AlertCircle, ArrowDownUp, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBalances } from "@/lib/api/wallet";
 import { createSwap } from "@/lib/api/transactions";
+import { getExchangeRate } from "@/lib/api/exchange-rates";
 import {
   convertSchema,
   type ConvertFormValues,
@@ -76,14 +77,10 @@ export function ConvertForm() {
     if (!fromCurrency || !toCurrency) return;
     setIsLoadingRate(true);
     setRateError(null);
-    fetch(`/api/exchange-rates?from=${fromCurrency}&to=${toCurrency}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch rate");
-        return res.json();
-      })
+    getExchangeRate(fromCurrency, toCurrency)
       .then((data) => {
         if (data.rate) {
-          setExchangeRate(Number(data.rate));
+          setExchangeRate(data.rate);
         } else {
           setExchangeRate(0);
           setRateError("Rates unavailable");

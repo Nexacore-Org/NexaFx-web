@@ -1,14 +1,33 @@
 "use client";
 
 import { AccountOverview } from "@/components/dashboard/account-overview";
-import DepositMethods from "@/components/dashboard/deposit";
 import { MarketOverview } from "@/components/dashboard/market-overview";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { ArrowUpDown, Download, Upload } from "lucide-react";
 import { useState } from "react";
-import { WithdrawalModal } from "@/components/dashboard/withdrawal/WithdrawalModal";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const DepositMethods = dynamic(
+  () => import("@/components/dashboard/deposit"),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center h-48">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
+      </div>
+    ),
+    ssr: false,
+  }
+);
+
+const WithdrawalModal = dynamic(
+  () =>
+    import("@/components/dashboard/withdrawal/WithdrawalModal").then(
+      (mod) => mod.WithdrawalModal
+    ),
+  { ssr: false }
+);
 
 export default function DashboardPage() {
   const [openDeposit, setOpenDeposit] = useState(false);

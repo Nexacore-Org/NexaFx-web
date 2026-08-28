@@ -2,6 +2,22 @@ import { useAuthStore } from "@/hooks/use-auth-store";
 import * as Sentry from "@sentry/nextjs";
 import { parseRetryAfter } from "./utils/retry-after";
 
+// ---------------------------------------------------------------------------
+// Startup guard — NEXT_PUBLIC_API_URL is required for every API call.
+// Throwing at module-load time surfaces the misconfiguration immediately
+// during `next dev` or `next build` instead of silently failing at runtime.
+// ---------------------------------------------------------------------------
+if (
+  typeof process !== "undefined" &&
+  !process.env.NEXT_PUBLIC_API_URL
+) {
+  throw new Error(
+    "[NexaFx] NEXT_PUBLIC_API_URL is not set. " +
+      "Add it to your .env.local file. " +
+      "See .env.example for the required variables."
+  );
+}
+
 export class RateLimitError extends Error {
   retryAfterSeconds: number;
 
