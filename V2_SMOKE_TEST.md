@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-24
 **Branch:** v2
-**Tester:** Automated code review + manual walkthrough
+**Tester:** Automated code review + manual walkthrough.
 
 ---
 

@@ -12,7 +12,7 @@
 |---|------|--------|-------|
 | 1 | `npm run test` passes with zero failures | ❌ FAIL | No test script configured in `package.json`. No testing library installed. |
 | 2 | `npm run test:coverage` shows ≥ 80% on `lib/api-client.ts` and `hooks/use-auth-store.ts` | ❌ FAIL | No coverage script configured. No test runner exists. |
-| 3 | `npm run e2e` passes all auth and dashboard E2E tests | ❌ FAIL | No E2E script configured. No Playwright/Cypress installed. |
+| 3 | `npm run e2e` passes all auth and dashboard E2E tests | ❌ FAIL | No E2E script configured. No Playwright/Cypress installed. |.
 
 ## Dark Mode
 
