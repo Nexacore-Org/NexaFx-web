@@ -1,8 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { VerificationModal } from "@/components/profile/verification-modal";
 import { InfoIcon } from "@/components/ui/info-icon";
+import dynamic from "next/dynamic";
+
+const VerificationModal = dynamic(
+  () =>
+    import("@/components/profile/verification-modal").then(
+      (mod) => mod.VerificationModal
+    ),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center h-32">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-400" />
+      </div>
+    ),
+    ssr: false,
+  }
+);
 
 export function VerificationBanner() {
   const [isModalOpen, setIsModalOpen] = useState(false);
