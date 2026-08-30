@@ -182,10 +182,15 @@ export async function getAdminUserById(id: string): Promise<AdminUser> {
 }
 
 export async function deleteAdminUser(id: string): Promise<void> {
-    await apiClient<void>(`/admin/users/${id}`, {
+    const res = await fetch(`/api/proxy/admin/users/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
     });
+
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.message || `Failed to delete user (status ${res.status})`);
+    }
 }
 
 export interface KycSubmission {

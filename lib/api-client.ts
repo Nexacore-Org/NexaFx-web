@@ -185,9 +185,11 @@ export async function apiClient<T>(
       if (useProxy) {
         headers.set("x-client-token", token);
       } else {
+        // When not using the proxy, send the Authorization header with Bearer token
         headers.set("Authorization", `Bearer ${token}`);
       }
     }
+
     return headers;
   };
 
