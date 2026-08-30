@@ -8,6 +8,10 @@ import { server } from "@/__tests__/msw-server";
 const amountInput = () => screen.getByPlaceholderText("0.00");
 const convertButton = () =>
   screen.getByRole("button", { name: /Convert Now/i });
+const convertButton = () =>
+  screen.getByRole("button", { name: /Convert Now/i });
+const fromCurrencyTrigger = (code: string) =>
+  screen.getByRole("button", { name: new RegExp(code, "i") });
 
 const failExchangeRate = () =>
   server.use(
@@ -120,6 +124,62 @@ describe("ConvertForm", () => {
       fireEvent.click(convertButton());
 
       await waitFor(() => expect(amountInput()).toHaveValue(""));
+       });
+  });
+
+  describe("currency selection updates rate and amount", () => {
+    it("updates the displayed rate and converted amount when the 'from' currency changes", async () => {
+      server.use(
+        http.get("*/api/exchange-rates", ({ request }) => {
+          const url = new URL(request.url);
+          const from = url.searchParams.get("from");
+          const to = url.searchParams.get("to");
+          if (from === "EUR" && to === "NGN") {
+            return HttpResponse.json({ rate: 1800 });
+          }
+          return HttpResponse.json({ rate: 1500 });
+        })
+      );
+
+      render(<ConvertForm />);
+
+      fireEvent.click(fromCurrencyTrigger("USD"));
+      fireEvent.click(screen.getByRole("button", { name: /^EUR/i }));
+
+      fireEvent.change(amountInput(), { target: { value: "100" } });
+
+      await waitFor(() =>
+        expect(screen.getByText(/1 EUR =/)).toBeInTheDocument()
+      );
+      expect(screen.getByText(/1,800\.00/)).toBeInTheDocument();
+      expect(screen.getByText("180,000.00")).toBeInTheDocument();
+    });
+
+    it("updates the displayed rate and converted amount when the 'to' currency changes", async () => {
+      server.use(
+        http.get("*/api/exchange-rates", ({ request }) => {
+          const url = new URL(request.url);
+          const from = url.searchParams.get("from");
+          const to = url.searchParams.get("to");
+          if (from === "USD" && to === "GBP") {
+            return HttpResponse.json({ rate: 0.79 });
+          }
+          return HttpResponse.json({ rate: 1500 });
+        })
+      );
+
+      render(<ConvertForm />);
+
+      fireEvent.click(fromCurrencyTrigger("NGN"));
+      fireEvent.click(screen.getByRole("button", { name: /^GBP/i }));
+
+      fireEvent.change(amountInput(), { target: { value: "100" } });
+
+      await waitFor(() =>
+        expect(screen.getByText(/1 USD =/)).toBeInTheDocument()
+      );
+      expect(screen.getByText(/0\.79/)).toBeInTheDocument();
+      expect(screen.getByText("79.00")).toBeInTheDocument();
     });
   });
 });
