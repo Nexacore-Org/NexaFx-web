@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import OtpInput from "@/components/auth/otp-input";
 import { resendLoginOtp, verifyLoginOtp } from "@/lib/api/auth";
 import { useAuthStore } from "@/hooks/use-auth-store";
+import { useOtpVerifyBackoff } from "@/hooks/use-otp-verify-backoff";
 
 const COOLDOWN_SECONDS = 60;
 
@@ -19,6 +20,13 @@ export default function VerifyOtpPage() {
   const [resendMessage, setResendMessage] = useState("");
   const [cooldown, setCooldown] = useState(0);
   const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const {
+    isBlocked: isBackoffBlocked,
+    secondsRemaining: backoffSeconds,
+    failedAttempts,
+    registerFailure: registerFailedAttempt,
+    reset: resetBackoff,
+  } = useOtpVerifyBackoff("login-otp-verify-backoff");
 
   useEffect(() => {
     const storedEmail = sessionStorage.getItem("login-email");
@@ -50,6 +58,8 @@ export default function VerifyOtpPage() {
     event.preventDefault();
     setApiError("");
     setResendMessage("");
+
+    if (isBackoffBlocked) return;
 
     if (!email) {
       setApiError("Please sign in again to continue.");
@@ -97,8 +107,10 @@ export default function VerifyOtpPage() {
         res.refreshToken,
       );
       sessionStorage.removeItem("login-email");
+      resetBackoff();
       router.push("/");
     } catch (error) {
+      registerFailedAttempt();
       setApiError(
         error instanceof Error ? error.message : "Invalid or expired OTP",
       );
@@ -147,10 +159,16 @@ export default function VerifyOtpPage() {
         {resendMessage && (
           <p className="text-center text-xs text-green-600">{resendMessage}</p>
         )}
+        {isBackoffBlocked && (
+          <p role="status" className="text-center text-xs text-amber-600">
+            {failedAttempts} failed attempts. Please wait {backoffSeconds}s
+            before trying again.
+          </p>
+        )}
 
         <button
           type="submit"
-          disabled={isLoading || otp.length !== 6}
+          disabled={isLoading || otp.length !== 6 || isBackoffBlocked}
           className="h-16 w-full rounded-xl bg-orange-500 text-lg font-bold text-white shadow-[0_4px_14px_0_rgb(249,115,22,0.39)] transition-all hover:scale-[1.01] hover:bg-orange-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-orange-300"
         >
           {isLoading ? (
@@ -158,6 +176,8 @@ export default function VerifyOtpPage() {
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               <span>Verifying...</span>
             </div>
+          ) : isBackoffBlocked ? (
+            `Wait ${backoffSeconds}s`
           ) : (
             "Proceed"
           )}
