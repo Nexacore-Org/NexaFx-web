@@ -6,26 +6,22 @@ The current admin gate is implemented by the client-side `AdminGuard` component.
 
 This is currently client-side-only enforcement. The role check and persisted client state must not be treated as a server-side security boundary, because a client can modify its own state. Server-side or middleware enforcement is tracked separately in issue #590 and is the intended resolution for this limitation.
 
-## Dependency Vulnerability Scanning
+## CSP Rollout Process
 
-Dependencies are scanned two ways:
+`middleware.ts` sets two CSP headers on every non-static response:
 
-- **CI gate**: every push/PR to `main` and `v2` runs `npm audit --audit-level=high` (see `.github/workflows/ci.yml`). The build fails if `npm audit` reports any new `high` or `critical` severity advisory.
-- **Automated update PRs**: [`.github/dependabot.yml`](.github/dependabot.yml) opens weekly PRs for outdated npm packages and GitHub Actions. Dependabot also opens its own PRs immediately for any dependency with a known security advisory, independent of the weekly schedule.
+- **`Content-Security-Policy`** -- the policy actually enforced today. Changing this directly enforces the change immediately for every user, with no way to see breakage before it happens.
+- **`Content-Security-Policy-Report-Only`** -- a candidate policy that is stricter than what's enforced. The browser evaluates it and sends a violation report for anything that would have been blocked, but never actually blocks the resource. This is the safety net for any future tightening.
 
-### Triaging a flagged vulnerability
+Violation reports are sent to `POST /api/csp-report` (`report-uri` for broad browser support, `report-to`/`Reporting-Endpoints` for browsers that have moved to the modern Reporting API) and logged to the server console, tagged `[source=csp-report-only]`, so they're queryable in whatever log aggregation is already in place without redeploying anything. (`@sentry/nextjs` is referenced elsewhere in this repo's config but isn't currently an installed dependency, so this endpoint intentionally doesn't depend on it -- wiring reports into Sentry once that's fixed is a natural follow-up.)
 
-1. **Identify what's flagged.** Run `npm audit` locally (or read the CI job's output / the Dependabot PR description) to see the advisory ID, severity, and which package(s) pull in the vulnerable version — `npm ls <package>` shows the dependency chain.
-2. **Check whether it's reachable.** Many advisories are in build-time or dev-only tooling that never ships to users, or affect a code path this app doesn't use (e.g. a server-only bug in a package only used client-side). This doesn't make the finding safe to ignore, but it changes the urgency.
-3. **Prefer the smallest fix first.**
-   - `npm audit fix` — applies fixes that stay within the version ranges already declared in `package.json` (safe, no breaking changes expected).
-   - A Dependabot PR for the specific package — review the changelog/diff, run CI, and merge if green.
-   - `npm audit fix --force` — only as a last resort. This can bump a dependency outside its declared semver range (including majors), so treat it like any other major-version upgrade: read the changelog, expect to fix breakage, and get it reviewed before merging.
-4. **If there is no fix yet:**
-   - Check whether the maintainer has a patched version in progress (the advisory page linked in the `npm audit` output usually says so).
-   - Decide, with a maintainer, whether to pin/patch around it, remove the dependency, or explicitly accept the risk for a bounded time. Record that decision (a comment on the tracking issue is enough) so it isn't silently re-flagged forever.
-5. **Never merge a PR to silence the CI gate** (e.g. lowering `--audit-level`, deleting the workflow step) without a maintainer sign-off — the gate existing is the point.
+As of this PR, the report-only policy differs from the enforced one by dropping `'unsafe-inline'` from `style-src` -- that's the next tightening candidate. `script-src` is already nonce + `'strict-dynamic'` with no `unsafe-inline`/`unsafe-eval` in the header `middleware.ts` sets; the `'unsafe-eval' 'unsafe-inline'` entry still present in `next.config.ts`'s `securityHeaders` is effectively neutralized in browsers today (when multiple `Content-Security-Policy` headers are present, a resource must satisfy all of them), but removing it from that config is tracked as separate follow-up cleanup so it doesn't read as an active permission.
 
-### Current known findings (informational, not a blocker for this doc)
+### Process for tightening the CSP further
 
-As of this writing, `npm audit --audit-level=high` reports high-severity advisories inherited transitively through `next` (which in turn pulls in vulnerable `postcss`/`sharp`/`picomatch` versions). The available fix (`npm audit fix --force`) would bump `next` outside its currently declared range, which is a breaking change deserving its own reviewed PR rather than being bundled here — tracked as follow-up work.
+1. **Propose the tightened directive** as a report-only change: edit the `reportOnlyCspHeader` in `middleware.ts` (not the enforced `cspHeader`) to remove or restrict the directive you want to validate.
+2. **Ship it and wait.** Let it run in production against real traffic for a meaningful window (at least a few days, longer if the app has weekly-cadence flows like billing or scheduled reports that might only run on specific days).
+3. **Review violation reports** in the server logs (filter by `[source=csp-report-only]`). Each report includes the blocked URI, violated directive, and the document URL, which is normally enough to tell whether a violation is a real regression (a legitimate script/style path outside the new policy) or expected noise (e.g. a browser extension injecting content, which shows up as `blocked-uri: about:blank` or similar and can be ignored).
+4. **Fix any real findings** -- add the legitimate source to the policy (or move inline styles/scripts to a file so they pick up the nonce) -- and repeat from step 2 until reports are clean for the review window.
+5. **Promote the change**: move the now-validated directive from `reportOnlyCspHeader` into the enforced `cspHeader`, so it's actually blocking. Keep the report-only header a step ahead with the next candidate tightening, if there is one.
+6. **Never promote straight from "no data"** -- if a directive was never actually run in report-only mode in production, tightening it directly in the enforced header skips the entire point of this mechanism.
