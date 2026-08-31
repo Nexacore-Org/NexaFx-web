@@ -16,6 +16,7 @@ import {
 } from "@/lib/validations/transactions";
 import { Input } from "@/components/ui/Input";
 import { requiresMemo } from "@/lib/utils/stellar-validation";
+import { MAX_AMOUNT_INPUT_LENGTH } from "@/lib/constants/limits";
 
 interface CurrencyOption {
   id: string;
@@ -36,11 +37,7 @@ function toCurrencyOption(
 const FALLBACK_CURRENCIES = ["NGN", "USD", "EUR", "GBP", "USDC"];
 
 function SkeletonBar({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn("animate-pulse rounded-xl bg-muted", className)}
-    />
-  );
+  return <div className={cn("animate-pulse rounded-xl bg-muted", className)} />;
 }
 
 export function WithdrawalForm() {
@@ -85,12 +82,14 @@ export function WithdrawalForm() {
     setUsedFallbackCurrencies(false);
 
     // Balances are the real blocker — if they fail we can't safely show amounts.
-    let balanceMap: Record<string, string> = {};
+    const balanceMap: Record<string, string> = {};
     try {
       const balanceData = await getBalances();
       for (const b of balanceData) balanceMap[b.currency] = b.balance;
     } catch {
-      setCurrencyError("Unable to load your balances. Please refresh the page.");
+      setCurrencyError(
+        "Unable to load your balances. Please refresh the page.",
+      );
       setIsLoadingCurrencies(false);
       return;
     }
@@ -119,7 +118,11 @@ export function WithdrawalForm() {
     fetchCurrenciesAndBalances();
   }, [fetchCurrenciesAndBalances]);
 
-  const { remainingDaily, remainingMonthly, isLoading: limitsLoading } = useWithdrawalLimits(currency);
+  const {
+    remainingDaily,
+    remainingMonthly,
+    isLoading: limitsLoading,
+  } = useWithdrawalLimits(currency);
   const walletAddress = watch("walletAddress");
   const amount = watch("amount");
   const showMemoWarning = requiresMemo(walletAddress ?? "");
@@ -149,7 +152,6 @@ export function WithdrawalForm() {
   const handleMaxClick = () => {
     if (!selectedCurrency) return;
     setValue("amount", selectedCurrency.balance.replace(",", ""), {
-
       shouldValidate: true,
     });
   };
@@ -259,7 +261,9 @@ export function WithdrawalForm() {
             />
             {showMemoWarning && (
               <p className="text-xs text-amber-700">
-                This address appears to belong to an exchange. You may need to include a memo/tag with your transfer. Please check with the recipient.
+                This address appears to belong to an exchange. You may need to
+                include a memo/tag with your transfer. Please check with the
+                recipient.
               </p>
             )}
           </div>
@@ -342,6 +346,7 @@ export function WithdrawalForm() {
                 type="text"
                 inputMode="decimal"
                 placeholder="0.00"
+                maxLength={MAX_AMOUNT_INPUT_LENGTH}
                 error={errors.amount?.message}
                 className={cn(
                   "pr-16 rounded-xl bg-muted/50 border",
@@ -359,27 +364,35 @@ export function WithdrawalForm() {
           </div>
 
           {/* Withdrawal Limits */}
-          {!limitsLoading && currency && (remainingDaily !== null || remainingMonthly !== null) && (
-            <div className="p-3 rounded-xl bg-muted/50 border border-border space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">Withdrawal Limits</p>
-              {remainingDaily !== null && (
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Daily remaining</span>
-                  <span className="font-medium text-foreground">
-                    {remainingDaily} {currency}
-                  </span>
-                </div>
-              )}
-              {remainingMonthly !== null && (
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Monthly remaining</span>
-                  <span className="font-medium text-foreground">
-                    {remainingMonthly} {currency}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+          {!limitsLoading &&
+            currency &&
+            (remainingDaily !== null || remainingMonthly !== null) && (
+              <div className="p-3 rounded-xl bg-muted/50 border border-border space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Withdrawal Limits
+                </p>
+                {remainingDaily !== null && (
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      Daily remaining
+                    </span>
+                    <span className="font-medium text-foreground">
+                      {remainingDaily} {currency}
+                    </span>
+                  </div>
+                )}
+                {remainingMonthly !== null && (
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      Monthly remaining
+                    </span>
+                    <span className="font-medium text-foreground">
+                      {remainingMonthly} {currency}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
           <div className="text-center">
             <FeeEstimatorModal />

@@ -1,7 +1,6 @@
+"use client";
+
 import { FeeEstimatorModal } from "@/components/shared/fee-estimator-modal";
-
-("use client");
-
 import { useState, useMemo, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +14,11 @@ import {
   type ConvertFormValues,
 } from "@/lib/validations/transactions";
 import { Input } from "@/components/ui/Input";
-import { CURRENCIES, type CurrencyOption } from "@/lib/currencies";
+import { CURRENCIES } from "@/lib/currencies";
+import {
+  MAX_AMOUNT_INPUT_LENGTH,
+  MAX_TRANSACTION_AMOUNT,
+} from "@/lib/constants/limits";
 
 /**
  * Decimal precision for a converted amount. Crypto (ETH) is shown with up to 8
@@ -27,7 +30,10 @@ export function getAmountFractionDigits(
   toCurrency: string,
 ): { minimumFractionDigits: number; maximumFractionDigits: number } {
   const involvesEth = fromCurrency === "ETH" || toCurrency === "ETH";
-  return { minimumFractionDigits: 2, maximumFractionDigits: involvesEth ? 8 : 2 };
+  return {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: involvesEth ? 8 : 2,
+  };
 }
 
 export function ConvertForm() {
@@ -162,6 +168,7 @@ export function ConvertForm() {
     !amount ||
     isNaN(parseFloat(amount)) ||
     parseFloat(amount) <= 0 ||
+    parseFloat(amount) > MAX_TRANSACTION_AMOUNT ||
     exchangeRate === 0 ||
     !!rateError ||
     isLoadingRate ||
@@ -269,6 +276,7 @@ export function ConvertForm() {
                 type="text"
                 inputMode="decimal"
                 placeholder="0.00"
+                maxLength={MAX_AMOUNT_INPUT_LENGTH}
                 error={errors.amount?.message}
                 className={cn(
                   "pr-16 rounded-xl bg-muted/50 border text-base",
