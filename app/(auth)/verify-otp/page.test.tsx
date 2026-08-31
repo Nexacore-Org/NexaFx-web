@@ -27,13 +27,13 @@ const seedEmail = () =>
 
 const fillOtp = async (
   user: ReturnType<typeof userEvent.setup>,
-  code = "123456"
+  code = "123456",
 ) => {
   const first = screen.getByLabelText("OTP digit 1");
   await user.click(first);
   await user.paste(code);
   await waitFor(() =>
-    expect(screen.getByRole("button", { name: /proceed/i })).toBeEnabled()
+    expect(screen.getByRole("button", { name: /proceed/i })).toBeEnabled(),
   );
 };
 
@@ -67,7 +67,7 @@ describe("VerifyOtpPage", () => {
           accessToken: "access-1",
           refreshToken: "refresh-1",
         });
-      })
+      }),
     );
 
     render(<VerifyOtpPage />);
@@ -84,8 +84,8 @@ describe("VerifyOtpPage", () => {
     const user = userEvent.setup();
     server.use(
       http.post("*/auth/verify-login-otp", () =>
-        HttpResponse.json({ message: "Invalid OTP" }, { status: 400 })
-      )
+        HttpResponse.json({ message: "Invalid OTP" }, { status: 400 }),
+      ),
     );
 
     render(<VerifyOtpPage />);
@@ -96,6 +96,35 @@ describe("VerifyOtpPage", () => {
     expect(push).not.toHaveBeenCalled();
   });
 
+  it("applies a progressive backoff after repeated failed verification attempts", async () => {
+    seedEmail();
+    const user = userEvent.setup();
+    server.use(
+      http.post("*/auth/verify-login-otp", () =>
+        HttpResponse.json({ message: "Invalid OTP" }, { status: 400 }),
+      ),
+    );
+
+    render(<VerifyOtpPage />);
+    await fillOtp(user);
+
+    // First two failures are "free" (no forced delay) -- just a typo
+    // tolerance -- so the button stays enabled and clickable.
+    await user.click(screen.getByRole("button", { name: /proceed/i }));
+    await screen.findByText(/invalid otp/i);
+    await user.click(screen.getByRole("button", { name: /proceed/i }));
+    await screen.findByText(/invalid otp/i);
+    expect(screen.queryByText(/failed attempts/i)).not.toBeInTheDocument();
+
+    // Third failure crosses the free-attempt threshold and triggers a
+    // visible, explained backoff -- not a silently disabled button.
+    await user.click(screen.getByRole("button", { name: /proceed/i }));
+    await screen.findByText(/invalid otp/i);
+
+    expect(await screen.findByText(/3 failed attempts/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /wait \d+s/i })).toBeDisabled();
+  });
+
   it("resends the login OTP when Resend is clicked", async () => {
     seedEmail();
     const user = userEvent.setup();
@@ -104,7 +133,7 @@ describe("VerifyOtpPage", () => {
       http.post("*/auth/resend-login-otp", () => {
         called = true;
         return HttpResponse.json({ message: "sent" });
-      })
+      }),
     );
 
     render(<VerifyOtpPage />);
@@ -114,7 +143,7 @@ describe("VerifyOtpPage", () => {
 
     await waitFor(() => expect(called).toBe(true));
     expect(
-      await screen.findByText(/a new code has been sent/i)
+      await screen.findByText(/a new code has been sent/i),
     ).toBeInTheDocument();
   });
 });
