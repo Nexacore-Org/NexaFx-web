@@ -26,6 +26,7 @@ function AlertTriangleIcon() {
 interface ErrorBoundaryProps {
   children: React.ReactNode;
   sectionName?: string;
+  onDismiss?: () => void;
 }
 
 interface ErrorBoundaryState {
@@ -54,12 +55,49 @@ export class ErrorBoundary extends React.Component<
     );
   }
 
+  handleRetry = () => {
+    this.setState({ hasError: false });
+  };
+
   handleRefresh = () => {
     window.location.reload();
   };
 
   render() {
     if (this.state.hasError) {
+      if (this.props.onDismiss) {
+        return (
+          <div
+            className="flex flex-col items-center justify-center gap-4 rounded-xl border border-red-200 bg-card px-6 py-10 text-center dark:border-red-900"
+            role="alert"
+          >
+            <div className="rounded-full bg-red-50 p-4">
+              <AlertTriangleIcon />
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <p className="text-sm font-medium">Something went wrong</p>
+              <p className="text-xs text-muted-foreground">
+                Please try again or close this flow.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={this.handleRetry}
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              >
+                Try again
+              </button>
+              <button
+                onClick={this.props.onDismiss}
+                className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div className="flex flex-col items-center justify-center py-16 px-6 gap-4 rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
           <div className="rounded-full bg-red-50 p-4">
