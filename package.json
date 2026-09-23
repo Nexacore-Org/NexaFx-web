@@ -2,12 +2,17 @@
   "name": "nexafx-web",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@10.9.2",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "jest"
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "type-check": "tsc --noEmit",
+    "analyze": "node scripts/analyze.mjs",
+    "verify": "npm run lint && npm run type-check && npm run test"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.3",

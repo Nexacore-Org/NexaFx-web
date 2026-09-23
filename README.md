@@ -82,6 +82,10 @@ NexaFX prioritizes the security of user funds and data:
 
 We welcome contributions from the community! Please read our [Contributing Guidelines](https://github.com/Nexacore-Org/NexaFx-web/blob/main/Contribution.md) before submitting pull requests.
 
+### 📚 Documentation
+- [Testing Guide](TESTING.md) — How to run and debug tests
+- [Contributing Guidelines](Contribution.md) — Full contribution workflow
+
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
