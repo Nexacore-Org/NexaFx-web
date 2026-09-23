@@ -139,7 +139,11 @@ interface PushNotificationResponse {
   data?: PushNotificationDto;
 }
 
-// Safe normalization of Admin Users
+/**
+ * Normalizes a single admin-user DTO into the `AdminUser` shape. Accepts the
+ * backend's snake_case variants (`first_name`, `wallet_address`, `kyc_status`,
+ * `created_at`, `is_active`, ...) as well as camelCase.
+ */
 export function mapAdminUser(dto: AdminUserDto): AdminUser {
   return {
     id: String(dto.id ?? dto._id ?? ''),
@@ -166,6 +170,13 @@ export function mapAdminUser(dto: AdminUserDto): AdminUser {
   };
 }
 
+/**
+ * GET /admin/metrics
+ *
+ * Fetches the admin dashboard metrics. Normalizes either a `{ data }` wrapper
+ * or a flat response and coerces every counter to a number (the backend may
+ * return numbers or numeric strings).
+ */
 export async function getAdminMetrics(): Promise<AdminMetrics> {
   const response = await apiClient<AdminMetricsResponse>('/admin/metrics');
   const data = response?.data ?? (response as AdminMetricsDto) ?? {};
@@ -179,18 +190,38 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
   };
 }
 
+/**
+ * GET /admin/users
+ *
+ * Fetches the admin user list. Accepts either a raw array or a `{ data: [] }`
+ * wrapper and maps each DTO through `mapAdminUser`.
+ */
 export async function getAdminUsers(): Promise<AdminUser[]> {
   const response = await apiClient<AdminUsersResponse | AdminUserDto[]>('/admin/users');
   const data = (Array.isArray(response) ? response : response?.data) ?? [];
   return data.map(mapAdminUser);
 }
 
+/**
+ * GET /admin/users/:id
+ *
+ * Fetches a single admin user. Accepts a `{ data }` wrapper or the DTO at the
+ * top level and maps it through `mapAdminUser`.
+ */
 export async function getAdminUserById(id: string): Promise<AdminUser> {
   const response = await apiClient<AdminUserResponse | AdminUserDto>(`/admin/users/${id}`);
   const data = ('data' in response && response.data ? response.data : response) as AdminUserDto;
   return mapAdminUser(data);
 }
 
+/**
+ * GET /admin/transactions
+ *
+ * Fetches the admin transaction list. Accepts a raw array or `{ data: [] }`
+ * wrapper, normalizes the transaction type synonyms
+ * (`withdrawal`/`withdraw` → Withdraw, `conversion`/`exchange` → Convert), the
+ * date (`createdAt`/`date`), and the reference (`txId`/`transactionRef`/`reference`).
+ */
 export async function getAdminTransactions(): Promise<AdminTransaction[]> {
   const response = await apiClient<AdminTransactionsResponse | AdminTransactionDto[]>('/admin/transactions');
   const data = (Array.isArray(response) ? response : response?.data) ?? [];
@@ -222,6 +253,13 @@ export async function getAdminTransactions(): Promise<AdminTransaction[]> {
   });
 }
 
+/**
+ * GET /admin/push-notifications
+ *
+ * Fetches the admin push-notification list. Accepts a raw array or `{ data: [] }`
+ * wrapper and normalizes the status (`Active`/"active") and date
+ * (`createdAt`/`created_at`).
+ */
 export async function getAdminPushNotifications(): Promise<PushNotification[]> {
   const response = await apiClient<PushNotificationsResponse | PushNotificationDto[]>('/admin/push-notifications');
   const data = (Array.isArray(response) ? response : response?.data) ?? [];
@@ -241,6 +279,13 @@ export async function getAdminPushNotifications(): Promise<PushNotification[]> {
   });
 }
 
+/**
+ * POST /admin/push-notifications
+ *
+ * Creates a push notification from `{ title, message }`. Accepts a `{ data }`
+ * wrapper or the DTO at the top level and normalizes id, status, and
+ * `createdAt`/`created_at` fields like `getAdminPushNotifications`.
+ */
 export async function createAdminPushNotification(payload: { title: string; message: string }): Promise<PushNotification> {
   const response = await apiClient<PushNotificationResponse | PushNotificationDto>('/admin/push-notifications', {
     method: 'POST',
