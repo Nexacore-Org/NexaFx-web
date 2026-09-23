@@ -62,6 +62,14 @@ NexaFX is built on a robust technological foundation:
 
 5. Open your browser and navigate to `http://localhost:3000`
 
+### Test scripts
+
+The project uses Jest (with Testing Library for component tests). While writing
+or fixing tests, `test:watch` keeps Jest running so you can iterate quickly:
+
+- `npm test` — run all Jest tests once
+- `npm run test:watch` — run Jest in watch mode
+
 ## 🔐 Security
 
 NexaFX prioritizes the security of user funds and data:

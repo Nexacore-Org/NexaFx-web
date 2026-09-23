@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "jest"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "check:dummy-stubs": "node scripts/check-for-dummy-stubs.mjs"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.3",
