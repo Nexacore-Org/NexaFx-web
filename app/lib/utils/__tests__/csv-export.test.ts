@@ -1,4 +1,4 @@
-import { exportTransactionsToCSV } from '../csv-export';
+import { exportTransactionsToCSV, generateCSVFilename } from '../csv-export';
 import type { Transaction } from '@/lib/api/transactions';
 
 function makeTransaction(overrides: Partial<Transaction> = {}): Transaction {
@@ -106,5 +106,35 @@ describe('exportTransactionsToCSV', () => {
     expect(lines[1]).toContain('"REF-0"');
     expect(lines[rowCount]).toContain(`"REF-${rowCount - 1}"`);
     expect(elapsed).toBeLessThan(5000);
+  });
+});
+
+describe('generateCSVFilename', () => {
+  beforeEach(() => {
+    jest
+      .spyOn(Date.prototype, 'toISOString')
+      .mockReturnValue('2026-01-15T00:00:00.000Z');
+  });
+
+  it('combines both date filters in order (from-to)', () => {
+    expect(generateCSVFilename('2026-01-01', '2026-01-31')).toBe(
+      'transactions-2026-01-01-to-2026-01-31.csv',
+    );
+  });
+
+  it('produces a from-only filename', () => {
+    expect(generateCSVFilename('2026-01-01')).toBe(
+      'transactions-from-2026-01-01.csv',
+    );
+  });
+
+  it('produces a to-only filename', () => {
+    expect(generateCSVFilename(undefined, '2026-01-31')).toBe(
+      'transactions-to-2026-01-31.csv',
+    );
+  });
+
+  it('produces a today-dated filename when no filters are applied', () => {
+    expect(generateCSVFilename()).toBe('transactions-2026-01-15.csv');
   });
 });

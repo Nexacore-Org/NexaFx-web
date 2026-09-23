@@ -16,6 +16,7 @@ import {
 } from "@/lib/validations/transactions";
 import { Input } from "@/components/ui/Input";
 import { requiresMemo } from "@/lib/utils/stellar-validation";
+import { parseBalanceAmount } from "@/lib/utils/balance";
 import { MAX_AMOUNT_INPUT_LENGTH } from "@/lib/constants/limits";
 
 interface CurrencyOption {
@@ -55,9 +56,10 @@ export function WithdrawalForm() {
   // Recomputed whenever the selected currency's balance changes, so the
   // resolver always validates "amount" against the currently-selected
   // balance -- this is the same schema used at submit time, just with a
-  // live maxBalance plugged in, so the two never drift apart.
+  // live maxBalance plugged in, so the two never drift apart. parseBalanceAmount
+  // strips every thousands separator so large balances aren't truncated.
   const maxBalance = selectedCurrency
-    ? parseFloat(selectedCurrency.balance.replace(",", ""))
+    ? parseBalanceAmount(selectedCurrency.balance)
     : undefined;
   const withdrawalSchema = useMemo(
     () => createWithdrawalSchema(maxBalance),
@@ -151,7 +153,7 @@ export function WithdrawalForm() {
 
   const handleMaxClick = () => {
     if (!selectedCurrency) return;
-    setValue("amount", selectedCurrency.balance.replace(",", ""), {
+    setValue("amount", selectedCurrency.balance.replace(/,/g, ""), {
       shouldValidate: true,
     });
   };
