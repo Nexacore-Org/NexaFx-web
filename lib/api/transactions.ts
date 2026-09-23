@@ -233,9 +233,15 @@ export interface WithdrawalResponse {
 export async function createWithdrawal(
     data: CreateWithdrawalDto
 ): Promise<WithdrawalResponse> {
+  const idempotencyKey = crypto.randomUUID();
+
+  // TODO: Coordinate backend support for accepting and deduplicating this header.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const json = await apiClient<any>('/transactions/withdraw', {
         method: 'POST',
+    headers: {
+      'Idempotency-Key': idempotencyKey,
+    },
         body: JSON.stringify(data),
     });
 
