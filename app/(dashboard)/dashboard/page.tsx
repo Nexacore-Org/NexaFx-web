@@ -40,7 +40,12 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-5 md:gap-10">
-      <WithdrawalModal />
+      <ErrorBoundary
+        onDismiss={() => useWithdrawalStore.getState().close()}
+        sectionName="Withdrawal"
+      >
+        <WithdrawalModal />
+      </ErrorBoundary>
       {openDeposit ? (
         <ErrorBoundary
           onDismiss={toggleDeposit}

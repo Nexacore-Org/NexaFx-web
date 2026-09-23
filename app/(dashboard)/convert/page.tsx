@@ -1,3 +1,5 @@
+"use client";
+
 import { ConvertForm } from "@/components/dashboard/convert/convert-form";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { useRouter } from "next/navigation";
