@@ -1,5 +1,6 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
+import * as transactionApi from "@/lib/api/transactions";
 import { ConvertForm, getAmountFractionDigits } from "./convert-form";
 import { server } from "@/__tests__/msw-server";
 
@@ -124,7 +125,24 @@ describe("ConvertForm", () => {
       fireEvent.click(convertButton());
 
       await waitFor(() => expect(amountInput()).toHaveValue(""));
-       });
+    });
+
+    it("ignores a second submit while a swap request is already in flight", async () => {
+      const pendingSwap = new Promise(() => {});
+      const createSwapSpy = vi
+        .spyOn(transactionApi, "createSwap")
+        .mockImplementation(() => pendingSwap as Promise<any>);
+
+      render(<ConvertForm />);
+
+      fireEvent.change(amountInput(), { target: { value: "100" } });
+      await waitFor(() => expect(convertButton()).not.toBeDisabled());
+
+      fireEvent.click(convertButton());
+      fireEvent.click(convertButton());
+
+      await waitFor(() => expect(createSwapSpy).toHaveBeenCalledTimes(1));
+    });
   });
 
   describe("currency selection updates rate and amount", () => {
