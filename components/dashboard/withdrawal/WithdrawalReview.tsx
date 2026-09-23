@@ -37,10 +37,13 @@ export function WithdrawalReview() {
     };
 
     const handleConfirmClick = () => {
+        if (isProcessingStep) return;
         setShowConfirmation(true);
     };
 
     const handleConfirmedWithdrawal = async () => {
+        if (isProcessingStep) return;
+
         setIsProcessing(true);
         setStep('processing');
 
