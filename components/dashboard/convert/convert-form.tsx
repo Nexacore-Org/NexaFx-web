@@ -8,6 +8,7 @@ import { ChevronDown, AlertCircle, ArrowDownUp, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBalances } from "@/lib/api/wallet";
 import { createSwap } from "@/lib/api/transactions";
+import { InlineFieldError } from "@/components/ui/inline-field-error";
 import { getExchangeRate } from "@/lib/api/exchange-rates";
 import {
   convertSchema,
@@ -165,6 +166,115 @@ export function ConvertForm() {
     );
   }, [amount, exchangeRate, fromCurrency, toCurrency]);
 
+                {/* From Section */}
+                <div className="space-y-4 bg-card rounded-2xl p-6 border border-border">
+                    <div>
+                        <label className="text-sm font-medium text-foreground block mb-3">
+                            From
+                        </label>
+
+                        {/* Currency Selector */}
+                        <div className="relative mb-4">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowFromDropdown(!showFromDropdown);
+                                    setShowToDropdown(false);
+                                }}
+                                className={cn(
+                                    "w-full flex items-center justify-between px-4 py-3.5 rounded-xl",
+                                    "bg-muted/50 border border-border",
+                                    "hover:bg-muted transition-colors cursor-pointer"
+                                )}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary">
+                                        {fromCurrencyData.symbol.toUpperCase().substring(0, 1)}
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="font-semibold text-foreground">{fromCurrency}</p>
+                                        <p className="text-xs text-muted-foreground">{fromCurrencyData.name}</p>
+                                    </div>
+                                </div>
+                                <ChevronDown className={cn(
+                                    "h-5 w-5 text-muted-foreground transition-transform",
+                                    showFromDropdown && "rotate-180"
+                                )} />
+                            </button>
+
+                            {/* Dropdown */}
+                            {showFromDropdown && (
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10">
+                                    {CURRENCIES.map((curr) => (
+                                        <button
+                                            key={curr.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setFromCurrency(curr.id);
+                                                setShowFromDropdown(false);
+                                                setAmount("");
+                                            }}
+                                            className={cn(
+                                                "w-full flex items-center justify-between px-4 py-3 text-left",
+                                                "hover:bg-muted transition-colors",
+                                                curr.id === fromCurrency && "bg-primary/10"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary">
+                                                    {curr.symbol.toUpperCase().substring(0, 1)}
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-foreground">{curr.id}</p>
+                                                    <p className="text-xs text-muted-foreground">{curr.name}</p>
+                                                </div>
+                                            </div>
+                                            <span className="text-sm text-muted-foreground">
+                                                {balances[curr.id] || "0.00"}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Amount Input */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium text-foreground">
+                                    Amount
+                                </label>
+                                <span className="text-xs text-muted-foreground">
+                                    Balance: {fromBalanceStr}
+                                </span>
+                            </div>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    placeholder="0.00"
+                                    value={amount}
+                                    onChange={handleAmountChange}
+                                    className={cn(
+                                        "w-full px-4 py-3.5 pr-16 rounded-xl bg-muted/50 border",
+                                        "text-base text-foreground placeholder:text-muted-foreground",
+                                        "focus:outline-none focus:ring-2 focus:ring-primary/50",
+                                        "transition-all duration-200",
+                                        errors.amount ? "border-destructive" : "border-border"
+                                    )}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleMaxClick}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                                >
+                                    MAX
+                                </button>
+                            </div>
+                            <InlineFieldError message={errors.amount} />
+                        </div>
+                    </div>
+                </div>
   const handleSwap = () => {
     setFromCurrency(toCurrency);
     setToCurrency(fromCurrency);

@@ -1,6 +1,10 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { resetPassword } from "@/lib/api/auth";
+import { InlineFieldError } from "@/components/ui/inline-field-error";
+
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -157,6 +161,25 @@ function ResetPasswordContent() {
                   />
                 ))}
               </div>
+              <InlineFieldError message={errors.otp} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                New Password
+              </label>
+
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder=""
+                  className="w-full px-4 py-2.5 bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm"
+                  disabled={isLoading}
+                />
+                <InlineFieldError message={errors.newPassword} />
+              </div>
+            </div>
               {errors.otp && (
                 <p className="mt-1.5 ml-1 text-xs text-red-500">{errors.otp.message}</p>
               )}
@@ -175,6 +198,7 @@ function ResetPasswordContent() {
                   error={errors.newPassword?.message}
                   className="bg-[#F5F5F5] border-0 focus:ring-[#F39A00] pr-10"
                 />
+                <InlineFieldError message={errors.confirmPassword} />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -186,6 +210,44 @@ function ResetPasswordContent() {
             </div>
 
             <div>
+              <div className="flex gap-1 justify-between">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => {
+                      inputRefs.current[index] = el;
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    onPaste={handlePaste}
+                    className="w-10 h-11 text-center text-lg font-semibold bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all"
+                    disabled={isLoading}
+                  />
+                ))}
+              </div>
+              <InlineFieldError message={errors.otp} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                New Password
+              </label>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder=""
+                className="w-full px-4 py-2.5 bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm"
+                disabled={isLoading}
+              />
+              <InlineFieldError message={errors.newPassword} />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
               <label htmlFor="confirm-password-desktop" className="block text-xs font-medium text-gray-700 mb-1.5">
                 Confirm Password
               </label>
@@ -198,6 +260,7 @@ function ResetPasswordContent() {
                   error={errors.confirmPassword?.message}
                   className="bg-[#F5F5F5] border-0 focus:ring-[#F39A00] pr-10"
                 />
+                <InlineFieldError message={errors.confirmPassword} />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}

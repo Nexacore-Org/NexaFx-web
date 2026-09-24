@@ -10,6 +10,7 @@ import { useWithdrawalLimits } from "@/hooks/use-withdrawal-limits";
 import { cn } from "@/lib/utils";
 import { getCurrencies, type Currency } from "@/lib/api/currencies";
 import { getBalances } from "@/lib/api/wallet";
+import { InlineFieldError } from "@/components/ui/inline-field-error";
 import {
   createWithdrawalSchema,
   type WithdrawalFormValues,
@@ -243,6 +244,31 @@ export function WithdrawalForm() {
         </div>
       )}
 
+            {/* Form */}
+            <div className="space-y-4">
+                {/* Wallet Address */}
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">
+                        Wallet Address
+                    </label>
+                    <input
+                        type="text"
+                        placeholder="Enter wallet address or username"
+                        value={walletAddress}
+                        onChange={(e) => {
+                            setFormData({ walletAddress: e.target.value });
+                            if (errors.address) setErrors(prev => ({ ...prev, address: undefined }));
+                        }}
+                        className={cn(
+                            "w-full px-4 py-3 rounded-xl bg-muted/50 border",
+                            "text-sm text-foreground placeholder:text-muted-foreground",
+                            "focus:outline-none focus:ring-2 focus:ring-primary/50",
+                            "transition-all duration-200",
+                            errors.address ? "border-destructive" : "border-border"
+                        )}
+                    />
+                    <InlineFieldError message={errors.address} />
+                </div>
       {!isLoadingCurrencies && !currencyError && isEmptyBalance && (
         <div className="space-y-4">
           <div className="px-4 py-3 rounded-xl bg-muted/50 border border-border text-sm text-muted-foreground">
@@ -284,6 +310,44 @@ export function WithdrawalForm() {
             )}
           </div>
 
+                {/* Amount */}
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-foreground">
+                            Amount
+                        </label>
+                        <span className="text-xs text-muted-foreground">
+                            Balance: {selectedCurrency?.balance ?? "—"} {selectedCurrency?.id ?? ""}
+                        </span>
+                    </div>
+                    <div className="relative">
+                        <input
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="0.00"
+                            value={amount}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/[^0-9.]/g, "");
+                                setFormData({ amount: value });
+                                if (errors.amount) setErrors(prev => ({ ...prev, amount: undefined }));
+                            }}
+                            className={cn(
+                                "w-full px-4 py-3 pr-16 rounded-xl bg-muted/50 border",
+                                "text-sm text-foreground placeholder:text-muted-foreground",
+                                "focus:outline-none focus:ring-2 focus:ring-primary/50",
+                                "transition-all duration-200",
+                                errors.amount ? "border-destructive" : "border-border"
+                            )}
+                        />
+                        <button
+                            type="button"
+                            onClick={handleMaxClick}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                        >
+                            MAX
+                        </button>
+                    </div>
+                    <InlineFieldError message={errors.amount} />
           {/* Currency Selector */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
