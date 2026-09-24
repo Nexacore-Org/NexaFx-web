@@ -1,5 +1,27 @@
 "use client";
 
+/**
+ * Deposit Flow State Machine
+ *
+ * Method Selection:
+ * idle ──click "Instant Deposit"──► QR Modal Open (isQRModalOpen=true)
+ * idle ──click "Buy Crypto (MoonPay)"──► handleMoonPayOpen()
+ *    │                                           │
+ *    │  (if NEXT_PUBLIC_MOONPAY_API_KEY unset)   │
+ *    └──────────────► moonPayError=true ─────────┘
+ *
+ * QR Modal:
+ * isQRModalOpen=true ──click backdrop/close──► idle
+ * isQRModalOpen=true ──deposit complete──► idle (via notification)
+ *
+ * MoonPay Button Guard:
+ * - Disabled while walletAddress === null (loading profile)
+ * - Enabled once walletAddress loaded from getProfile()
+ *
+ * Error State:
+ * - moonPayError shown when API key missing (dev) or MoonPay unavailable
+ * - Auto-clears when user selects "Instant Deposit"
+ */
 import React, { useState, useRef, useEffect } from "react";
 import {
   ArrowLeft,

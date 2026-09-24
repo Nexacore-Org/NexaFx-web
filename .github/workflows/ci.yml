@@ -8,7 +8,7 @@ on:
 
 jobs:
   ci:
-    name: Lint, Type-check & Build
+    name: Lint, Type-check, Test & Build
     runs-on: ubuntu-latest
 
     steps:
@@ -44,6 +44,12 @@ jobs:
 
       - name: Unit tests
         run: npm run test
+
+      - name: Test
+        run: npm test -- --watchAll=false --ci
+
+      - name: Test Coverage
+        run: npm run test:coverage
 
       - name: Build
         run: npm run build

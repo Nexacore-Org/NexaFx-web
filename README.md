@@ -114,3 +114,25 @@ This project uses Next.js 16. Read the relevant local guide in `node_modules/nex
 For product and exchange terminology, see the [contributor glossary](docs/glossary.md).
 
 Commits run ESLint and Prettier on staged files through Husky. Bypass the hook with `git commit --no-verify` only when a genuine exception is necessary; the normal expectation is to fix the reported issues before committing.
+### 📚 Documentation
+- [Testing Guide](TESTING.md) — How to run and debug tests
+- [Contributing Guidelines](Contribution.md) — Full contribution workflow
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📞 Support
+
+Having trouble? Reach out to us:
+
+- Submit an issue on GitHub
+- Telegram: [https://t.me/NexaFx](https://t.me/+WkWO3kNnA-1mYzVk)
+- Email us at [contact@nexacore.org](mailto:nexacore.org@gmail.com)
+
+## 📧 Contact
+
+---
+
+**NexaFX** - Bridging Traditional Finance and DeFi for a Borderless Financial Future
+
