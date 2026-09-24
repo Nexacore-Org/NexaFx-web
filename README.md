@@ -2,6 +2,10 @@
 
 NexaFx is a web app for currency exchange, crypto payments, wallet operations, invoices, KYC, and admin operations. The v2 branch is the active rebuild of the product frontend..
 
+![CI](https://github.com/Nexacore-Org/NexaFx-web/actions/workflows/ci.yml/badge.svg)
+
+NexaFX is a cutting-edge currency exchange platform that bridges traditional finance with blockchain technology, offering seamless conversions between the Nigerian Naira, global currencies, and cryptocurrencies. Built on Web3 principles and integrated with the Stellar ecosystem, NexaFX delivers a secure, transparent, and cost-effective solution for all your financial exchange needs.
+
 ## Tech Stack
 
 - Next.js 16 App Router
