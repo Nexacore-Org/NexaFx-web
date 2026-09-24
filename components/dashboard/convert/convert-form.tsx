@@ -21,6 +21,46 @@ import {
   MAX_TRANSACTION_AMOUNT,
 } from "@/lib/constants/limits";
 
+const CONVERT_FORM_STORAGE_KEY = "nexafx:convert-form";
+
+interface ConvertFormSessionState {
+  amount: string;
+  fromCurrency: string;
+  toCurrency: string;
+}
+
+function getStoredConvertForm(): ConvertFormSessionState {
+  const defaults = { amount: "", fromCurrency: "USD", toCurrency: "NGN" };
+
+  try {
+    const stored = sessionStorage.getItem(CONVERT_FORM_STORAGE_KEY);
+    if (!stored) return defaults;
+
+    const parsed = JSON.parse(stored) as Partial<ConvertFormSessionState>;
+    return {
+      amount: typeof parsed.amount === "string" ? parsed.amount : defaults.amount,
+      fromCurrency:
+        typeof parsed.fromCurrency === "string"
+          ? parsed.fromCurrency
+          : defaults.fromCurrency,
+      toCurrency:
+        typeof parsed.toCurrency === "string"
+          ? parsed.toCurrency
+          : defaults.toCurrency,
+    };
+  } catch {
+    return defaults;
+  }
+}
+
+function clearStoredConvertForm() {
+  try {
+    sessionStorage.removeItem(CONVERT_FORM_STORAGE_KEY);
+  } catch {
+    // Session storage may be unavailable in restricted browser contexts.
+  }
+}
+
 /**
  * Decimal precision for a converted amount. Crypto (ETH) is shown with up to 8
  * decimals while fiat stays at 2, so small ETH amounts aren't rounded away.
@@ -38,8 +78,9 @@ export function getAmountFractionDigits(
 }
 
 export function ConvertForm() {
-  const [fromCurrency, setFromCurrency] = useState("USD");
-  const [toCurrency, setToCurrency] = useState("NGN");
+  const [storedForm] = useState(getStoredConvertForm);
+  const [fromCurrency, setFromCurrency] = useState(storedForm.fromCurrency);
+  const [toCurrency, setToCurrency] = useState(storedForm.toCurrency);
   const [showFromDropdown, setShowFromDropdown] = useState(false);
   const [showToDropdown, setShowToDropdown] = useState(false);
   const [balances, setBalances] = useState<Record<string, string>>({});
@@ -58,10 +99,26 @@ export function ConvertForm() {
     formState: { errors },
   } = useForm<ConvertFormValues>({
     resolver: zodResolver(convertSchema),
-    defaultValues: { amount: "" },
+    defaultValues: { amount: storedForm.amount },
   });
 
   const amount = watch("amount");
+
+  useEffect(() => {
+    try {
+      if (!amount && fromCurrency === "USD" && toCurrency === "NGN") {
+        sessionStorage.removeItem(CONVERT_FORM_STORAGE_KEY);
+        return;
+      }
+
+      sessionStorage.setItem(
+        CONVERT_FORM_STORAGE_KEY,
+        JSON.stringify({ amount, fromCurrency, toCurrency }),
+      );
+    } catch {
+      // Session storage may be unavailable in restricted browser contexts.
+    }
+  }, [amount, fromCurrency, toCurrency]);
 
   const fromCurrencyData =
     CURRENCIES.find((c) => c.id === fromCurrency) || CURRENCIES[0];
@@ -147,7 +204,10 @@ export function ConvertForm() {
       if (res.status === "failed") {
         setError("amount", { message: res.message || "Swap failed" });
       } else {
+        clearStoredConvertForm();
         reset({ amount: "" });
+        setFromCurrency("USD");
+        setToCurrency("NGN");
         const bals = await getBalances();
         const map: Record<string, string> = {};
         bals.forEach((b) => {

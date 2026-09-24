@@ -1,5 +1,6 @@
 import { apiClient } from "../api-client";
 import { pickField } from "./pick-field";
+import { formatDateTimeGB } from "../utils/format";
 
 export type TransactionStatus = "Success" | "Pending" | "Failed";
 export type TransactionType = "Deposit" | "Withdraw" | "Convert";
@@ -90,6 +91,8 @@ export function mapTransaction(dto: Record<string, any>): Transaction {
         minute: "2-digit",
       })
     : "";
+  const rawDate = (dto.createdAt ?? dto.date ?? dto.created_at) as string;
+  const date = rawDate ? formatDateTimeGB(rawDate) : "";
 
   return {
     id: pickField(dto, "id", "_id") as string,

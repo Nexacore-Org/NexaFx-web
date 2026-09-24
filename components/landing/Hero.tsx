@@ -1,5 +1,5 @@
-import Link from "next/link";
 import Image from "next/image";
+import { AuthCTAButtons } from "./auth-cta-buttons";
 
 export default function Hero() {
   return (
@@ -24,21 +24,11 @@ export default function Hero() {
           blockchain-backed reliability.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Link
-            href="/signup"
-            className="bg-[#F39A00] text-white text-center px-8 py-4 rounded-lg font-bold text-lg"
-          >
-            Sign Up
-          </Link>
-
-          <Link
-            href="/sign-in"
-            className="bg-slate-300/50  text-center px-8 py-4 rounded-lg text-lg font-bold"
-          >
-            Sign In
-          </Link>
-        </div>
+        <AuthCTAButtons
+          className="flex flex-col sm:flex-row gap-4"
+          signUpClassName="bg-[#F39A00] text-white text-center px-8 py-4 rounded-lg font-bold text-lg"
+          signInClassName="bg-slate-300/50  text-center px-8 py-4 rounded-lg text-lg font-bold"
+        />
       </div>
 
       <div className="w-full md:w-1/2 justify-end hidden md:flex">
@@ -49,6 +39,7 @@ export default function Hero() {
             width={800}
             height={800}
             className="rounded-3xl w-[450px] h-[480px] object-cover"
+            sizes="450px"
             priority
           />
         </div>

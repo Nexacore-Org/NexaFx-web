@@ -32,13 +32,13 @@ export default function NotificationsPage() {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  const handleNotificationClick = (id: string) => {
+  const handleNotificationClick = useCallback((id: string) => {
     markAsRead(id);
-  };
+  }, [markAsRead]);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = useCallback((id: string) => {
     removeNotification(id);
-  };
+  }, [removeNotification]);
 
   const handleRefresh = useCallback(async () => {
     await fetchNotifications();
@@ -74,8 +74,8 @@ export default function NotificationsPage() {
                 <SwipeableNotificationItem
                   key={notification.id}
                   notification={notification}
-                  onClick={() => handleNotificationClick(notification.id)}
-                  onDelete={() => handleDelete(notification.id)}
+                  onClick={handleNotificationClick}
+                  onDelete={handleDelete}
                 />
               ))}
             </div>

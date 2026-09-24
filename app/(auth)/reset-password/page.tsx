@@ -157,6 +157,7 @@ function ResetPasswordContent() {
             height={40}
             priority
           />
+          <Image src="/logo.png" alt="NexaFX logo" width={120} height={40} />
         </div>
       </div>
 
@@ -171,6 +172,7 @@ function ResetPasswordContent() {
               height={40}
               priority
             />
+            <Image src="/logo.png" alt="NexaFX logo" width={120} height={40} />
           </div>
 
           <div className="mb-8">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Bell } from "lucide-react";
 import { useNotificationsStore } from "@/hooks/use-notifications-store";
 import { SwipeableNotificationItem } from "@/components/notifications";
@@ -25,13 +25,13 @@ export default function NotificationsPage() {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  const handleNotificationClick = (id: string) => {
+  const handleNotificationClick = useCallback((id: string) => {
     markAsRead(id);
-  };
+  }, [markAsRead]);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = useCallback((id: string) => {
     removeNotification(id);
-  };
+  }, [removeNotification]);
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -58,8 +58,8 @@ export default function NotificationsPage() {
               <SwipeableNotificationItem
                 key={notification.id}
                 notification={notification}
-                onClick={() => handleNotificationClick(notification.id)}
-                onDelete={() => handleDelete(notification.id)}
+                onClick={handleNotificationClick}
+                onDelete={handleDelete}
               />
             ))}
           </div>

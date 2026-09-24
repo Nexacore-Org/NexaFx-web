@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { apiClient } from "../api-client";
 import { pickField } from "./pick-field";
+import {
+  formatDateTimeGB,
+  formatShortDate,
+  formatShortDateTime,
+} from "../utils/format";
 
 export interface AdminUser {
   id: string;
@@ -148,6 +153,8 @@ export function mapAdminUser(user: any): AdminUser {
         })
       : "",
     createdAtRaw: pickField(user, "createdAt", "created_at") ?? undefined,
+    createdAt: user.createdAt ? formatShortDate(user.createdAt) : "",
+    createdAtRaw: user.createdAt ?? user.created_at ?? undefined,
     twoFactorEnabled:
       pickField(user, "twoFactorEnabled", "two_factor_enabled", "mfaEnabled") ??
       undefined,
@@ -415,6 +422,8 @@ export async function getAdminTransactions(
           minute: "2-digit",
         })
       : "";
+    const rawDate = tx.createdAt ?? tx.date ?? "";
+    const formattedDate = rawDate ? formatDateTimeGB(rawDate) : "";
 
     return {
       id: pickField(tx, "id", "_id") ?? "",
@@ -520,13 +529,7 @@ export async function getAnnouncements(): Promise<Announcement[]> {
         : ("Inactive" as const),
     colorTheme: item.colorTheme ?? "yellow",
     targetPage: item.targetPage ?? "all",
-    createdAt: item.createdAt
-      ? new Date(item.createdAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : "",
+    createdAt: item.createdAt ? formatShortDate(item.createdAt) : "",
   }));
 }
 
@@ -550,16 +553,8 @@ export async function createAnnouncement(data: {
     colorTheme: item.colorTheme ?? data.colorTheme,
     targetPage: item.targetPage ?? data.targetPage,
     createdAt: item.createdAt
-      ? new Date(item.createdAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }),
+      ? formatShortDate(item.createdAt)
+      : formatShortDate(new Date()),
   };
 }
 
@@ -613,13 +608,7 @@ export async function getBroadcastEmails(): Promise<BroadcastEmail[]> {
     scheduledAt: item.scheduledAt ?? undefined,
     sentAt: item.sentAt ?? undefined,
     recipientCount: Number(item.recipientCount) || 0,
-    createdAt: item.createdAt
-      ? new Date(item.createdAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : "",
+    createdAt: item.createdAt ? formatShortDate(item.createdAt) : "",
   }));
 }
 
@@ -645,16 +634,8 @@ export async function sendBroadcastEmail(data: {
     sentAt: item.sentAt ?? undefined,
     recipientCount: Number(item.recipientCount) || 0,
     createdAt: item.createdAt
-      ? new Date(item.createdAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }),
+      ? formatShortDate(item.createdAt)
+      : formatShortDate(new Date()),
   };
 }
 
@@ -718,15 +699,7 @@ export async function getUserNotes(userId: string): Promise<UserNote[]> {
     id: item.id ?? item._id ?? "",
     adminEmail: item.adminEmail ?? item.admin_email ?? "",
     content: item.content ?? item.note ?? "",
-    createdAt: item.createdAt
-      ? new Date(item.createdAt).toLocaleString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "",
+    createdAt: item.createdAt ? formatShortDateTime(item.createdAt) : "",
   }));
 }
 
@@ -745,20 +718,8 @@ export async function addUserNote(
     adminEmail: item.adminEmail ?? item.admin_email ?? "",
     content: item.content ?? content,
     createdAt: item.createdAt
-      ? new Date(item.createdAt).toLocaleString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : new Date().toLocaleString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
+      ? formatShortDateTime(item.createdAt)
+      : formatShortDateTime(new Date()),
   };
 }
 

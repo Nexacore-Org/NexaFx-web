@@ -37,3 +37,37 @@ export function formatDateTime(isoString: string): string {
     timeZoneName: "short",
   });
 }
+
+const SHORT_DATE_OPTIONS: Intl.DateTimeFormatOptions = {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+};
+
+const SHORT_DATE_TIME_OPTIONS: Intl.DateTimeFormatOptions = {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+};
+
+const GB_DATE_TIME_OPTIONS: Intl.DateTimeFormatOptions = {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+};
+
+export function formatShortDate(value: string | Date): string {
+  return new Date(value).toLocaleDateString("en-US", SHORT_DATE_OPTIONS);
+}
+
+export function formatShortDateTime(value: string | Date): string {
+  return new Date(value).toLocaleString("en-US", SHORT_DATE_TIME_OPTIONS);
+}
+
+export function formatDateTimeGB(value: string | Date): string {
+  return new Date(value).toLocaleString("en-GB", GB_DATE_TIME_OPTIONS);
+}

@@ -81,6 +81,7 @@ export default function ForgotPasswordPageClient() {
             height={40}
             priority
           />
+          <Image src="/logo.png" alt="NexaFX logo" width={120} height={40} />
           <div className="text-sm text-gray-700">
             <Link
               href="/login"
@@ -105,6 +106,7 @@ export default function ForgotPasswordPageClient() {
                 height={40}
                 priority
               />
+              <Image src="/logo.png" alt="NexaFX logo" width={120} height={40} />
             </div>
 
             <div className="mb-8">
