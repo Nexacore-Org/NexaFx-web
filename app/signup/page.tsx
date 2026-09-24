@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { signUp } from "@/lib/api/auth";
 import { InlineFieldError } from "@/components/ui/inline-field-error";
+import { validateEmail, validatePassword, validateConfirmPassword } from "@/lib/validations/auth";
 
 export default function CreateAccountPage() {
   const router = useRouter();
@@ -25,19 +26,16 @@ export default function CreateAccountPage() {
 
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
-    if (!formData.email) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email))
-      newErrors.email = "Invalid email address";
+    const emailError = validateEmail(formData.email);
+    if (emailError) newErrors.email = emailError;
 
     if (!formData.phone) newErrors.phone = "Phone number is required";
 
-    if (!formData.password) newErrors.password = "Password is required";
-    else if (formData.password.length < 8)
-      newErrors.password = "Password must be at least 8 characters";
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) newErrors.password = passwordError;
 
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
+    const confirmPasswordError = validateConfirmPassword(formData.password, formData.confirmPassword);
+    if (confirmPasswordError) newErrors.confirmPassword = confirmPasswordError;
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

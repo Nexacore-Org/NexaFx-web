@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 export function Preference() {
   return (
     <div className="rounded-2xl border-[#8C8C8C] border-[0.25px] bg-white dark:bg-black/5 mt-6">
-      <h3 className="text-[#00000066] mb-4.5 font-semibold text-base mx-5 pt-6.25 pb-4.5 dark:text-white dark:border-slate-300 border-[#00000026] border-b">
+      <h3 className="text-[#00000066] mb-4.5 font-semibold text-base mx-5 pt-6 pb-4.5 dark:text-white dark:border-slate-300 border-[#00000026] border-b">
         Preferences
       </h3>
       <div className="flex justify-between items-center gap-5 px-5">
@@ -28,15 +28,21 @@ export function Preference() {
               <SelectValue className="" />
             </SelectTrigger>
             <SelectContent>
+              {/* English is the only supported language today. The previous
+                  "Frances"/"Portuges" options were copy-pasted theme values
+                  (dark/system) with misspelt labels and no i18n behind them, so
+                  they are replaced with a clear "coming soon" placeholder until
+                  real internationalization exists. */}
               <SelectItem value="english">English</SelectItem>
-              <SelectItem value="dark">Frances</SelectItem>
-              <SelectItem value="system">Portuges</SelectItem>
+              <SelectItem value="coming-soon" disabled>
+                More languages coming soon
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
-      <div className="flex justify-between items-center gap-5 px-5 pt-6 pb-6.25">
-        <div className="max-w-124.25">
+      <div className="flex justify-between items-center gap-5 px-5 pt-6 pb-6">
+        <div className="max-w-124">
           <h4 className="text-[#000000CC] font-semibold text-[15px] sm:text-lg dark:text-white">
             Fiat Display
           </h4>

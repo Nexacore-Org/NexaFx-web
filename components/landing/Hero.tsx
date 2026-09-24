@@ -1,9 +1,9 @@
-import Link from "next/link";
 import Image from "next/image";
+import { AuthCTAButtons } from "./auth-cta-buttons";
 
 export default function Hero() {
   return (
-    <section className="flex flex-col md:flex-row max-w-360 mx-auto px-6 md:px-12 md:py- gap-12 lg:gap-30 items-center mb-32">
+    <section className="flex flex-col md:flex-row max-w-[1440px] mx-auto px-6 md:px-12 md:py-24 gap-12 lg:gap-32 items-center mb-32">
       <div className="w-full md:w-1/2">
         <div className="inline-flex items-center gap-2 bg-[#F39A00]/10 px-4 py-1.5 rounded-full mb-6">
           <span className="w-2 h-2 bg-[#F39A00] rounded-full animate-pulse" />
@@ -24,31 +24,22 @@ export default function Hero() {
           blockchain-backed reliability.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Link
-            href="/signup"
-            className="bg-[#F39A00] text-white text-center px-8 py-4 rounded-lg font-bold text-lg"
-          >
-            Sign Up
-          </Link>
-
-          <Link
-            href="/sign-in"
-            className="bg-slate-300/50  text-center px-8 py-4 rounded-lg text-lg font-bold"
-          >
-            Sign In
-          </Link>
-        </div>
+        <AuthCTAButtons
+          className="flex flex-col sm:flex-row gap-4"
+          signUpClassName="bg-[#F39A00] text-white text-center px-8 py-4 rounded-lg font-bold text-lg"
+          signInClassName="bg-slate-300/50  text-center px-8 py-4 rounded-lg text-lg font-bold"
+        />
       </div>
 
       <div className="w-full md:w-1/2 justify-end hidden md:flex">
         <div className="bg-white/50 p-4 rounded-4xl shadow-2xl backdrop-blur border">
           <Image
             src="/finance.png"
-            alt="finance visual"
+            alt="NexaFX financial trading platform"
             width={800}
             height={800}
             className="rounded-3xl w-[450px] h-[480px] object-cover"
+            sizes="450px"
             priority
           />
         </div>
