@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { AlertTriangle, ChevronDown, UserPlus, ArrowUpDown, Clock, Coins } from "lucide-react";
+import { AlertTriangle, UserPlus, ArrowUpDown, Clock, Coins } from "lucide-react";
 import { AdminMetricCard } from "@/components/admin/AdminMetricCard";
 import { CohortRetentionTable } from "@/components/admin/cohort-retention-table";
 import { AnomalyList } from "@/components/admin/anomaly-list";
@@ -148,11 +148,6 @@ export default function AnalyticsPage() {
       {/* Overview section header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900">Overview</h2>
-        <button className="flex items-center gap-1.5 text-sm text-gray-600">
-          <span className="text-gray-400">Show</span>
-          <span className="font-semibold text-gray-900">This Year</span>
-          <ChevronDown size={16} className="text-gray-500" />
-        </button>
       </div>
 
       {/* Revenue chart + deposits/withdrawals */}
