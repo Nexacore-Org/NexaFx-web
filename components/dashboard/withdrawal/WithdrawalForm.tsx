@@ -1,5 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
+import { ChevronLeft, AlertCircle } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { FeeEstimatorModal } from "@/components/shared/fee-estimator-modal";
 import { useForm } from "react-hook-form";
@@ -12,6 +15,13 @@ import { getCurrencies, type Currency } from "@/lib/api/currencies";
 import { getBalances } from "@/lib/api/wallet";
 import { InlineFieldError } from "@/components/ui/inline-field-error";
 import {
+    CurrencySelector,
+    type CurrencySelectorOption,
+} from "@/components/ui/currency-selector";
+import { getCurrencyIcon } from "@/lib/currency-icons";
+
+interface CurrencyOption extends CurrencySelectorOption {
+    balance: string;
   createWithdrawalSchema,
   type WithdrawalFormValues,
 } from "@/lib/validations/transactions";
@@ -30,6 +40,12 @@ function toCurrencyOption(
   c: Currency,
   balanceMap: Record<string, string>,
 ): CurrencyOption {
+    return {
+        id: c.code,
+        name: c.name,
+        icon: getCurrencyIcon(c.code),
+        balance: balanceMap[c.code] ?? "0.00",
+    };
   return { id: c.code, name: c.name, balance: balanceMap[c.code] ?? "0.00" };
 }
 
@@ -284,6 +300,41 @@ export function WithdrawalForm() {
         </div>
       )}
 
+                {/* Currency Selector */}
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">
+                        Currency
+                    </label>
+                    <div className="relative">
+                        {currencyError ? (
+                            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-destructive/10 border border-destructive">
+                                <div className="flex items-center gap-2 text-destructive">
+                                    <AlertCircle className="size-4 shrink-0" />
+                                    <span className="text-sm">{currencyError}</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={fetchCurrenciesAndBalances}
+                                    className="text-xs font-semibold text-destructive underline underline-offset-2 hover:opacity-70 transition-opacity shrink-0"
+                                >
+                                    Retry
+                                </button>
+                            </div>
+                        ) : (
+                        <CurrencySelector
+                            selectedId={currency}
+                            options={currencies}
+                            isOpen={showCurrencyDropdown}
+                            onToggle={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
+                            onSelect={(id) => {
+                                setFormData({ currency: id });
+                                setShowCurrencyDropdown(false);
+                            }}
+                            isLoading={isLoadingCurrencies}
+                        />
+                        )}
+                    </div>
+                </div>
       {!isLoadingCurrencies && !currencyError && !isEmptyBalance && (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Wallet Address */}

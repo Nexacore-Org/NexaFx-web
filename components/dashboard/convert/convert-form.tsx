@@ -2,6 +2,14 @@
 
 import { FeeEstimatorModal } from "@/components/shared/fee-estimator-modal";
 import { useState, useMemo, useEffect } from "react";
+import { AlertCircle, ArrowDownUp, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { getBalances } from "@/lib/api/wallet";
+import { createSwap } from "@/lib/api/transactions";
+import {
+    CurrencySelector,
+    type CurrencySelectorOption,
+} from "@/components/ui/currency-selector";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, AlertCircle, ArrowDownUp, Loader2 } from "lucide-react";
@@ -32,6 +40,84 @@ interface ConvertFormSessionState {
 function getStoredConvertForm(): ConvertFormSessionState {
   const defaults = { amount: "", fromCurrency: "USD", toCurrency: "NGN" };
 
+export function ConvertForm() {
+    const [fromCurrency, setFromCurrency] = useState("USD");
+    const [toCurrency, setToCurrency] = useState("NGN");
+    const [amount, setAmount] = useState("");
+    const [showFromDropdown, setShowFromDropdown] = useState(false);
+    const [showToDropdown, setShowToDropdown] = useState(false);
+    const [errors, setErrors] = useState<{ amount?: string }>({});
+    
+    const [balances, setBalances] = useState<Record<string, string>>({});
+    const [exchangeRate, setExchangeRate] = useState<number>(0);
+    const [isLoadingRate, setIsLoadingRate] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [rateError, setRateError] = useState<string | null>(null);
+
+    const currencyOptions: CurrencySelectorOption[] = CURRENCIES.map((c) => ({
+        id: c.id,
+        name: c.name,
+        symbol: c.symbol,
+        balance: balances[c.id] || "0.00",
+    }));
+
+    useEffect(() => {
+        getBalances().then((res) => {
+            const newBalances: Record<string, string> = {};
+            res.forEach(b => {
+                newBalances[b.currency] = b.balance;
+            });
+            setBalances(newBalances);
+        }).catch((err) => {
+            console.error("Failed to fetch balances", err);
+        });
+    }, []);
+
+    useEffect(() => {
+        if (!fromCurrency || !toCurrency) return;
+        setIsLoadingRate(true);
+        setRateError(null);
+        
+        fetch(`/api/exchange-rates?from=${fromCurrency}&to=${toCurrency}`)
+            .then(res => {
+                if (!res.ok) throw new Error("Failed to fetch rate");
+                return res.json();
+            })
+            .then(data => {
+                if (data.rate) {
+                    setExchangeRate(Number(data.rate));
+                } else {
+                    setExchangeRate(0);
+                    setRateError("Rates unavailable");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                setExchangeRate(0);
+                setRateError("Rates unavailable");
+            })
+            .finally(() => {
+                setIsLoadingRate(false);
+            });
+    }, [fromCurrency, toCurrency]);
+
+    const convertedAmount = useMemo(() => {
+        if (!amount || isNaN(parseFloat(amount)) || exchangeRate === 0) return "";
+        const numAmount = parseFloat(amount);
+        const result = numAmount * exchangeRate;
+        return result.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: fromCurrency === "ETH" || toCurrency === "ETH" ? 8 : 2,
+        });
+    }, [amount, exchangeRate, fromCurrency, toCurrency]);
+
+    const handleSwap = () => {
+        setFromCurrency(toCurrency);
+        setToCurrency(fromCurrency);
+        setAmount("");
+        setShowFromDropdown(false);
+        setShowToDropdown(false);
+    };
   try {
     const stored = sessionStorage.getItem(CONVERT_FORM_STORAGE_KEY);
     if (!stored) return defaults;
@@ -175,6 +261,20 @@ export function ConvertForm() {
 
                         {/* Currency Selector */}
                         <div className="relative mb-4">
+                            <CurrencySelector
+                                selectedId={fromCurrency}
+                                options={currencyOptions}
+                                isOpen={showFromDropdown}
+                                onToggle={() => {
+                                    setShowFromDropdown(!showFromDropdown);
+                                    setShowToDropdown(false);
+                                }}
+                                onSelect={(id) => {
+                                    setFromCurrency(id);
+                                    setShowFromDropdown(false);
+                                    setAmount("");
+                                }}
+                            />
                             <button
                                 type="button"
                                 onClick={() => {
@@ -271,6 +371,12 @@ export function ConvertForm() {
                                     MAX
                                 </button>
                             </div>
+                            {errors.amount && (
+                                <div className="flex items-center gap-1.5 text-destructive">
+                                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                                    <span className="text-xs">{errors.amount}</span>
+                                </div>
+                            )}
                             <InlineFieldError message={errors.amount} />
                         </div>
                     </div>
@@ -397,6 +503,44 @@ export function ConvertForm() {
               />
             </button>
 
+                {/* To Section */}
+                <div className="space-y-4 bg-card rounded-2xl p-6 border border-border">
+                    <div>
+                        <label className="text-sm font-medium text-foreground block mb-3">
+                            To
+                        </label>
+
+                        {/* Currency Selector */}
+                        <div className="relative mb-4">
+                            <CurrencySelector
+                                selectedId={toCurrency}
+                                options={currencyOptions}
+                                isOpen={showToDropdown}
+                                onToggle={() => {
+                                    setShowToDropdown(!showToDropdown);
+                                    setShowFromDropdown(false);
+                                }}
+                                onSelect={(id) => {
+                                    setToCurrency(id);
+                                    setShowToDropdown(false);
+                                }}
+                            />
+                        </div>
+
+                        {/* Amount Display */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-foreground">
+                                Amount
+                            </label>
+                            <div className="px-4 py-3.5 rounded-xl bg-muted/50 border border-border flex items-center justify-between">
+                                <span className="text-base text-foreground font-semibold">
+                                    {convertedAmount || "0.00"}
+                                </span>
+                                <span className="text-sm text-muted-foreground">
+                                    {toCurrency}
+                                </span>
+                            </div>
+                        </div>
             {showFromDropdown && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10">
                 {CURRENCIES.map((curr) => (
