@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check path aliases
+        run: npm run check-aliases
+
       - name: Audit dependencies for known vulnerabilities
         run: npm audit --audit-level=high
 

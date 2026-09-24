@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "prebuild": "node scripts/check-path-aliases.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "check-aliases": "node scripts/check-path-aliases.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"
