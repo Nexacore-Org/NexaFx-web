@@ -43,7 +43,7 @@ function formatYAxis(value: number) {
 
 export function RevenueChart() {
     return (
-        <div className="bg-white rounded-2xl flex-1 min-w-0 h-63.25 py-2.5 px-5 border border-gray-200 flex flex-col gap-2">
+        <div className="bg-white rounded-2xl flex-1 min-w-0 h-64 py-2.5 px-5 border border-gray-200 flex flex-col gap-2">
             {/* Header */}
             <div className="flex items-center justify-between shrink-0">
                 <h3 className="text-base font-semibold text-gray-900">Revenue</h3>

@@ -69,13 +69,13 @@ export function TwoFactorAuth() {
 
   return (
     <div className="rounded-2xl border-[#8C8C8C] border-[0.25px] bg-card">
-      <h3 className="text-muted-foreground mb-4.5 font-semibold text-base mx-5 pt-6.25 pb-4.5 dark:text-white dark:border-slate-300 border-[#00000026] border-b">
+      <h3 className="text-muted-foreground mb-4.5 font-semibold text-base mx-5 pt-6 pb-4.5 dark:text-white dark:border-slate-300 border-[#00000026] border-b">
         Two-Factor Authentication
       </h3>
 
       <div className="space-y-6 pb-5 px-5">
         <div className="flex max-sm:flex-col max-sm:items-start justify-between items-center gap-6">
-          <div className="max-w-124.25">
+          <div className="max-w-124">
             <div className="flex items-center gap-2 mb-1">
               {isEnabled ? (
                 <Shield className="size-5 text-green-500" />

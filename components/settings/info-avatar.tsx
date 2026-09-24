@@ -59,7 +59,7 @@ export function InfoAvatar() {
   };
 
   return (
-    <div className="sm:py-8.75 flex flex-col items-start justify-between rounded-2xl border-[0.5px] border-[#E58600] bg-[linear-gradient(83.78deg,rgba(255,162,0,0.3)_-29.73%,rgba(59,130,246,0.3)_143.83%)] p-3.75 sm:flex-row sm:items-center sm:px-5">
+    <div className="sm:py-9 flex flex-col items-start justify-between rounded-2xl border-[0.5px] border-[#E58600] bg-[linear-gradient(83.78deg,rgba(255,162,0,0.3)_-29.73%,rgba(59,130,246,0.3)_143.83%)] p-4 sm:flex-row sm:items-center sm:px-5">
       <div className="flex flex-col">
         <div className="flex gap-4">
           <CircleUserRound className="h-[68px] w-[70px] text-muted-foreground" />
