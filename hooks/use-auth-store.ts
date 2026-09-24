@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+/**
+ * Auth store — uses `persist` middleware to survive refresh.
+ * See `docs/store-conventions.md` for persistence and optimistic-update conventions.
+ */
 export interface UserProfileStore {
   id: string;
   firstName: string;

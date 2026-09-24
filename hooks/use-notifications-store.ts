@@ -2,6 +2,10 @@ import { create } from "zustand";
 import { Notification } from "@/types/notification";
 import * as api from "@/lib/api/notifications";
 
+/**
+ * Notifications store — uses optimistic-update-with-rollback pattern.
+ * See `docs/store-conventions.md` for persistence and optimistic-update conventions.
+ */
 interface NotificationsStore {
   notifications: Notification[];
   isOpen: boolean;

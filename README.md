@@ -78,6 +78,12 @@ NexaFX prioritizes the security of user funds and data:
 - **Businesses**: Simplify international payments and reduce transaction costs
 - **Remittance**: Send money to family and friends across borders with minimal fees
 
+## 📚 Documentation
+
+- [Store Conventions](docs/store-conventions.md) — Zustand store conventions (persistence, optimistic updates)
+- [Operational Runbook](docs/runbook.md) — Deploy rollback and log-checking steps
+- [Mock Cleanup Note](docs/mock-cleanup-note.md) — Historical mock file cleanup and test fixture locations
+
 ## 🤝 Contributing
 
 We welcome contributions from the community! Please read our [Contributing Guidelines](https://github.com/Nexacore-Org/NexaFx-web/blob/main/Contribution.md) before submitting pull requests.

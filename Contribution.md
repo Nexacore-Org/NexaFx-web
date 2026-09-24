@@ -142,6 +142,14 @@ chore: update dependencies
 
 ---
 
+## Useful Documentation
+
+- [Development Scripts](docs/store-conventions.md) — Zustand store conventions (persistence, optimistic updates)
+- [Operational Runbook](docs/runbook.md) — Deploy rollback and log-checking steps
+- [Mock Cleanup Note](docs/mock-cleanup-note.md) — Historical mock file cleanup and test fixture locations
+
+---
+
 ## Need Help?
 If you have any questions, feel free to ask in our **telegram community** [https://t.me/Nexafx](https://t.me/+WkWO3kNnA-1mYzVk).
 
