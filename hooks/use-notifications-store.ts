@@ -2,12 +2,44 @@ import { create } from "zustand";
 import { Notification } from "@/types/notification";
 import * as api from "@/lib/api/notifications";
 
+const UNDO_DELAY = 5000;
+
+// Encapsulates the optimistic-update-with-rollback pattern shared by
+// markAsRead / markAllAsRead / removeNotification: capture a snapshot of
+// pre-action state, apply the optimistic update, run the API call, then roll
+// back relative to whatever the state looks like when the call settles (the
+// updater-function form). Computing from latest state -- rather than from the
+// captured snapshot -- means an update made by a different action in between
+// is never clobbered by an earlier rollback.
+function withOptimisticUpdate<T>(
+  capture: () => T,
+  optimisticUpdate: (captured: T) => void,
+  apiCall: () => Promise<unknown>,
+  rollbackUpdate: (captured: T) => void,
+): void {
+  const captured = capture();
+  optimisticUpdate(captured);
+  apiCall().catch(() => rollbackUpdate(captured));
+}
+
+interface PendingDelete {
+  notification: Notification;
+  timer: ReturnType<typeof setTimeout>;
+}
+
+interface PendingClearAll {
+  notifications: Notification[];
+  timer: ReturnType<typeof setTimeout>;
+}
+
 interface NotificationsStore {
   notifications: Notification[];
   isOpen: boolean;
   unreadCount: number;
   isLoading: boolean;
   error: string | null;
+  pendingDeletes: Map<string, PendingDelete>;
+  pendingClearAll: PendingClearAll | null;
 
   // Panel actions
   open: () => void;
@@ -22,14 +54,19 @@ interface NotificationsStore {
   markAllAsRead: () => void;
   addNotification: (notification: Notification) => void;
   removeNotification: (id: string) => void;
+  undoDelete: (id: string) => void;
+  clearAllNotifications: () => void;
+  undoClearAll: () => void;
 }
 
-export const useNotificationsStore = create<NotificationsStore>((set) => ({
+export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
   notifications: [],
   isOpen: false,
   unreadCount: 0,
-  isLoading: false, 
+  isLoading: false,
   error: null,
+  pendingDeletes: new Map(),
+  pendingClearAll: null,
 
   open: () => set({ isOpen: true }),
   close: () => set({ isOpen: false }),
@@ -53,7 +90,8 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
     } catch (err) {
       set({
         isLoading: false,
-        error: err instanceof Error ? err.message : "Failed to load notifications",
+        error:
+          err instanceof Error ? err.message : "Failed to load notifications",
       });
     }
   },
@@ -62,37 +100,74 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
     try {
       const count = await api.getUnreadCount();
       set({ unreadCount: count });
-    } catch {
-    }
+    } catch {}
   },
 
   markAsRead: (id) => {
-    const prevNotifications = useNotificationsStore.getState().notifications;
-    const prevUnreadCount = useNotificationsStore.getState().unreadCount;
-    set((state) => {
-      const updated = state.notifications.map((n) =>
-        n.id === id ? { ...n, isRead: true } : n
-      );
-      return {
-        notifications: updated,
-        unreadCount: updated.filter((n) => !n.isRead).length,
-      };
-    });
-    api.markAsRead(id).catch(() => {
-        set({ notifications: prevNotifications, unreadCount: prevUnreadCount });
-    });
+    withOptimisticUpdate(
+      // Only remember whether *this* notification was unread beforehand --
+      // not a snapshot of the whole array -- so a rollback can be computed
+      // relative to whatever the state looks like when the API call settles,
+      // instead of clobbering a different action's update made in between.
+      () =>
+        get().notifications.find((n) => n.id === id)?.isRead === false,
+      () =>
+        set((state) => {
+          const updated = state.notifications.map((n) =>
+            n.id === id ? { ...n, isRead: true } : n,
+          );
+          return {
+            notifications: updated,
+            unreadCount: updated.filter((n) => !n.isRead).length,
+          };
+        }),
+      () => api.markAsRead(id),
+      (wasUnread) => {
+        if (!wasUnread) return;
+        set((state) => {
+          const updated = state.notifications.map((n) =>
+            n.id === id ? { ...n, isRead: false } : n,
+          );
+          return {
+            notifications: updated,
+            unreadCount: updated.filter((n) => !n.isRead).length,
+          };
+        });
+      },
+    );
   },
 
   markAllAsRead: () => {
-    const prevNotifications = useNotificationsStore.getState().notifications;
-    const prevUnreadCount = useNotificationsStore.getState().unreadCount;
-    set((state) => ({
-      notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
-      unreadCount: 0,
-    }));
-    api.markAllAsRead().catch(() => {
-        set({ notifications: prevNotifications, unreadCount: prevUnreadCount });
-    });
+    withOptimisticUpdate(
+      // Remember which ids were unread beforehand rather than the whole
+      // array/count, so rollback can restore just those ids relative to
+      // current state instead of overwriting anything that changed since.
+      () =>
+        new Set(
+          get()
+            .notifications.filter((n) => !n.isRead)
+            .map((n) => n.id),
+        ),
+      () =>
+        set((state) => ({
+          notifications: state.notifications.map((n) => ({
+            ...n,
+            isRead: true,
+          })),
+          unreadCount: 0,
+        })),
+      () => api.markAllAsRead(),
+      (previouslyUnreadIds) =>
+        set((state) => {
+          const updated = state.notifications.map((n) =>
+            previouslyUnreadIds.has(n.id) ? { ...n, isRead: false } : n,
+          );
+          return {
+            notifications: updated,
+            unreadCount: updated.filter((n) => !n.isRead).length,
+          };
+        }),
+    );
   },
 
   addNotification: (notification) =>
@@ -102,19 +177,125 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
     })),
 
   removeNotification: (id) => {
-    const prevNotifications = useNotificationsStore.getState().notifications;
-    const prevUnreadCount = useNotificationsStore.getState().unreadCount;
-    set((state) => {
-      const notification = state.notifications.find((n) => n.id === id);
-      const updated = state.notifications.filter((n) => n.id !== id);
+    const state = get();
+    if (state.pendingDeletes.has(id)) return;
+
+    const notification = state.notifications.find((n) => n.id === id);
+    if (!notification) return;
+
+    let timer: ReturnType<typeof setTimeout>;
+
+    withOptimisticUpdate(
+      () => ({
+        notification,
+        wasUnread: !notification.isRead,
+      }),
+      ({ wasUnread }) =>
+        set((s) => ({
+          notifications: s.notifications.filter((n) => n.id !== id),
+          unreadCount: s.unreadCount - (wasUnread ? 1 : 0),
+        })),
+      () =>
+        new Promise<void>((resolve, reject) => {
+          timer = setTimeout(() => {
+            const current = get();
+            if (!current.pendingDeletes.has(id)) {
+              resolve();
+              return;
+            }
+            api.deleteNotification(id).then(
+              () => {
+                set((s) => {
+                  const next = new Map(s.pendingDeletes);
+                  next.delete(id);
+                  return { pendingDeletes: next };
+                });
+                resolve();
+              },
+              reject,
+            );
+          }, UNDO_DELAY);
+        }),
+      ({ notification, wasUnread }) => {
+        // Roll back relative to state at rollback time, not a captured
+        // snapshot, and only re-insert if nothing else has already put
+        // this notification back (e.g. a fresh fetch).
+        set((s) => {
+          const next = new Map(s.pendingDeletes);
+          next.delete(id);
+          if (s.notifications.some((n) => n.id === id)) {
+            return { pendingDeletes: next };
+          }
+          return {
+            pendingDeletes: next,
+            notifications: [notification, ...s.notifications],
+            unreadCount: s.unreadCount + (wasUnread ? 1 : 0),
+          };
+        });
+      },
+    );
+
+    set((s) => {
+      const next = new Map(s.pendingDeletes);
+      const existing = next.get(id);
+      if (existing) clearTimeout(existing.timer);
+      next.set(id, { notification, timer: timer! });
+      return { pendingDeletes: next };
+    });
+  },
+
+  undoDelete: (id) => {
+    const state = get();
+    const pending = state.pendingDeletes.get(id);
+    if (!pending) return;
+
+    clearTimeout(pending.timer);
+
+    set((s) => {
+      const next = new Map(s.pendingDeletes);
+      next.delete(id);
       return {
-        notifications: updated,
-        unreadCount:
-          state.unreadCount - (notification && !notification.isRead ? 1 : 0),
+        pendingDeletes: next,
+        notifications: [pending.notification, ...s.notifications],
+        unreadCount: s.unreadCount + (!pending.notification.isRead ? 1 : 0),
       };
     });
-    api.deleteNotification(id).catch(() => {
-        set({ notifications: prevNotifications, unreadCount: prevUnreadCount });
+  },
+
+  clearAllNotifications: () => {
+    const state = get();
+    if (state.notifications.length === 0) return;
+
+    const notificationsCopy = [...state.notifications];
+
+    const timer = setTimeout(() => {
+      const current = get();
+      if (current.pendingClearAll) {
+        current.pendingClearAll.notifications.forEach((n) => {
+          api.deleteNotification(n.id).catch(() => {});
+        });
+        set({ pendingClearAll: null });
+      }
+    }, UNDO_DELAY);
+
+    set({
+      notifications: [],
+      unreadCount: 0,
+      pendingClearAll: { notifications: notificationsCopy, timer },
+    });
+  },
+
+  undoClearAll: () => {
+    const state = get();
+    if (!state.pendingClearAll) return;
+
+    clearTimeout(state.pendingClearAll.timer);
+
+    const restored = state.pendingClearAll.notifications;
+    set({
+      notifications: restored,
+      unreadCount: restored.filter((n) => !n.isRead).length,
+      pendingClearAll: null,
     });
   },
 }));

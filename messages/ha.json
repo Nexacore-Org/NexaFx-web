@@ -1,0 +1,10 @@
+{
+  "Navigation": {
+    "dashboard": "Dashboard",
+    "convert": "Sauya",
+    "deposit": "Ajiyewa",
+    "withdraw": "Cirewa",
+    "transactions": "Ma'amaloli",
+    "settings": "Saiti"
+  }
+}

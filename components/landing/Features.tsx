@@ -1,22 +1,29 @@
 import { Banknote, ChartSpline, ShieldCheck, Globe } from "lucide-react";
 
+// `id` is the stable DOM anchor for each feature card. It is intentionally
+// decoupled from `title` so the anchor (e.g. `#security`, deep-linked from
+// marketing emails) keeps working even if the display copy is edited.
 const features = [
   {
+    id: "multi-currency",
     title: "Multi-Currency Support",
     desc: "Convert between NGN, USD, EUR, GBP and crypto",
     icon: Banknote,
   },
   {
+    id: "real-time-rates",
     title: "Real-Time Rates",
     desc: "Always get accurate exchange rates instantly",
     icon: ChartSpline,
   },
   {
+    id: "security",
     title: "Blockchain Security",
     desc: "Secure transactions powered by blockchain",
     icon: ShieldCheck,
   },
   {
+    id: "cross-border-transfers",
     title: "Cross-Border Transfers",
     desc: "Send money globally without restrictions",
     icon: Globe,
@@ -44,10 +51,10 @@ export default function Features() {
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         {features.map((f) => (
           <div
-            key={f.title}
+            key={f.id}
             className="p-6 rounded-2xl bg-white border hover:shadow-lg transition"
           >
-            <div id={f.title.toLowerCase() === "blockchain security" ? "security" : undefined} className="w-fit p-3 rounded-xl bg-amber-50 mb-4">
+            <div id={f.id} className="w-fit p-3 rounded-xl bg-amber-50 mb-4">
               <span className="text-[#F39A00]">
                 {<f.icon size={30}/>}
               </span>

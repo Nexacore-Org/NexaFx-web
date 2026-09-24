@@ -1,9 +1,71 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
+import withPWAInit from "next-pwa";
+import createNextIntlPlugin from "next-intl/plugin";
+
+const securityHeaders = [
+  { key: "X-DNS-Prefetch-Control", value: "on" },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=()",
+  },
+  {
+    key: "Content-Security-Policy",
+    value: [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://api.dicebear.com https://lh3.googleusercontent.com https://nexafx-backend.onrender.com",
+      "font-src 'self'",
+      "connect-src 'self' https://nexafx-backend.onrender.com https://open.er-api.com https://buy.moonpay.com https://client.crisp.chat https://*.crisp.chat https://*.ingest.sentry.io wss://*.crisp.chat",
+      "frame-src 'self' https://buy.moonpay.com",
+    ].join("; "),
+  },
+];
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   images: {
-    domains: ["lh3.googleusercontent.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+    ],
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60,
+  },
+  compress: true,
+  async redirects() {
+    return [
+      { source: "/sign-in", destination: "/login", permanent: true },
+      { source: "/login", destination: "/sign-in", permanent: true },
+    ];
+  },
+  async headers() {
+    return [{ source: "/(.*)", headers: securityHeaders }];
   },
 };
 
-export default nextConfig;
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
+
+const config = withPWAInit({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === "development",
+})(withNextIntl(nextConfig));
+
+export default withSentryConfig(config, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+});

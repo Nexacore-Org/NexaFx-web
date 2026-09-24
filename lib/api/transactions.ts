@@ -1,150 +1,224 @@
-type GenericApiResponse = Record<string, unknown> & {
-  data?: Record<string, unknown> & { id?: string; transactionId?: string; status?: string };
-  transactions?: GenericApiResponse[];
-  items?: GenericApiResponse[];
-  status?: string;
-  transaction_id?: string;
-  id?: string;
-  transactionId?: string;
-};
-import { apiClient } from '../api-client';
+import { apiClient } from "../api-client";
+import { formatDateTimeGB } from "../utils/format";
 
-export type TransactionStatus = 'Success' | 'Pending' | 'Failed';
-export type TransactionType = 'Deposit' | 'Withdraw' | 'Convert';
+export type TransactionStatus = "Success" | "Pending" | "Failed";
+export type TransactionType = "Deposit" | "Withdraw" | "Convert";
+
+export interface TransactionFilters {
+  type?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+}
 
 export interface Transaction {
-    id: string;
-    type: TransactionType;
-    currency: string;
-    toCurrency?: string;
-    amount: number;
-    amountString: string;
-    date: string;
-    status: TransactionStatus;
-    reference: string;
-    description?: string;
-    fee?: number;
-    exchangeRate?: number;
-    toAmount?: number;
+  id: string;
+  type: TransactionType;
+  currency: string;
+  toCurrency?: string;
+  amount: number;
+  amountString: string;
+  date: string;
+  rawDate?: string;
+  status: TransactionStatus;
+  reference: string;
+  description?: string;
+  fee?: number;
+  exchangeRate?: number;
+  toAmount?: number;
+  walletAddress?: string;
 }
 
 export interface TransactionQueryDto {
-    page?: number;
-    limit?: number;
-    search?: string;
-    type?: string;
-    from?: string;
-    to?: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+  type?: string;
+  status?: string;
+  from?: string;
+  to?: string;
 }
 
 export interface PaginatedTransactions {
-    data: Transaction[];
-    total: number;
-    page: number;
-    limit: number;
+  data: Transaction[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages?: number;
 }
 
-function mapTransaction(dto: GenericApiResponse): Transaction {
-    const typeMap: Record<string, TransactionType> = {
-        deposit: 'Deposit',
-        withdrawal: 'Withdraw',
-        withdraw: 'Withdraw',
-        convert: 'Convert',
-        conversion: 'Convert',
-        exchange: 'Convert',
-    };
-    const statusMap: Record<string, TransactionStatus> = {
-        success: 'Success',
-        pending: 'Pending',
-        failed: 'Failed',
-    };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function mapTransaction(dto: Record<string, any>): Transaction {
+  const typeMap: Record<string, TransactionType> = {
+    deposit: "Deposit",
+    withdrawal: "Withdraw",
+    withdraw: "Withdraw",
+    convert: "Convert",
+    conversion: "Convert",
+    exchange: "Convert",
+  };
+  const statusMap: Record<string, TransactionStatus> = {
+    success: "Success",
+    pending: "Pending",
+    failed: "Failed",
+  };
 
-    const type =
-        typeMap[(dto.type as string)?.toLowerCase()] ?? (dto.type as TransactionType);
-    const status =
-        statusMap[(dto.status as string)?.toLowerCase()] ?? (dto.status as TransactionStatus);
+  const type =
+    typeMap[(dto.type as string)?.toLowerCase()] ??
+    (dto.type as TransactionType);
+  const status =
+    statusMap[(dto.status as string)?.toLowerCase()] ??
+    (dto.status as TransactionStatus);
 
-    const amount = Number(dto.amount) || 0;
-    const currency = (dto.currency as string) ?? '';
+  const amount = Number(dto.amount) || 0;
+  const currency = (dto.currency as string) ?? "";
 
-    let amountString = `${amount.toLocaleString()} ${currency}`;
-    if (type === 'Deposit') amountString = `+ ${amountString}`;
-    else if (type === 'Withdraw') amountString = `- ${amountString}`;
+  let amountString = `${amount.toLocaleString()} ${currency}`;
+  if (type === "Deposit") amountString = `+ ${amountString}`;
+  else if (type === "Withdraw") amountString = `- ${amountString}`;
 
-    const rawDate = (dto.createdAt ?? dto.date ?? dto.created_at) as string;
-    const date = rawDate
-        ? new Date(rawDate).toLocaleString('en-GB', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-          })
-        : '';
+  const rawDate = (dto.createdAt ?? dto.date ?? dto.created_at) as string;
+  const date = rawDate ? formatDateTimeGB(rawDate) : "";
 
-    return {
-        id: (dto.id ?? dto._id) as string,
-        type,
-        currency,
-        toCurrency: (dto.toCurrency ?? dto.to_currency) as string | undefined,
-        amount,
-        amountString,
-        date,
-        status,
-        reference: (dto.reference ?? dto.transactionRef ?? dto.transaction_ref ?? '') as string,
-        description: dto.description as string | undefined,
-        fee: dto.fee as number | undefined,
-        exchangeRate: (dto.exchangeRate ?? dto.exchange_rate) as number | undefined,
-        toAmount: (dto.toAmount ?? dto.to_amount) as number | undefined,
-    };
+  return {
+    id: (dto.id ?? dto._id) as string,
+    type,
+    currency,
+    toCurrency: (dto.toCurrency ?? dto.to_currency) as string | undefined,
+    amount,
+    amountString,
+    date,
+    // Display "date" is locale-formatted (DD/MM/YYYY) and isn't safely
+    // re-parseable for sorting — keep the original ISO-ish value around
+    // for that purpose.
+    rawDate: rawDate ?? "",
+    status,
+    reference: (dto.reference ??
+      dto.transactionRef ??
+      dto.transaction_ref ??
+      "") as string,
+    description: dto.description as string | undefined,
+    fee: dto.fee as number | undefined,
+    exchangeRate: (dto.exchangeRate ?? dto.exchange_rate) as number | undefined,
+    toAmount: (dto.toAmount ?? dto.to_amount) as number | undefined,
+    walletAddress: (dto.walletAddress ?? dto.wallet_address ?? dto.address) as
+      string | undefined,
+  };
 }
 
 export async function getTransactions(
-    query: TransactionQueryDto = {}
+  query: TransactionQueryDto & TransactionFilters = {},
+  fetchOptions?: { signal?: AbortSignal },
 ): Promise<PaginatedTransactions> {
-    const params: Record<string, string> = {};
-    if (query.page) params.page = String(query.page);
-    if (query.limit) params.limit = String(query.limit);
-    if (query.search) params.search = query.search;
-    if (query.type && query.type !== 'All') {
-        const typeParam =
-            query.type === 'Withdraw' ? 'withdrawal' : query.type.toLowerCase();
-        params.type = typeParam;
-    }
-    if (query.from) params.from = query.from;
-    if (query.to) params.to = query.to;
+  const params: Record<string, string> = {};
+  if (query.page) params.page = String(query.page);
+  if (query.limit) params.limit = String(query.limit);
+  if (query.search) params.search = query.search;
 
-        const json = await apiClient<GenericApiResponse>('/transactions', {
-        params,
-    });
+  const typeValue = query.type && query.type !== "All" ? query.type : undefined;
+  if (typeValue) {
+    const typeParam =
+      typeValue === "Withdraw" ? "withdrawal" : typeValue.toLowerCase();
+    params.type = typeParam;
+  }
 
-    if (Array.isArray(json)) {
-        return {
-            data: json.map(mapTransaction),
-            total: json.length,
-            page: query.page ?? 1,
-            limit: query.limit ?? 10,
-        };
-    }
+  const statusValue =
+    query.status && query.status !== "All" ? query.status : undefined;
+  if (statusValue) {
+    params.status = statusValue.toLowerCase();
+  }
 
-        const data = (json.data ?? json.transactions ?? json.items ?? []) as GenericApiResponse[];
-    const total = (json.total ?? json.totalCount ?? json.count ?? data.length) as number;
-    const page = (json.page ?? query.page ?? 1) as number;
-    const limit = (json.limit ?? query.limit ?? 10) as number;
+  const from = query.from || query.startDate;
+  if (from) params.from = from;
 
-    return {
-        data: data.map(mapTransaction),
-        total,
-        page,
-        limit,
-    };
+  const to = query.to || query.endDate;
+  if (to) params.to = to;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const json = await apiClient<any>("/transactions", {
+    params,
+    signal: fetchOptions?.signal,
+  });
+
+  let dataList: Array<Record<string, unknown>> = [];
+  let total = 0;
+  let page = query.page ?? 1;
+  let limit = query.limit ?? 20;
+
+  if (Array.isArray(json)) {
+    dataList = json;
+    total = json.length;
+  } else {
+    dataList = (json.data ?? json.transactions ?? json.items ?? []) as Array<
+      Record<string, unknown>
+    >;
+    total = (json.total ??
+      json.totalCount ??
+      json.count ??
+      dataList.length) as number;
+    page = (json.page ?? query.page ?? 1) as number;
+    limit = (json.limit ?? query.limit ?? 20) as number;
+  }
+
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    data: dataList.map(mapTransaction),
+    total,
+    page,
+    limit,
+    totalPages,
+  };
 }
 
 export async function getTransactionById(id: string): Promise<Transaction> {
-        const json = await apiClient<GenericApiResponse>(`/transactions/${id}`);
-        const dto = (json.data ?? json) as GenericApiResponse;
-    return mapTransaction(dto);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const json = await apiClient<any>(`/transactions/${id}`);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dto = (json.data ?? json) as Record<string, any>;
+  return mapTransaction(dto);
 }
+
+// ==================== Conversion Summary ====================
+
+export interface ConversionSummary {
+  period: string;
+  fromCurrency: string;
+  toCurrency: string;
+  totalAmount: number;
+  transactionCount: number;
+}
+
+export const getConversionSummary = (
+  transactions: Transaction[],
+): ConversionSummary[] => {
+  const convertTxs = transactions.filter((t) => t.type === "Convert");
+  const grouped: Record<string, ConversionSummary> = {};
+
+  convertTxs.forEach((tx) => {
+    const date = new Date(tx.date);
+    const period = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    const key = `${period}-${tx.currency}-${tx.toCurrency || ""}`;
+
+    if (!grouped[key]) {
+      grouped[key] = {
+        period,
+        fromCurrency: tx.currency,
+        toCurrency: tx.toCurrency || "",
+        totalAmount: 0,
+        transactionCount: 0,
+      };
+    }
+    grouped[key].totalAmount += tx.amount;
+    grouped[key].transactionCount += 1;
+  });
+
+  return Object.values(grouped).sort((a, b) =>
+    a.period.localeCompare(b.period),
+  );
+};
 
 // ==================== Withdrawal ====================
 
@@ -153,24 +227,52 @@ export async function getTransactionById(id: string): Promise<Transaction> {
 // - `amount` must be a number, not a string
 // - `beneficiaryId` and `walletId` are optional alternative targeting fields
 export interface CreateWithdrawalDto {
-    currency: string;
-    amount: number;
-    destinationAddress?: string;
-    beneficiaryId?: string;
-    walletId?: string;
+  currency: string;
+  amount: number;
+  destinationAddress?: string;
+  beneficiaryId?: string;
+  walletId?: string;
 }
 
 export interface WithdrawalResponse {
-    transactionId: string;
-    status: 'pending' | 'success' | 'failed';
-    message?: string;
+  transactionId: string;
+  status: "pending" | "success" | "failed";
+  message?: string;
 }
 
 export async function createWithdrawal(
-    data: CreateWithdrawalDto
+  data: CreateWithdrawalDto,
 ): Promise<WithdrawalResponse> {
-        const json = await apiClient<GenericApiResponse>('/transactions/withdraw', {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const json = await apiClient<any>("/transactions/withdraw", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+  // Normalize response - backend may use different field names
+  const transactionId = (json.transactionId ??
+    json.transaction_id ??
+    json.id ??
+    json.data?.id ??
+    json.data?.transactionId) as string;
+
+  const status = (json.status ?? json.data?.status ?? "pending") as
+    "pending" | "success" | "failed";
+
+  return {
+    transactionId,
+    status,
+    message: json.message as string | undefined,
+  };
+  const idempotencyKey = crypto.randomUUID();
+
+  // TODO: Coordinate backend support for accepting and deduplicating this header.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const json = await apiClient<any>('/transactions/withdraw', {
         method: 'POST',
+    headers: {
+      'Idempotency-Key': idempotencyKey,
+    },
         body: JSON.stringify(data),
     });
 
@@ -194,85 +296,80 @@ export async function createWithdrawal(
 }
 
 // ==================== Deposit ====================
-
+//
+// Confirmed via live probe: POST /v1/transactions/deposit returns 401 (requires auth).
+// The backend could not be tested with a valid token (auth endpoints returning 500).
+//
+// Required fields (based on audit + Stellar convention):
+//   amount        — deposit amount as string
+//   currency      — currency code (e.g. "USDC")
+//   sourceAddress — the user's Stellar wallet public key; enables the backend to match
+//                   incoming on-chain transactions to this user's account.
+//                   Added as optional pending live verification.
 export interface CreateDepositDto {
-    amount: string;
-    currency: string;
+  amount: string;
+  currency: string;
+  sourceAddress?: string;
 }
 
 export interface DepositResponse {
-    transactionId: string;
-    status: 'pending' | 'success' | 'failed';
-    walletAddress?: string;
-    message?: string;
+  transactionId: string;
+  status: "pending" | "success" | "failed";
+  walletAddress?: string;
+  message?: string;
 }
 
-export async function createDeposit(
-    data: CreateDepositDto
-): Promise<DepositResponse> {
-        const json = await apiClient<GenericApiResponse>('/transactions/deposit', {
-        method: 'POST',
-        body: JSON.stringify(data),
-    });
+export async function createDeposit({
+  amount,
+  currency,
+  sourceAddress,
+}: CreateDepositDto): Promise<DepositResponse> {
+  const body: Record<string, string> = { amount, currency };
+  if (sourceAddress) body.sourceAddress = sourceAddress;
 
-    // Normalize response - backend may use different field names
-    const transactionId = (json.transactionId ??
-        json.transaction_id ??
-        json.id ??
-        json.data?.id ??
-        json.data?.transactionId) as string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const json = await apiClient<any>("/transactions/deposit", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 
-    const status = (json.status ?? json.data?.status ?? 'pending') as
-        | 'pending'
-        | 'success'
-        | 'failed';
+  // Normalize response - backend may use different field names
+  const transactionId = (json.transactionId ??
+    json.transaction_id ??
+    json.id ??
+    json.data?.id ??
+    json.data?.transactionId) as string;
 
-    return {
-        transactionId,
-        status,
-        walletAddress: (json.walletAddress ?? json.wallet_address ?? json.address) as string | undefined,
-        message: json.message as string | undefined,
-    };
+  const status = (json.status ?? json.data?.status ?? "pending") as
+    "pending" | "success" | "failed";
+
+  return {
+    transactionId,
+    status,
+    walletAddress: (json.walletAddress ??
+      json.wallet_address ??
+      json.address) as string | undefined,
+    message: json.message as string | undefined,
+  };
 }
 
 // ==================== Swap ====================
 
 export interface CreateSwapDto {
-    fromCurrency: string;
-    toCurrency: string;
-    amount: string;
+  fromCurrency: string;
+  toCurrency: string;
+  amount: number;
+  lockId?: string;
 }
 
-export interface SwapResponse {
-    transactionId: string;
-    status: 'pending' | 'success' | 'failed';
-    toAmount?: number;
-    exchangeRate?: number;
-    message?: string;
-}
+export async function createSwap(data: CreateSwapDto): Promise<Transaction> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const json = await apiClient<any>("/transactions/swap", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 
-export async function createSwap(data: CreateSwapDto): Promise<SwapResponse> {
-        const json = await apiClient<GenericApiResponse>('/transactions/swap', {
-        method: 'POST',
-        body: JSON.stringify(data),
-    });
-
-    const transactionId = (json.transactionId ??
-        json.transaction_id ??
-        json.id ??
-        json.data?.id ??
-        json.data?.transactionId) as string;
-
-    const status = (json.status ?? json.data?.status ?? 'pending') as
-        | 'pending'
-        | 'success'
-        | 'failed';
-
-    return {
-        transactionId,
-        status,
-        toAmount: (json.toAmount ?? json.to_amount) as number | undefined,
-        exchangeRate: (json.exchangeRate ?? json.exchange_rate) as number | undefined,
-        message: json.message as string | undefined,
-    };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dto = (json.data ?? json) as Record<string, any>;
+  return mapTransaction(dto);
 }

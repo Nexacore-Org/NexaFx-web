@@ -7,4 +7,6 @@ export interface Notification {
   message: string;
   timestamp: Date;
   isRead: boolean;
+  read: boolean;
+  createdAt: string;
 }

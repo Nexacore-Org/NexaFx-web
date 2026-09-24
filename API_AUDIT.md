@@ -3,7 +3,7 @@
 **Date:** 2026-05-27
 **Tester:** devhenryno
 **Backend URL:** https://nexafx-backend.onrender.com/v1
-**Method:** Static code audit of all relevant source files + live HTTP probe of every endpoint
+**Method:** Static code audit of all relevant source files + live HTTP probe of every endpoint.
 
 ---
 
