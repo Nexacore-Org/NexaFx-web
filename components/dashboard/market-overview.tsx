@@ -62,6 +62,7 @@ export function MarketOverview() {
   const [watchlist, setWatchlist] = useState<string[]>([]);
   // Timestamp of the last successful fetch per pair, used to flag stale rates.
   const lastSuccessRef = useRef<Record<string, number>>({});
+  const marketDataRef = useRef<RateData[]>([]);
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -118,9 +119,15 @@ export function MarketOverview() {
         };
       }
 
-      // This pair failed: show "Rates temporarily unavailable" rather than the
-      // last good rate, and flag it stale once the last success is > 5 min old.
+      const previous = marketDataRef.current[index];
       const lastSuccess = lastSuccessRef.current[p.pair];
+      if (previous && !previous.unavailable) {
+        return {
+          ...previous,
+          stale: true,
+        };
+      }
+
       return {
         pair: p.pair,
         rate: "",
@@ -132,6 +139,7 @@ export function MarketOverview() {
       };
     });
 
+    marketDataRef.current = next;
     setMarketData(next);
     setLoading(false);
     setLastUpdated(new Date());
@@ -175,6 +183,8 @@ export function MarketOverview() {
     }
   };
 
+  const hasStaleRates = marketData.some((item) => item.stale);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -195,6 +205,15 @@ export function MarketOverview() {
           )}
         </p>
       </div>
+
+      {hasStaleRates && (
+        <div
+          role="status"
+          className="flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700"
+        >
+          Rates may be outdated. We could not refresh the latest market data.
+        </div>
+      )}
 
       <div className="exchange-rates flex items-center overflow-x-auto gap-3 pb-2">
         {loading && marketData.length === 0
@@ -260,9 +279,16 @@ export function MarketOverview() {
                   </div>
                 ) : (
                   <div className="flex items-center justify-between gap-4 w-full">
-                    <p className="text-lg font-bold tracking-tight">
-                      {item.rate}
-                    </p>
+                    <div>
+                      <p className="text-lg font-bold tracking-tight">
+                        {item.rate}
+                      </p>
+                      {item.stale && (
+                        <p className="mt-1 text-[10px] font-semibold text-amber-600">
+                          Rates may be stale
+                        </p>
+                      )}
+                    </div>
                     <div
                       className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
                         item.up

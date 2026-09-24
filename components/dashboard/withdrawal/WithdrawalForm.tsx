@@ -86,6 +86,7 @@ export function WithdrawalForm() {
     register,
     handleSubmit,
     setValue,
+    clearErrors,
     watch,
     formState: { errors },
   } = useForm<WithdrawalFormValues>({
@@ -165,6 +166,7 @@ export function WithdrawalForm() {
 
   const handleMaxClick = () => {
     if (!selectedCurrency) return;
+    clearErrors("amount");
     setValue("amount", selectedCurrency.balance.replace(/,/g, ""), {
       shouldValidate: true,
     });
