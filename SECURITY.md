@@ -6,6 +6,18 @@ The current admin gate is implemented by the client-side `AdminGuard` component.
 
 This is currently client-side-only enforcement. The role check and persisted client state must not be treated as a server-side security boundary, because a client can modify its own state. Server-side or middleware enforcement is tracked separately in issue #590 and is the intended resolution for this limitation.
 
+## Secret-Scanning Triage
+
+The `Secret Scan` workflow runs Gitleaks on pushes and pull requests targeting `main` or `v2`. It scans the complete Git history, so a finding can remain actionable even when the secret is no longer present in the latest commit.
+
+When a finding is reported:
+
+1. Stop merging the affected change and treat the value as compromised. Do not paste the secret into an issue, pull request, chat message, or log.
+2. Identify the owner and immediately revoke or rotate the credential through its provider. Check recent provider activity for unauthorized use and notify the security owner if misuse is suspected.
+3. Remove the secret from the working tree and commit a replacement that reads it from the appropriate environment or secret store. Removing it from the latest commit alone does not remove it from Git history; coordinate history rewriting for exposed credentials when required, then have all contributors re-clone or carefully reset their local copies.
+4. Rerun the workflow and confirm the replacement credential works. Record the provider, rotation date, affected commits, and follow-up actions without recording the secret value.
+5. For a confirmed false positive, add the narrowest possible Gitleaks allowlist entry with a reason and reviewer in the same change. Never allowlist a live credential to make CI pass.
+
 ## CSP Rollout Process
 
 `middleware.ts` sets two CSP headers on every non-static response:
