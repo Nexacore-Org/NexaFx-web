@@ -129,6 +129,8 @@ export function ConvertForm() {
   };
 
   const onSubmit = async (data: ConvertFormValues) => {
+    if (isSubmitting) return;
+
     const balanceNum = parseFloat(fromBalanceStr.replace(/,/g, ""));
     if (parseFloat(data.amount) > balanceNum) {
       setError("amount", { message: "Insufficient balance" });
