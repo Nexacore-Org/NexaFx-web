@@ -10,6 +10,7 @@ import { WithdrawalSuccess } from "@/components/dashboard/withdraw/withdrawal-su
 import type { Transaction } from "@/lib/api/transactions";
 import { cn } from "@/lib/utils";
 import { X, XCircle } from "lucide-react";
+import { ErrorBoundary } from "@/components/shared/error-boundary";
 
 export function WithdrawalModal() {
   const { isOpen, step, close, reset, amount, currency, walletAddress, transactionId, errorMessage } = useWithdrawalStore();
@@ -125,7 +126,9 @@ export function WithdrawalModal() {
               >
                 <X className="size-5 text-muted-foreground" />
               </button>
-              {renderStep()}
+              <ErrorBoundary onDismiss={handleClose} sectionName="Withdrawal">
+                {renderStep()}
+              </ErrorBoundary>
             </div>
           </div>
 
@@ -149,7 +152,11 @@ export function WithdrawalModal() {
             >
               <X className="size-5 text-muted-foreground" />
             </button>
-            <div className="h-full overflow-y-auto">{renderStep()}</div>
+            <div className="h-full overflow-y-auto">
+              <ErrorBoundary onDismiss={handleClose} sectionName="Withdrawal">
+                {renderStep()}
+              </ErrorBoundary>
+            </div>
           </div>
         </>
       )}
