@@ -39,6 +39,20 @@ describe('apiClient', () => {
     await expect(apiClient('/test')).rejects.toThrow('Bad Request');
   });
 
+  it('should use a generic message when an error response is not JSON', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 502,
+      json: async () => {
+        throw new SyntaxError('Unexpected token < in JSON');
+      },
+    });
+
+    await expect(apiClient('/test')).rejects.toThrow(
+      'Request failed with status 502',
+    );
+  });
+
   it('should return data on success', async () => {
     const mockData = { success: true };
     (global.fetch as jest.Mock).mockResolvedValueOnce({

@@ -59,6 +59,46 @@ async function handler(
         backendRes.headers.get("Content-Type") ?? "application/json",
     },
   });
+async function handler(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+    const { path } = await params;
+    const pathname = path.join("/");
+
+    const targetUrl = new URL(`${BACKEND_URL}/${pathname}`);
+    // Forward query string as-is
+    req.nextUrl.searchParams.forEach((value, key) => {
+        targetUrl.searchParams.set(key, value);
+    });
+
+    const headers = new Headers();
+    headers.set("Content-Type", "application/json");
+
+    if (process.env.TEST_ACCESS_TOKEN && process.env.NODE_ENV !== "development") {
+        console.warn(
+            "[NexaFx] TEST_ACCESS_TOKEN was configured outside local development. This is a security risk and should be removed immediately.",
+            { env: process.env.NODE_ENV, pathname }
+        );
+    }
+
+    // Use token from client cookie/header if present
+    const token = req.headers.get("x-client-token") ?? req.cookies.get("access_token")?.value;
+    if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+    }
+
+    const backendRes = await fetch(targetUrl.toString(), {
+        method: req.method,
+        headers,
+        body: req.method !== "GET" && req.method !== "HEAD" ? await req.text() : undefined,
+    });
+
+    const body = await backendRes.text();
+
+    return new NextResponse(body, {
+        status: backendRes.status,
+        headers: {
+            "Content-Type": backendRes.headers.get("Content-Type") ?? "application/json",
+        },
+    });
 }
 
 export const GET = handler;

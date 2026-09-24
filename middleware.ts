@@ -12,8 +12,10 @@ export function middleware(request: NextRequest) {
     default-src 'self';
     script-src 'self' 'nonce-${nonce}' 'strict-dynamic';
     style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data:;
+    img-src 'self' blob: data: https://api.dicebear.com https://lh3.googleusercontent.com https://nexafx-backend.onrender.com;
     font-src 'self';
+    connect-src 'self' https://nexafx-backend.onrender.com https://open.er-api.com https://buy.moonpay.com https://client.crisp.chat https://*.crisp.chat https://*.ingest.sentry.io wss://*.crisp.chat;
+    frame-src 'self' https://buy.moonpay.com;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
@@ -32,8 +34,10 @@ export function middleware(request: NextRequest) {
     default-src 'self';
     script-src 'self' 'nonce-${nonce}' 'strict-dynamic';
     style-src 'self';
-    img-src 'self' blob: data:;
+    img-src 'self' blob: data: https://api.dicebear.com https://lh3.googleusercontent.com https://nexafx-backend.onrender.com;
     font-src 'self';
+    connect-src 'self' https://nexafx-backend.onrender.com https://open.er-api.com https://buy.moonpay.com https://client.crisp.chat https://*.crisp.chat https://*.ingest.sentry.io wss://*.crisp.chat;
+    frame-src 'self' https://buy.moonpay.com;
     object-src 'none';
     base-uri 'self';
     form-action 'self';

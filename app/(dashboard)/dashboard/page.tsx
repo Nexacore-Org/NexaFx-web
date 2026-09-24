@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { ErrorBoundary } from "@/components/shared/error-boundary";
 
 const DepositMethods = dynamic(
   () => import("@/components/dashboard/deposit"),
@@ -39,9 +40,19 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-5 md:gap-10">
-      <WithdrawalModal />
+      <ErrorBoundary
+        onDismiss={() => useWithdrawalStore.getState().close()}
+        sectionName="Withdrawal"
+      >
+        <WithdrawalModal />
+      </ErrorBoundary>
       {openDeposit ? (
-        <DepositMethods toggleDeposit={toggleDeposit} />
+        <ErrorBoundary
+          onDismiss={toggleDeposit}
+          sectionName="Deposit"
+        >
+          <DepositMethods toggleDeposit={toggleDeposit} />
+        </ErrorBoundary>
       ) : (
         <div className="md:px-4 space-y-4">
           <div className="grid grid-cols-3 gap-4 px-6 pb-6 md:p-0">

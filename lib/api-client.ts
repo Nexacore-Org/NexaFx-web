@@ -27,6 +27,7 @@ export class RateLimitError extends Error {
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const PROXY_URL = "/api/proxy";
+const MAX_AUTH_RETRIES = 1;
 
 /**
  * API modules should use the default `useProxy: true` for requests that can be
@@ -243,9 +244,11 @@ export async function apiClient<T>(
     }
   };
 
+  let authRetryCount = 0;
   let response = await executeRequest();
 
-  if (response.status === 401) {
+  if (response.status === 401 && authRetryCount < MAX_AUTH_RETRIES) {
+    authRetryCount += 1;
     if (!isRefreshing) {
       isRefreshing = true;
       const newToken = await refreshToken();
@@ -270,6 +273,9 @@ export async function apiClient<T>(
         subscribeTokenRefresh(async () => {
           try {
             const retryResponse = await executeRequest();
+            if (retryResponse.status === 401) {
+              useAuthStore.getState().logout();
+            }
             if (!retryResponse.ok) {
               const data = await retryResponse.json().catch(() => ({}));
               const error = new ApiError(
@@ -290,6 +296,9 @@ export async function apiClient<T>(
     }
 
     response = await executeRequest();
+    if (response.status === 401) {
+      useAuthStore.getState().logout();
+    }
   }
 
   if (response.status === 429) {

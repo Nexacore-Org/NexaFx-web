@@ -14,6 +14,7 @@ import { BudgetTracker } from "@/components/dashboard/budget-tracker";
 import { transactions } from "@/lib/api/transactions";
 import { Watchlist } from "@/components/dashboard/watchlist";
 import dynamic from "next/dynamic";
+import { ErrorBoundary } from "@/components/shared/error-boundary";
 
 const DepositMethods = dynamic(
   () => import("@/components/dashboard/deposit"),
@@ -50,9 +51,19 @@ export default function DashboardPage() {
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <div className="flex flex-col gap-5 md:gap-10">
-        <WithdrawalModal />
+        <ErrorBoundary
+          onDismiss={() => useWithdrawalStore.getState().close()}
+          sectionName="Withdrawal"
+        >
+          <WithdrawalModal />
+        </ErrorBoundary>
         {openDeposit ? (
-          <DepositMethods toggleDeposit={toggleDeposit} />
+          <ErrorBoundary
+            onDismiss={toggleDeposit}
+            sectionName="Deposit"
+          >
+            <DepositMethods toggleDeposit={toggleDeposit} />
+          </ErrorBoundary>
         ) : (
           <>
             <Watchlist />
