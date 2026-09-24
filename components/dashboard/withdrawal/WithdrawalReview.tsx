@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
+import { ChevronLeft, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { createWithdrawal } from "@/lib/api/transactions";
+import { getCurrencyIcon } from "@/lib/currency-icons";
 import { useWithdrawalLimits } from "@/hooks/use-withdrawal-limits";
 import {
   ChevronLeft,
@@ -204,6 +208,85 @@ export function WithdrawalReview() {
                   {remainingMonthly} {currency}
                 </span>
               </div>
+            {/* Header */}
+            <div className="flex items-center gap-3 pt-4">
+                <button
+                    onClick={() => setStep('form')}
+                    disabled={isProcessingStep}
+                    className={cn(
+                        "p-2 -ml-2 rounded-full hover:bg-muted transition-colors",
+                        isProcessingStep && "opacity-50 cursor-not-allowed"
+                    )}
+                    aria-label="Go back to withdrawal form"
+                >
+                    <ChevronLeft className="size-5 text-muted-foreground" />
+                </button>
+                <div>
+                    <h2 id="withdrawal-modal-title" className="text-xl font-bold text-foreground">Review Withdrawal</h2>
+                    <p className="text-sm text-muted-foreground">Confirm your withdrawal details</p>
+                </div>
+            </div>
+
+            {/* Summary Card */}
+            <div className="bg-muted/30 rounded-xl p-5 space-y-4 border border-border">
+                {/* Amount */}
+                <div className="text-center pb-4 border-b border-border">
+                    <p className="text-sm text-muted-foreground mb-1">You are withdrawing</p>
+                    <div className="flex items-center justify-center gap-3">
+                        {getCurrencyIcon(selectedCurrency.id)}
+                        <span className="text-3xl font-bold text-foreground">
+                            {parseFloat(amount).toLocaleString()} {currency}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Details */}
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Destination</span>
+                        <span className="text-sm font-medium text-foreground font-mono">
+                            {truncateAddress(walletAddress)}
+                        </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Network</span>
+                        <span className="text-sm font-medium text-foreground">
+                            {network}
+                        </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Fee</span>
+                        <span className={cn(
+                            "text-sm font-medium",
+                            fee.amount <= 0 ? "text-green-500" : "text-foreground",
+                        )}>
+                            {formatWithdrawalFee(fee)}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Withdrawal Limits */}
+            {!limitsLoading && currency && (remainingDaily !== null || remainingMonthly !== null) && (
+                <div className="p-3 rounded-xl bg-muted/50 border border-border space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Remaining Limits</p>
+                    {remainingDaily !== null && (
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">Daily</span>
+                            <span className="font-medium text-foreground">
+                                {remainingDaily} {currency}
+                            </span>
+                        </div>
+                    )}
+                    {remainingMonthly !== null && (
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">Monthly</span>
+                            <span className="font-medium text-foreground">
+                                {remainingMonthly} {currency}
+                            </span>
+                        </div>
+                    )}
+                </div>
             )}
           </div>
         )}
