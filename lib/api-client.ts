@@ -7,14 +7,11 @@ import { parseRetryAfter } from "./utils/retry-after";
 // Throwing at module-load time surfaces the misconfiguration immediately
 // during `next dev` or `next build` instead of silently failing at runtime.
 // ---------------------------------------------------------------------------
-if (
-  typeof process !== "undefined" &&
-  !process.env.NEXT_PUBLIC_API_URL
-) {
+if (typeof process !== "undefined" && !process.env.NEXT_PUBLIC_API_URL) {
   throw new Error(
     "[NexaFx] NEXT_PUBLIC_API_URL is not set. " +
       "Add it to your .env.local file. " +
-      "See .env.example for the required variables."
+      "See .env.example for the required variables.",
   );
 }
 
@@ -64,8 +61,36 @@ export class OfflineError extends ApiError {
   }
 }
 
+/**
+ * Thrown by a direct (non-proxied, `useProxy: false`) API call when `fetch`
+ * fails before a response is received. This is distinct from a normal HTTP
+ * error response (which has a real status code) and from being offline: it
+ * almost always means either the backend hasn't been configured to allow
+ * cross-origin requests from this app's origin (CORS), or NEXT_PUBLIC_API_URL
+ * points at a host the browser cannot reach.
+ */
+export class DirectApiUnreachableError extends ApiError {
+  constructor(url: string) {
+    super(
+      `Unable to reach ${url}. This usually means the backend hasn't been ` +
+        "configured to allow requests from this app's origin (CORS), or " +
+        "NEXT_PUBLIC_API_URL is pointing at a host that isn't reachable. " +
+        "Check the browser console for a CORS error and confirm " +
+        "NEXT_PUBLIC_API_URL is set correctly.",
+      0,
+    );
+    this.name = "DirectApiUnreachableError";
+  }
+}
+
 export function isOfflineError(error: unknown): error is OfflineError {
-  return error instanceof ApiError && error.status === 0;
+  return error instanceof OfflineError;
+}
+
+export function isDirectApiUnreachableError(
+  error: unknown,
+): error is DirectApiUnreachableError {
+  return error instanceof DirectApiUnreachableError;
 }
 
 export function getOfflineMessage(hasCachedData: boolean) {
@@ -202,6 +227,16 @@ export async function apiClient<T>(
     } catch (error) {
       if (typeof navigator !== "undefined" && !navigator.onLine) {
         throw new OfflineError("No internet connection");
+      }
+
+      // A direct (non-proxied) call depends on the backend's CORS config
+      // and on NEXT_PUBLIC_API_URL being correct. When fetch fails before
+      // producing a response here -- while the browser reports itself
+      // online -- that's the likely cause, so surface a clearer, more
+      // actionable error instead of the raw (often just "Failed to
+      // fetch") error.
+      if (!useProxy) {
+        throw new DirectApiUnreachableError(finalUrl);
       }
 
       throw error;
