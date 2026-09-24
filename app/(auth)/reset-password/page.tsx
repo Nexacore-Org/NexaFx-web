@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { resetPassword } from "@/lib/api/auth";
+import { InlineFieldError } from "@/components/ui/inline-field-error";
 
 import Image from "next/image";
 
@@ -175,9 +176,7 @@ function ResetPasswordContent() {
                   />
                 ))}
               </div>
-              {errors.otp && (
-                <p className="mt-1.5 ml-1 text-xs text-red-500">{errors.otp}</p>
-              )}
+              <InlineFieldError message={errors.otp} />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">
@@ -193,11 +192,7 @@ function ResetPasswordContent() {
                   className="w-full px-4 py-2.5 bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm"
                   disabled={isLoading}
                 />
-                {errors.newPassword && (
-                  <p className="mt-1.5 ml-1 text-xs text-red-500">
-                    {errors.newPassword}
-                  </p>
-                )}
+                <InlineFieldError message={errors.newPassword} />
               </div>
             </div>
 
@@ -214,11 +209,7 @@ function ResetPasswordContent() {
                   className="w-full px-4 py-2.5 bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm"
                   disabled={isLoading}
                 />
-                {errors.confirmPassword && (
-                  <p className="mt-1.5 ml-1 text-xs text-red-500">
-                    {errors.confirmPassword}
-                  </p>
-                )}
+                <InlineFieldError message={errors.confirmPassword} />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -322,9 +313,7 @@ function ResetPasswordContent() {
                   />
                 ))}
               </div>
-              {errors.otp && (
-                <p className="mt-1.5 ml-1 text-xs text-red-500">{errors.otp}</p>
-              )}
+              <InlineFieldError message={errors.otp} />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">
@@ -338,11 +327,7 @@ function ResetPasswordContent() {
                 className="w-full px-4 py-2.5 bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm"
                 disabled={isLoading}
               />
-              {errors.newPassword && (
-                <p className="mt-1.5 ml-1 text-xs text-red-500">
-                  {errors.newPassword}
-                </p>
-              )}
+              <InlineFieldError message={errors.newPassword} />
             </div>
 
             <div>
@@ -358,11 +343,7 @@ function ResetPasswordContent() {
                   className="w-full px-4 py-2.5 bg-[#F5F5F5] border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm"
                   disabled={isLoading}
                 />
-                {errors.confirmPassword && (
-                  <p className="mt-1.5 ml-1 text-xs text-red-500">
-                    {errors.confirmPassword}
-                  </p>
-                )}
+                <InlineFieldError message={errors.confirmPassword} />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}

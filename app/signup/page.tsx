@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { signUp } from "@/lib/api/auth";
+import { InlineFieldError } from "@/components/ui/inline-field-error";
 
 export default function CreateAccountPage() {
   const router = useRouter();
@@ -84,9 +85,7 @@ export default function CreateAccountPage() {
               setFormData({ ...formData, email: e.target.value })
             }
           />
-          {errors.email && (
-            <p className="mt-1.5 ml-1 text-xs text-red-500">{errors.email}</p>
-          )}
+          <InlineFieldError message={errors.email} />
         </div>
 
         <div>
@@ -99,9 +98,7 @@ export default function CreateAccountPage() {
               setFormData({ ...formData, phone: e.target.value })
             }
           />
-          {errors.phone && (
-            <p className="mt-1.5 ml-1 text-xs text-red-500">{errors.phone}</p>
-          )}
+          <InlineFieldError message={errors.phone} />
         </div>
 
         <div className="relative">
@@ -121,11 +118,7 @@ export default function CreateAccountPage() {
           >
             {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
           </button>
-          {errors.password && (
-            <p className="mt-1.5 ml-1 text-xs text-red-500">
-              {errors.password}
-            </p>
-          )}
+          <InlineFieldError message={errors.password} />
         </div>
 
         <div className="relative">
@@ -145,11 +138,7 @@ export default function CreateAccountPage() {
           >
             {showConfirmPassword ? <EyeOff size={22} /> : <Eye size={22} />}
           </button>
-          {errors.confirmPassword && (
-            <p className="mt-1.5 ml-1 text-xs text-red-500">
-              {errors.confirmPassword}
-            </p>
-          )}
+          <InlineFieldError message={errors.confirmPassword} />
         </div>
 
         <div className="flex items-center gap-3 pt-2">

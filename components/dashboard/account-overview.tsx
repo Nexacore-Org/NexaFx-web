@@ -11,6 +11,7 @@ import {
 import { useEffect, useState } from "react";
 import { getBalances } from "@/lib/api/wallet";
 import { getProfile } from "@/lib/api/users";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 const truncateAddress = (addr: string) =>
   `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -36,19 +37,6 @@ export function AccountOverview({
 
   useEffect(() => {
     let cancelled = false;
-
-    const formatCurrency = (amount: string | number | undefined, currency: string) => {
-      if (amount === undefined || amount === null || amount === "") return "";
-      const raw = typeof amount === "string" ? amount.replace(/[^0-9.-]+/g, "") : String(amount);
-      const num = Number(raw);
-      if (!Number.isFinite(num)) return String(amount);
-      try {
-        const locale = currency === "NGN" ? "en-NG" : "en-US";
-        return new Intl.NumberFormat(locale, { style: "currency", currency }).format(num as number);
-      } catch {
-        return String(amount);
-      }
-    };
 
     const fetchAccount = async () => {
       try {

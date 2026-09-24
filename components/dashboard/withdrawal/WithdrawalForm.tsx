@@ -6,6 +6,7 @@ import { ChevronDown, ChevronLeft, AlertCircle,  } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCurrencies, type Currency } from "@/lib/api/currencies";
 import { getBalances } from "@/lib/api/wallet";
+import { InlineFieldError } from "@/components/ui/inline-field-error";
 
 interface CurrencyOption {
     id: string;
@@ -170,12 +171,7 @@ const fetchCurrenciesAndBalances = async () => {
                             errors.address ? "border-destructive" : "border-border"
                         )}
                     />
-                    {errors.address && (
-                        <div className="flex items-center gap-1.5 text-destructive">
-                            <AlertCircle className="size-3.5" />
-                            <span className="text-xs">{errors.address}</span>
-                        </div>
-                    )}
+                    <InlineFieldError message={errors.address} />
                 </div>
 
                 {/* Currency Selector */}
@@ -300,12 +296,7 @@ const fetchCurrenciesAndBalances = async () => {
                             MAX
                         </button>
                     </div>
-                    {errors.amount && (
-                        <div className="flex items-center gap-1.5 text-destructive">
-                            <AlertCircle className="size-3.5" />
-                            <span className="text-xs">{errors.amount}</span>
-                        </div>
-                    )}
+                    <InlineFieldError message={errors.amount} />
                 </div>
             </div>
 

@@ -5,6 +5,7 @@ import { ChevronDown, AlertCircle, ArrowDownUp, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBalances } from "@/lib/api/wallet";
 import { createSwap } from "@/lib/api/transactions";
+import { InlineFieldError } from "@/components/ui/inline-field-error";
 
 interface CurrencyOption {
     id: string;
@@ -286,12 +287,7 @@ export function ConvertForm() {
                                     MAX
                                 </button>
                             </div>
-                            {errors.amount && (
-                                <div className="flex items-center gap-1.5 text-destructive">
-                                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                                    <span className="text-xs">{errors.amount}</span>
-                                </div>
-                            )}
+                            <InlineFieldError message={errors.amount} />
                         </div>
                     </div>
                 </div>

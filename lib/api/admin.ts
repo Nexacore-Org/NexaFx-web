@@ -139,30 +139,44 @@ interface PushNotificationResponse {
   data?: PushNotificationDto;
 }
 
+// Returns the first non-null value from a list of candidates.
+function pickFirst<T>(...values: T[]): T | undefined {
+  for (const value of values) {
+    if (value !== undefined && value !== null) return value;
+  }
+  return undefined;
+}
+
+// Converts a value to a number, applying a fallback when it is absent.
+function toNumber(value: unknown, fallback = 0): number {
+  if (value === undefined || value === null) return fallback;
+  return Number(value);
+}
+
 // Safe normalization of Admin Users
 export function mapAdminUser(dto: AdminUserDto): AdminUser {
   return {
-    id: String(dto.id ?? dto._id ?? ''),
-    email: String(dto.email ?? ''),
-    firstName: dto.firstName ?? dto.first_name ?? null,
-    lastName: dto.lastName ?? dto.last_name ?? null,
+    id: String(pickFirst(dto.id, dto._id, '')),
+    email: String(pickFirst(dto.email, '')),
+    firstName: pickFirst(dto.firstName, dto.first_name) ?? null,
+    lastName: pickFirst(dto.lastName, dto.last_name) ?? null,
     phone: dto.phone ?? null,
-    walletAddress: dto.walletAddress ?? dto.wallet_address ?? dto.address ?? '0x...',
-    username: dto.username ?? dto.email?.split('@')[0] ?? 'user',
-    avatarUrl: dto.avatarUrl ?? dto.avatar_url ?? null,
-    transactions: Number(dto.transactions ?? dto.transactionCount ?? 0),
-    totalDeposit: Number(dto.totalDeposit ?? dto.total_deposit ?? 0),
-    totalWithdraw: Number(dto.totalWithdraw ?? dto.total_withdraw ?? 0),
+    walletAddress: String(pickFirst(dto.walletAddress, dto.wallet_address, dto.address, '0x...')),
+    username: String(pickFirst(dto.username, dto.email?.split('@')[0], 'user')),
+    avatarUrl: pickFirst(dto.avatarUrl, dto.avatar_url) ?? null,
+    transactions: toNumber(pickFirst(dto.transactions, dto.transactionCount), 0),
+    totalDeposit: toNumber(pickFirst(dto.totalDeposit, dto.total_deposit), 0),
+    totalWithdraw: toNumber(pickFirst(dto.totalWithdraw, dto.total_withdraw), 0),
     kycStatus: dto.kycStatus === 'Verified' || dto.kyc_status === 'Verified' ? 'Verified' : 'Unverified',
     createdAt: (() => {
-      const dateVal = dto.createdAt ?? dto.created_at;
+      const dateVal = pickFirst(dto.createdAt, dto.created_at);
       return dateVal ? new Date(dateVal).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
         year: 'numeric'
       }) : 'N/A';
     })(),
-    isActive: Boolean(dto.isActive ?? dto.is_active ?? true),
+    isActive: Boolean(pickFirst(dto.isActive, dto.is_active, true)),
   };
 }
 
@@ -170,12 +184,12 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
   const response = await apiClient<AdminMetricsResponse>('/admin/metrics');
   const data = response?.data ?? (response as AdminMetricsDto) ?? {};
   return {
-    registeredUsers: Number(data.registeredUsers ?? 0),
-    totalTransactions: Number(data.totalTransactions ?? 0),
-    pendingKyc: Number(data.pendingKyc ?? 0),
-    currencies: Number(data.currencies ?? 0),
-    totalDeposits: Number(data.totalDeposits ?? 0),
-    totalWithdrawals: Number(data.totalWithdrawals ?? 0),
+    registeredUsers: toNumber(data.registeredUsers, 0),
+    totalTransactions: toNumber(data.totalTransactions, 0),
+    pendingKyc: toNumber(data.pendingKyc, 0),
+    currencies: toNumber(data.currencies, 0),
+    totalDeposits: toNumber(data.totalDeposits, 0),
+    totalWithdrawals: toNumber(data.totalWithdrawals, 0),
   };
 }
 
@@ -202,13 +216,13 @@ export async function getAdminTransactions(): Promise<AdminTransaction[]> {
     conversion: 'Convert',
   };
   return data.map((dto) => {
-    const rawDate = dto.createdAt ?? dto.date;
+    const rawDate = pickFirst(dto.createdAt, dto.date);
     return {
-      id: String(dto.id ?? dto._id ?? ''),
-      amount: Number(dto.amount ?? 0),
-      currency: String(dto.currency ?? 'NGN'),
-      type: typeMap[String(dto.type ?? '').toLowerCase()] ?? 'Deposit',
-      username: dto.username ?? dto.email ?? 'Unknown User',
+      id: String(pickFirst(dto.id, dto._id, '')),
+      amount: toNumber(pickFirst(dto.amount), 0),
+      currency: String(pickFirst(dto.currency, 'NGN')),
+      type: typeMap[String(pickFirst(dto.type, '')).toLowerCase()] ?? 'Deposit',
+      username: pickFirst(dto.username, dto.email) ?? 'Unknown User',
       date: rawDate ? new Date(rawDate).toLocaleString('en-GB', {
         day: '2-digit',
         month: '2-digit',
@@ -216,8 +230,8 @@ export async function getAdminTransactions(): Promise<AdminTransaction[]> {
         hour: '2-digit',
         minute: '2-digit'
       }) : 'N/A',
-      txId: dto.txId ?? dto.transactionRef ?? dto.reference ?? String(dto.id ?? '0x...'),
-      status: dto.status ?? 'active',
+      txId: String(pickFirst(dto.txId, dto.transactionRef, dto.reference, dto.id, '0x...')),
+      status: pickFirst(dto.status) ?? 'active',
     };
   });
 }
@@ -226,11 +240,11 @@ export async function getAdminPushNotifications(): Promise<PushNotification[]> {
   const response = await apiClient<PushNotificationsResponse | PushNotificationDto[]>('/admin/push-notifications');
   const data = (Array.isArray(response) ? response : response?.data) ?? [];
   return data.map((dto) => {
-    const rawDate = dto.createdAt ?? dto.created_at;
+    const rawDate = pickFirst(dto.createdAt, dto.created_at);
     return {
-      id: String(dto.id ?? dto._id ?? ''),
-      title: String(dto.title ?? ''),
-      message: String(dto.message ?? ''),
+      id: String(pickFirst(dto.id, dto._id, '')),
+      title: String(pickFirst(dto.title, '')),
+      message: String(pickFirst(dto.message, '')),
       status: dto.status === 'Active' || dto.status === 'active' ? 'Active' : 'Inactive',
       createdAt: rawDate ? new Date(rawDate).toLocaleDateString('en-US', {
         month: 'short',
@@ -247,11 +261,11 @@ export async function createAdminPushNotification(payload: { title: string; mess
     body: JSON.stringify(payload),
   });
   const data = ('data' in response && response.data ? response.data : response) as PushNotificationDto;
-  const rawDate = data.createdAt ?? data.created_at;
+  const rawDate = pickFirst(data.createdAt, data.created_at);
   return {
-    id: String(data.id ?? data._id ?? ''),
-    title: String(data.title ?? ''),
-    message: String(data.message ?? ''),
+    id: String(pickFirst(data.id, data._id, '')),
+    title: String(pickFirst(data.title, '')),
+    message: String(pickFirst(data.message, '')),
     status: data.status === 'Active' || data.status === 'active' ? 'Active' : 'Inactive',
     createdAt: rawDate ? new Date(rawDate).toLocaleDateString('en-US', {
       month: 'short',
