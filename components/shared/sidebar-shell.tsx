@@ -128,7 +128,7 @@ export function SidebarShell({
           className={cn(variant === "dashboard" && "h-8")}
           width={100}
           height={variant === "dashboard" ? 100 : 32}
-          priority
+          sizes="100px"
         />
       )}
       {variant === "admin" && onClose && (

@@ -44,14 +44,30 @@ function SkeletonBar({ className }: { className?: string }) {
 export function WithdrawalForm() {
   const { currency, setStep, setFormData, close, reset } = useWithdrawalStore();
 
-  const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
+  const [currencies, setCurrencies] = useState<Currency[]>([]);
+  const [balanceMap, setBalanceMap] = useState<Record<string, string>>({});
   const [isLoadingCurrencies, setIsLoadingCurrencies] = useState(true);
   const [currencyError, setCurrencyError] = useState<string | null>(null);
   const [usedFallbackCurrencies, setUsedFallbackCurrencies] = useState(false);
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
 
-  const selectedCurrency =
-    currencies.find((c) => c.id === currency) || currencies[0];
+  const currencyOptions = useMemo(
+    () =>
+      usedFallbackCurrencies
+        ? FALLBACK_CURRENCIES.map((code) => ({
+            id: code,
+            name: code,
+            balance: balanceMap[code] ?? "0.00",
+          }))
+        : currencies.map((c) => toCurrencyOption(c, balanceMap)),
+    [currencies, balanceMap, usedFallbackCurrencies],
+  );
+
+  const selectedCurrency = useMemo(
+    () =>
+      currencyOptions.find((c) => c.id === currency) || currencyOptions[0],
+    [currencyOptions, currency],
+  );
 
   // Recomputed whenever the selected currency's balance changes, so the
   // resolver always validates "amount" against the currently-selected
@@ -84,10 +100,11 @@ export function WithdrawalForm() {
     setUsedFallbackCurrencies(false);
 
     // Balances are the real blocker — if they fail we can't safely show amounts.
-    const balanceMap: Record<string, string> = {};
     try {
       const balanceData = await getBalances();
-      for (const b of balanceData) balanceMap[b.currency] = b.balance;
+      const nextBalanceMap: Record<string, string> = {};
+      for (const b of balanceData) nextBalanceMap[b.currency] = b.balance;
+      setBalanceMap(nextBalanceMap);
     } catch {
       setCurrencyError(
         "Unable to load your balances. Please refresh the page.",
@@ -100,17 +117,12 @@ export function WithdrawalForm() {
     // instead of leaving the dropdown empty.
     try {
       const currencyData = await getCurrencies();
-      setCurrencies(currencyData.map((c) => toCurrencyOption(c, balanceMap)));
+      setCurrencies(currencyData);
+      setUsedFallbackCurrencies(false);
     } catch (error) {
       console.error("[NexaFx] GET /currencies failed:", error);
-      setCurrencies(
-        FALLBACK_CURRENCIES.map((code) => ({
-          id: code,
-          name: code,
-          balance: balanceMap[code] ?? "0.00",
-        })),
-      );
       setUsedFallbackCurrencies(true);
+      setCurrencies([]);
     } finally {
       setIsLoadingCurrencies(false);
     }
@@ -130,8 +142,8 @@ export function WithdrawalForm() {
   const showMemoWarning = requiresMemo(walletAddress ?? "");
 
   const hasBalanceData =
-    !isLoadingCurrencies && !currencyError && currencies.length > 0;
-  const hasAnyPositiveBalance = currencies.some(
+    !isLoadingCurrencies && !currencyError && currencyOptions.length > 0;
+  const hasAnyPositiveBalance = currencyOptions.some(
     (c) => parseFloat(c.balance.replace(",", "")) > 0,
   );
   const isEmptyBalance = hasBalanceData && !hasAnyPositiveBalance;
@@ -296,7 +308,7 @@ export function WithdrawalForm() {
 
               {showCurrencyDropdown && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10">
-                  {currencies.map((curr) => (
+                  {currencyOptions.map((curr) => (
                     <button
                       key={curr.id}
                       type="button"

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Download, AlertCircle, Calendar, X } from "lucide-react";
 import { KycIcon } from "@/components/icons/kyc-icon";
 import { SwapIcon } from "@/components/icons/swap-icon";
@@ -9,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 interface NotificationItemProps {
   notification: Notification;
-  onClick?: () => void;
+  onClick?: (id: string) => void;
   isPendingDelete?: boolean;
 }
 
@@ -70,7 +71,7 @@ function highlightBoldText(text: string) {
   });
 }
 
-export function NotificationItem({
+function NotificationItemComponent({
   notification,
   onClick,
   isPendingDelete,
@@ -108,7 +109,7 @@ export function NotificationItem({
       )}
     >
       <button
-        onClick={onClick}
+        onClick={() => onClick?.(id)}
         className="flex items-start gap-3 flex-1 min-w-0 text-left"
       >
         <div
@@ -146,3 +147,5 @@ export function NotificationItem({
     </div>
   );
 }
+
+export const NotificationItem = memo(NotificationItemComponent);
