@@ -1,4 +1,5 @@
 import { apiClient } from "../api-client";
+import { formatDateTimeGB } from "../utils/format";
 
 export type TransactionStatus = "Success" | "Pending" | "Failed";
 export type TransactionType = "Deposit" | "Withdraw" | "Convert";
@@ -79,15 +80,7 @@ export function mapTransaction(dto: Record<string, any>): Transaction {
   else if (type === "Withdraw") amountString = `- ${amountString}`;
 
   const rawDate = (dto.createdAt ?? dto.date ?? dto.created_at) as string;
-  const date = rawDate
-    ? new Date(rawDate).toLocaleString("en-GB", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "";
+  const date = rawDate ? formatDateTimeGB(rawDate) : "";
 
   return {
     id: (dto.id ?? dto._id) as string,

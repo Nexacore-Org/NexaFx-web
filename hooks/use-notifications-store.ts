@@ -4,6 +4,24 @@ import * as api from "@/lib/api/notifications";
 
 const UNDO_DELAY = 5000;
 
+// Encapsulates the optimistic-update-with-rollback pattern shared by
+// markAsRead / markAllAsRead / removeNotification: capture a snapshot of
+// pre-action state, apply the optimistic update, run the API call, then roll
+// back relative to whatever the state looks like when the call settles (the
+// updater-function form). Computing from latest state -- rather than from the
+// captured snapshot -- means an update made by a different action in between
+// is never clobbered by an earlier rollback.
+function withOptimisticUpdate<T>(
+  capture: () => T,
+  optimisticUpdate: (captured: T) => void,
+  apiCall: () => Promise<unknown>,
+  rollbackUpdate: (captured: T) => void,
+): void {
+  const captured = capture();
+  optimisticUpdate(captured);
+  apiCall().catch(() => rollbackUpdate(captured));
+}
+
 interface PendingDelete {
   notification: Notification;
   timer: ReturnType<typeof setTimeout>;
@@ -86,63 +104,70 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
   },
 
   markAsRead: (id) => {
-    // Only remember whether *this* notification was unread beforehand --
-    // not a snapshot of the whole array -- so a rollback can be computed
-    // relative to whatever the state looks like when the API call settles,
-    // instead of clobbering a different action's update made in between.
-    const wasUnread =
-      get().notifications.find((n) => n.id === id)?.isRead === false;
-
-    set((state) => {
-      const updated = state.notifications.map((n) =>
-        n.id === id ? { ...n, isRead: true } : n,
-      );
-      return {
-        notifications: updated,
-        unreadCount: updated.filter((n) => !n.isRead).length,
-      };
-    });
-
-    api.markAsRead(id).catch(() => {
-      if (!wasUnread) return;
-      set((state) => {
-        const updated = state.notifications.map((n) =>
-          n.id === id ? { ...n, isRead: false } : n,
-        );
-        return {
-          notifications: updated,
-          unreadCount: updated.filter((n) => !n.isRead).length,
-        };
-      });
-    });
+    withOptimisticUpdate(
+      // Only remember whether *this* notification was unread beforehand --
+      // not a snapshot of the whole array -- so a rollback can be computed
+      // relative to whatever the state looks like when the API call settles,
+      // instead of clobbering a different action's update made in between.
+      () =>
+        get().notifications.find((n) => n.id === id)?.isRead === false,
+      () =>
+        set((state) => {
+          const updated = state.notifications.map((n) =>
+            n.id === id ? { ...n, isRead: true } : n,
+          );
+          return {
+            notifications: updated,
+            unreadCount: updated.filter((n) => !n.isRead).length,
+          };
+        }),
+      () => api.markAsRead(id),
+      (wasUnread) => {
+        if (!wasUnread) return;
+        set((state) => {
+          const updated = state.notifications.map((n) =>
+            n.id === id ? { ...n, isRead: false } : n,
+          );
+          return {
+            notifications: updated,
+            unreadCount: updated.filter((n) => !n.isRead).length,
+          };
+        });
+      },
+    );
   },
 
   markAllAsRead: () => {
-    // Remember which ids were unread beforehand rather than the whole
-    // array/count, so rollback can restore just those ids relative to
-    // current state instead of overwriting anything that changed since.
-    const previouslyUnreadIds = new Set(
-      get()
-        .notifications.filter((n) => !n.isRead)
-        .map((n) => n.id),
+    withOptimisticUpdate(
+      // Remember which ids were unread beforehand rather than the whole
+      // array/count, so rollback can restore just those ids relative to
+      // current state instead of overwriting anything that changed since.
+      () =>
+        new Set(
+          get()
+            .notifications.filter((n) => !n.isRead)
+            .map((n) => n.id),
+        ),
+      () =>
+        set((state) => ({
+          notifications: state.notifications.map((n) => ({
+            ...n,
+            isRead: true,
+          })),
+          unreadCount: 0,
+        })),
+      () => api.markAllAsRead(),
+      (previouslyUnreadIds) =>
+        set((state) => {
+          const updated = state.notifications.map((n) =>
+            previouslyUnreadIds.has(n.id) ? { ...n, isRead: false } : n,
+          );
+          return {
+            notifications: updated,
+            unreadCount: updated.filter((n) => !n.isRead).length,
+          };
+        }),
     );
-
-    set((state) => ({
-      notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
-      unreadCount: 0,
-    }));
-
-    api.markAllAsRead().catch(() => {
-      set((state) => {
-        const updated = state.notifications.map((n) =>
-          previouslyUnreadIds.has(n.id) ? { ...n, isRead: false } : n,
-        );
-        return {
-          notifications: updated,
-          unreadCount: updated.filter((n) => !n.isRead).length,
-        };
-      });
-    });
   },
 
   addNotification: (notification) =>
@@ -158,23 +183,40 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
     const notification = state.notifications.find((n) => n.id === id);
     if (!notification) return;
 
-    set((s) => ({
-      notifications: s.notifications.filter((n) => n.id !== id),
-      unreadCount: s.unreadCount - (!notification.isRead ? 1 : 0),
-    }));
+    let timer: ReturnType<typeof setTimeout>;
 
-    const timer = setTimeout(async () => {
-      const current = get();
-      if (!current.pendingDeletes.has(id)) return;
-
-      try {
-        await api.deleteNotification(id);
-        set((s) => {
-          const next = new Map(s.pendingDeletes);
-          next.delete(id);
-          return { pendingDeletes: next };
-        });
-      } catch {
+    withOptimisticUpdate(
+      () => ({
+        notification,
+        wasUnread: !notification.isRead,
+      }),
+      ({ wasUnread }) =>
+        set((s) => ({
+          notifications: s.notifications.filter((n) => n.id !== id),
+          unreadCount: s.unreadCount - (wasUnread ? 1 : 0),
+        })),
+      () =>
+        new Promise<void>((resolve, reject) => {
+          timer = setTimeout(() => {
+            const current = get();
+            if (!current.pendingDeletes.has(id)) {
+              resolve();
+              return;
+            }
+            api.deleteNotification(id).then(
+              () => {
+                set((s) => {
+                  const next = new Map(s.pendingDeletes);
+                  next.delete(id);
+                  return { pendingDeletes: next };
+                });
+                resolve();
+              },
+              reject,
+            );
+          }, UNDO_DELAY);
+        }),
+      ({ notification, wasUnread }) => {
         // Roll back relative to state at rollback time, not a captured
         // snapshot, and only re-insert if nothing else has already put
         // this notification back (e.g. a fresh fetch).
@@ -187,17 +229,17 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
           return {
             pendingDeletes: next,
             notifications: [notification, ...s.notifications],
-            unreadCount: s.unreadCount + (!notification.isRead ? 1 : 0),
+            unreadCount: s.unreadCount + (wasUnread ? 1 : 0),
           };
         });
-      }
-    }, UNDO_DELAY);
+      },
+    );
 
     set((s) => {
       const next = new Map(s.pendingDeletes);
       const existing = next.get(id);
       if (existing) clearTimeout(existing.timer);
-      next.set(id, { notification, timer });
+      next.set(id, { notification, timer: timer! });
       return { pendingDeletes: next };
     });
   },

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { AlertTriangle, ChevronDown, UserPlus, ArrowUpDown, Clock, Coins } from "lucide-react";
+import { Spinner } from "@/components/ui";
 import { AdminMetricCard } from "@/components/admin/AdminMetricCard";
 import { CohortRetentionTable } from "@/components/admin/cohort-retention-table";
 import { AnomalyList } from "@/components/admin/anomaly-list";
@@ -26,7 +27,7 @@ const RevenueChart = dynamic(() => import("@/components/admin/RevenueChart").the
   ssr: false,
   loading: () => (
     <div className="bg-white rounded-2xl flex-1 min-w-0 h-63.25 py-2.5 px-5 border border-gray-200 flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
+      <Spinner size="lg" className="border-yellow-400" />
     </div>
   ),
 });
@@ -35,7 +36,7 @@ const GeoDistribution = dynamic(() => import("@/components/admin/geo-distributio
   ssr: false,
   loading: () => (
     <div className="bg-white rounded-2xl flex-1 min-w-0 h-63.25 py-2.5 px-5 border border-gray-200 flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
+      <Spinner size="lg" className="border-yellow-400" />
     </div>
   ),
 });
@@ -71,7 +72,7 @@ export default function AnalyticsPage() {
         setRecentTransactions(transactionsData.data);
         setGeoData(geoResult);
         setError(null);
-      } catch (err: any) {
+      } catch (err) {
         console.error("Failed to load admin analytics data", err);
         const hasCachedData = hasCachedAnalyticsRef.current;
         const message = getRequestErrorMessage(err, {
