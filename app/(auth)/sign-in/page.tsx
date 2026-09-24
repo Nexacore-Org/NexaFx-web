@@ -46,7 +46,6 @@ export default function SignInPage() {
             alt="NexaFX logo"
             width={120}
             height={40}
-            priority
           />
           <div className="text-sm text-gray-700">
             Don&apos;t have an account?{" "}

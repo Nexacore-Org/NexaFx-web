@@ -49,6 +49,7 @@ export default function Hero() {
             width={800}
             height={800}
             className="rounded-3xl w-[450px] h-[480px] object-cover"
+            sizes="450px"
             priority
           />
         </div>

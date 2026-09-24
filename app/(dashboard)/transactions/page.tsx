@@ -63,40 +63,40 @@ function TransactionsContent() {
     [searchParams, router, pathname]
   );
 
-  const handleSearchChange = (q: string) => {
+  const handleSearchChange = useCallback((q: string) => {
     updateQueryParams({ search: q, page: "1" });
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => {
       setDebouncedSearch(q);
     }, 400);
-  };
+  }, [updateQueryParams]);
 
-  const handleFilterChange = (f: string) => {
+  const handleFilterChange = useCallback((f: string) => {
     updateQueryParams({ type: f === "All" ? null : f, page: "1" });
-  };
+  }, [updateQueryParams]);
 
-  const handleDateFromChange = (date: string) => {
+  const handleDateFromChange = useCallback((date: string) => {
     updateQueryParams({ from: date, page: "1" });
-  };
+  }, [updateQueryParams]);
 
-  const handleDateToChange = (date: string) => {
+  const handleDateToChange = useCallback((date: string) => {
     updateQueryParams({ to: date, page: "1" });
-  };
+  }, [updateQueryParams]);
 
-  const handleClearDateRange = () => {
+  const handleClearDateRange = useCallback(() => {
     updateQueryParams({ from: null, to: null, page: "1" });
-  };
+  }, [updateQueryParams]);
 
   // Sorting composes with search/filter/date-range via updateQueryParams,
   // which merges into the existing query string rather than replacing it —
   // and deliberately doesn't touch "page", so it doesn't reset pagination.
-  const handleSortChange = (column: TransactionSortColumn) => {
+  const handleSortChange = useCallback((column: TransactionSortColumn) => {
     if (sortBy === column) {
       updateQueryParams({ dir: sortDir === "asc" ? "desc" : "asc" });
     } else {
       updateQueryParams({ sort: column, dir: "asc" });
     }
-  };
+  }, [sortBy, sortDir, updateQueryParams]);
 
   const sortedTransactions = useMemo(() => {
     if (!sortBy) return transactions;
@@ -121,12 +121,12 @@ function TransactionsContent() {
     return sorted;
   }, [transactions, sortBy, sortDir]);
 
-  const handleExportCSV = () => {
+  const handleExportCSV = useCallback(() => {
     if (sortedTransactions.length > 0) {
       const filename = generateCSVFilename(dateFrom, dateTo);
       exportTransactionsToCSV(sortedTransactions, filename);
     }
-  };
+  }, [sortedTransactions, dateFrom, dateTo]);
 
   useEffect(() => {
     let cancelled = false;
@@ -193,10 +193,14 @@ function TransactionsContent() {
 
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
 
-  const handleTransactionClick = (tx: Transaction) => {
+  const handleTransactionClick = useCallback((tx: Transaction) => {
     setSelectedTransaction(tx);
     setDetailsOpen(true);
-  };
+  }, []);
+
+  const handlePageChange = useCallback((p: number) => {
+    updateQueryParams({ page: String(p) });
+  }, [updateQueryParams]);
 
   return (
     <div className="flex flex-col h-full space-y-4 md:space-y-6 max-w-7xl mx-auto w-full p-4 md:p-6">
@@ -256,7 +260,7 @@ function TransactionsContent() {
             <TransactionPagination
               currentPage={currentPage}
               totalPages={totalPages}
-              onPageChange={(p) => updateQueryParams({ page: String(p) })}
+              onPageChange={handlePageChange}
               totalItems={totalItems}
               itemsPerPage={ITEMS_PER_PAGE}
             />
