@@ -271,6 +271,35 @@ export async function createWithdrawal(
     status,
     message: json.message as string | undefined,
   };
+  const idempotencyKey = crypto.randomUUID();
+
+  // TODO: Coordinate backend support for accepting and deduplicating this header.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const json = await apiClient<any>('/transactions/withdraw', {
+        method: 'POST',
+    headers: {
+      'Idempotency-Key': idempotencyKey,
+    },
+        body: JSON.stringify(data),
+    });
+
+    // Normalize response - backend may use different field names
+    const transactionId = (json.transactionId ??
+        json.transaction_id ??
+        json.id ??
+        json.data?.id ??
+        json.data?.transactionId) as string;
+
+    const status = (json.status ?? json.data?.status ?? 'pending') as
+        | 'pending'
+        | 'success'
+        | 'failed';
+
+    return {
+        transactionId,
+        status,
+        message: json.message as string | undefined,
+    };
 }
 
 // ==================== Deposit ====================

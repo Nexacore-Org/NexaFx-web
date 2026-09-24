@@ -22,10 +22,10 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
+      "img-src 'self' data: blob: https://api.dicebear.com https://lh3.googleusercontent.com https://nexafx-backend.onrender.com",
       "font-src 'self'",
-      "connect-src 'self' https://nexafx-backend.onrender.com https://buy.moonpay.com https://*.ingest.sentry.io",
-      "frame-src https://buy.moonpay.com",
+      "connect-src 'self' https://nexafx-backend.onrender.com https://open.er-api.com https://buy.moonpay.com https://client.crisp.chat https://*.crisp.chat https://*.ingest.sentry.io wss://*.crisp.chat",
+      "frame-src 'self' https://buy.moonpay.com",
     ].join("; "),
   },
 ];

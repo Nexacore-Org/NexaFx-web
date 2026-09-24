@@ -15,6 +15,13 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
     const headers = new Headers();
     headers.set("Content-Type", "application/json");
 
+    if (process.env.TEST_ACCESS_TOKEN && process.env.NODE_ENV !== "development") {
+        console.warn(
+            "[NexaFx] TEST_ACCESS_TOKEN was configured outside local development. This is a security risk and should be removed immediately.",
+            { env: process.env.NODE_ENV, pathname }
+        );
+    }
+
     // Use token from client cookie/header if present
     const token = req.headers.get("x-client-token") ?? req.cookies.get("access_token")?.value;
     if (token) {
