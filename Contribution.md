@@ -214,6 +214,12 @@ npm run analyze
 Generates an interactive bundle analysis report (`.next/analyze/client.html`, `.next/analyze/server.html`, etc.). Open the HTML files in a browser to inspect bundle sizes, module breakdowns, and identify optimization opportunities.
 
 > **Note:** The analyzer is wired conditionally in `next.config.ts`. If `@next/bundle-analyzer` is not yet installed (it is added by the separate bundle-size-budget CI issue), the command runs a normal production build and prints a warning. The report is only generated once the dependency lands.
+## Useful Documentation
+
+- [Development Scripts](docs/store-conventions.md) — Zustand store conventions (persistence, optimistic updates)
+- [Operational Runbook](docs/runbook.md) — Deploy rollback and log-checking steps
+- [Mock Cleanup Note](docs/mock-cleanup-note.md) — Historical mock file cleanup and test fixture locations
+
 
 ---
 

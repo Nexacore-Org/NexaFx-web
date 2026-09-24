@@ -25,6 +25,9 @@ import { create } from "zustand";
  * - reset(): any → select (closes modal, clears form)
  *
  * Cross-referenced from: components/dashboard/withdrawal/WithdrawalModal.tsx
+ * Withdrawal store — step machine for withdrawal flow.
+ * See `docs/store-conventions.md` for persistence and optimistic-update conventions.
+
  */
 export type WithdrawalStep = 'select' | 'form' | 'review' | 'processing' | 'success' | 'error';
 export type TransactionStatus = 'pending' | 'success' | 'failed' | null;
