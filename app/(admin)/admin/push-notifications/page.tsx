@@ -140,7 +140,7 @@ export default function PushNotificationsPage() {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex gap-1.75 items-center px-1.5 py-1.5 rounded-md bg-[#FFD552] text-black text-xs font-semibold lg:hidden"
+            className="flex gap-2 items-center px-1.5 py-1.5 rounded-md bg-[#FFD552] text-black text-xs font-semibold lg:hidden"
           >
             <Plus className="w-3.5" /> Create new
           </button>

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { ArrowDownLeft, ArrowUpRight, Check, RefreshCw, X, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Transaction } from "@/lib/api/transactions";
@@ -15,7 +16,7 @@ interface TransactionTableProps {
     onSortChange?: (column: TransactionSortColumn) => void;
 }
 
-function SortableHeader({
+const SortableHeader = memo(function SortableHeader({
     label,
     column,
     align = "left",
@@ -65,7 +66,70 @@ function SortableHeader({
             </button>
         </th>
     );
-}
+});
+
+const TransactionRow = memo(function TransactionRow({
+    transaction: tx,
+    onSelectTransaction,
+}: {
+    transaction: Transaction;
+    onSelectTransaction: (transaction: Transaction) => void;
+}) {
+    return (
+        <tr
+            onClick={() => onSelectTransaction(tx)}
+            className="hover:bg-muted/50 transition-colors cursor-pointer"
+        >
+            <td className="px-6 py-4">
+                <div className="flex items-center gap-3">
+                    <div className={cn(
+                        "h-8 w-8 rounded-full flex items-center justify-center",
+                        tx.type === "Deposit" ? "bg-green-500/10 text-green-500" : 
+                        tx.type === "Withdraw" ? "bg-red-500/10 text-red-500" :
+                        "bg-orange-500/10 text-orange-500"
+                    )}>
+                        {tx.type === "Convert" ? <RefreshCw className="h-4 w-4" /> : 
+                         tx.type === "Deposit" ? <ArrowDownLeft className="h-4 w-4" /> : 
+                         <ArrowUpRight className="h-4 w-4" />}
+                    </div>
+                    <span className="font-medium">{tx.type}</span>
+                </div>
+            </td>
+            <td className="px-6 py-4 text-sm">
+                {tx.currency}
+                {tx.toCurrency && <span className="text-muted-foreground"> → {tx.toCurrency}</span>}
+            </td>
+            <td className="px-6 py-4 text-sm text-muted-foreground">{tx.date}</td>
+            <td className="px-6 py-4">
+                <span
+                    className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
+                    tx.status === "Success" ? "bg-green-500/10 text-green-700 dark:text-green-400" :
+                    tx.status === "Pending" ? "bg-yellow-600/10 text-yellow-700 dark:text-yellow-400" :
+                    "bg-red-500/10 text-red-700 dark:text-red-400"
+                )}
+                    aria-label={`Transaction status: ${tx.status}`}
+                >
+                    {tx.status === "Success" && <Check className="h-3 w-3" />}
+                    {tx.status === "Failed" && <X className="h-3 w-3" />}
+                    {tx.status}
+                </span>
+            </td>
+            <td className="px-6 py-4 text-sm font-bold text-right">
+                <span className={cn(
+                    tx.type === "Deposit" ? "text-green-500" : "text-foreground"
+                )}>
+                    {tx.amountString}
+                </span>
+                {tx.toAmount != null && tx.toCurrency && (
+                    <div className="text-xs text-muted-foreground font-normal">
+                        {tx.toAmount.toLocaleString()} {tx.toCurrency}
+                    </div>
+                )}
+            </td>
+        </tr>
+    );
+});
 
 export function TransactionTable({
     transactions,
@@ -94,59 +158,11 @@ export function TransactionTable({
                             </td>
                         </tr>
                     ) : transactions.map((tx) => (
-                        <tr 
-                            key={tx.id} 
-                            onClick={() => onSelectTransaction(tx)}
-                            className="hover:bg-muted/50 transition-colors cursor-pointer"
-                        >
-                            <td className="px-6 py-4">
-                                <div className="flex items-center gap-3">
-                                    <div className={cn(
-                                        "h-8 w-8 rounded-full flex items-center justify-center",
-                                        tx.type === "Deposit" ? "bg-green-500/10 text-green-500" : 
-                                        tx.type === "Withdraw" ? "bg-red-500/10 text-red-500" :
-                                        "bg-orange-500/10 text-orange-500"
-                                    )}>
-                                        {tx.type === "Convert" ? <RefreshCw className="h-4 w-4" /> : 
-                                         tx.type === "Deposit" ? <ArrowDownLeft className="h-4 w-4" /> : 
-                                         <ArrowUpRight className="h-4 w-4" />}
-                                    </div>
-                                    <span className="font-medium">{tx.type}</span>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm">
-                                {tx.currency}
-                                {tx.toCurrency && <span className="text-muted-foreground"> → {tx.toCurrency}</span>}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-muted-foreground">{tx.date}</td>
-                            <td className="px-6 py-4">
-                                <span
-                                    className={cn(
-                                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                                    tx.status === "Success" ? "bg-green-500/10 text-green-700 dark:text-green-400" :
-                                    tx.status === "Pending" ? "bg-yellow-600/10 text-yellow-700 dark:text-yellow-400" :
-                                    "bg-red-500/10 text-red-700 dark:text-red-400"
-                                )}
-                                    aria-label={`Transaction status: ${tx.status}`}
-                                >
-                                    {tx.status === "Success" && <Check className="h-3 w-3" />}
-                                    {tx.status === "Failed" && <X className="h-3 w-3" />}
-                                    {tx.status}
-                                </span>
-                            </td>
-                            <td className="px-6 py-4 text-sm font-bold text-right">
-                                <span className={cn(
-                                    tx.type === "Deposit" ? "text-green-500" : "text-foreground"
-                                )}>
-                                    {tx.amountString}
-                                </span>
-                                {tx.toAmount != null && tx.toCurrency && (
-                                    <div className="text-xs text-muted-foreground font-normal">
-                                        {tx.toAmount.toLocaleString()} {tx.toCurrency}
-                                    </div>
-                                )}
-                            </td>
-                        </tr>
+                        <TransactionRow
+                            key={tx.id}
+                            transaction={tx}
+                            onSelectTransaction={onSelectTransaction}
+                        />
                     ))}
                 </tbody>
             </table>

@@ -82,9 +82,12 @@ export function Notification() {
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
-    const loaded = loadPreferences();
-    setPreferences(loaded);
-    setSavedPreferences(loaded);
+    const timer = setTimeout(() => {
+      const loaded = loadPreferences();
+      setPreferences(loaded);
+      setSavedPreferences(loaded);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const hasChanges =
@@ -129,7 +132,7 @@ export function Notification() {
       )}
 
       <div className="rounded-2xl border-[0.25px] border-[#8C8C8C] bg-card">
-        <h3 className="mx-5 border-b border-[#00000026] pb-4.5 pt-6.25 mb-4.5 font-semibold text-base text-muted-foreground dark:border-slate-300 dark:text-white">
+        <h3 className="mx-5 border-b border-[#00000026] pb-4.5 pt-6 mb-4.5 font-semibold text-base text-muted-foreground dark:border-slate-300 dark:text-white">
           Notification Preferences
         </h3>
 
@@ -190,7 +193,7 @@ export function Notification() {
         </div>
       </div>
 
-      <div className="ml-auto mt-10 mb-3.5 flex max-w-105.25 flex-col gap-3 md:flex-row">
+      <div className="ml-auto mt-10 mb-3.5 flex max-w-105 flex-col gap-3 md:flex-row">
         <button
           onClick={handleSave}
           disabled={!hasChanges}

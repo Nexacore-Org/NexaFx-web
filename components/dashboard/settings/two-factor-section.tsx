@@ -12,7 +12,8 @@ export function TwoFactorSection() {
 
   useEffect(() => {
     // Check 2FA status from user profile or store
-    setLoading(false)
+    const timer = setTimeout(() => setLoading(false), 0)
+    return () => clearTimeout(timer)
   }, [])
 
   if (loading) {
@@ -26,7 +27,7 @@ export function TwoFactorSection() {
   return (
     <>
       <div className="flex max-sm:flex-col max-sm:items-start justify-between items-center gap-6 px-5 py-5">
-        <div className="max-w-124.25">
+        <div className="max-w-124">
           <h4 className="text-foreground font-semibold text-[15px] sm:text-lg flex items-center gap-2">
             {is2FAEnabled ? <Shield className="h-5 w-5 text-green-500" /> : <ShieldOff className="h-5 w-5 text-muted-foreground" />}
             Two-Factor Authentication

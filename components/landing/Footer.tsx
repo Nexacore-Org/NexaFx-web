@@ -10,6 +10,7 @@ export default function Footer() {
             alt="NexaFX Logo"
             width={120}
             height={40}
+            sizes="120px"
             className="object-contain mb-4"
           />
           <p className="text-sm text-slate-500 max-w-sm">

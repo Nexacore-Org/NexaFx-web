@@ -28,6 +28,8 @@ const RevenueChart = dynamic(() => import("@/components/admin/RevenueChart").the
   loading: () => (
     <div className="bg-white rounded-2xl flex-1 min-w-0 h-63.25 py-2.5 px-5 border border-gray-200 flex items-center justify-center">
       <Spinner size="lg" className="border-yellow-400" />
+    <div className="bg-white rounded-2xl flex-1 min-w-0 h-64 py-2.5 px-5 border border-gray-200 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
     </div>
   ),
 });
@@ -37,6 +39,8 @@ const GeoDistribution = dynamic(() => import("@/components/admin/geo-distributio
   loading: () => (
     <div className="bg-white rounded-2xl flex-1 min-w-0 h-63.25 py-2.5 px-5 border border-gray-200 flex items-center justify-center">
       <Spinner size="lg" className="border-yellow-400" />
+    <div className="bg-white rounded-2xl flex-1 min-w-0 h-64 py-2.5 px-5 border border-gray-200 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
     </div>
   ),
 });

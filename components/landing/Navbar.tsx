@@ -17,6 +17,7 @@ export default function Navbar() {
           alt="NexaFX Logo"
           width={110}
           height={36}
+          sizes="110px"
           className="object-contain"
         />
 

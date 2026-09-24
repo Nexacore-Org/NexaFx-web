@@ -1,7 +1,7 @@
 export function Information() {
   return (
     <div className=" rounded-2xl border-[#8C8C8C] border-[0.25px] bg-white dark:bg-black/5 mt-10">
-      <h3 className="text-[#00000066] mb-4.5 font-semibold text-base mx-5 pt-6.25 pb-4.5 dark:text-white dark:border-slate-300 border-[#00000026] border-b">
+      <h3 className="text-[#00000066] mb-4.5 font-semibold text-base mx-5 pt-6 pb-4.5 dark:text-white dark:border-slate-300 border-[#00000026] border-b">
         Account Information
       </h3>
       <div className="flex justify-between items-center gap-5 px-5">
@@ -16,7 +16,7 @@ export function Information() {
         </div>
         <span className="text-sm">a***n@yahoo.com</span>
       </div>
-      <div className="flex justify-between items-center gap-5 px-5 pt-6 pb-6.25">
+      <div className="flex justify-between items-center gap-5 px-5 pt-6 pb-6">
         <div>
           <h4 className="text-[#000000CC] font-semibold text-[15px] sm:text-lg dark:text-white">
             Verify Phone Number
