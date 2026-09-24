@@ -25,7 +25,7 @@ import { detectAnomalies, getAnomaliesThisWeek } from "@/lib/utils/anomaly-detec
 const RevenueChart = dynamic(() => import("@/components/admin/RevenueChart").then(mod => mod.RevenueChart), {
   ssr: false,
   loading: () => (
-    <div className="bg-white rounded-2xl flex-1 min-w-0 h-63.25 py-2.5 px-5 border border-gray-200 flex items-center justify-center">
+    <div className="bg-white rounded-2xl flex-1 min-w-0 h-64 py-2.5 px-5 border border-gray-200 flex items-center justify-center">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
     </div>
   ),
@@ -34,7 +34,7 @@ const RevenueChart = dynamic(() => import("@/components/admin/RevenueChart").the
 const GeoDistribution = dynamic(() => import("@/components/admin/geo-distribution").then(mod => mod.GeoDistribution), {
   ssr: false,
   loading: () => (
-    <div className="bg-white rounded-2xl flex-1 min-w-0 h-63.25 py-2.5 px-5 border border-gray-200 flex items-center justify-center">
+    <div className="bg-white rounded-2xl flex-1 min-w-0 h-64 py-2.5 px-5 border border-gray-200 flex items-center justify-center">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
     </div>
   ),
@@ -71,7 +71,7 @@ export default function AnalyticsPage() {
         setRecentTransactions(transactionsData.data);
         setGeoData(geoResult);
         setError(null);
-      } catch (err: any) {
+      } catch (err) {
         console.error("Failed to load admin analytics data", err);
         const hasCachedData = hasCachedAnalyticsRef.current;
         const message = getRequestErrorMessage(err, {

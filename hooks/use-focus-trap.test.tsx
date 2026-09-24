@@ -96,4 +96,45 @@ describe("useFocusTrap", () => {
 
     expect(() => pressKey("Tab")).not.toThrow();
   });
+
+  it("registers and cleans up exactly one document keydown listener per open trap", () => {
+    const addSpy = jest.spyOn(document, "addEventListener");
+    const removeSpy = jest.spyOn(document, "removeEventListener");
+    const containerRef: RefObject<HTMLDivElement | null> = {
+      current: setupContainer(),
+    };
+
+    const { unmount } = renderHook(() =>
+      useFocusTrap(true, jest.fn(), containerRef),
+    );
+
+    const keydownAdds = addSpy.mock.calls.filter(
+      ([type]) => type === "keydown",
+    );
+    expect(keydownAdds).toHaveLength(1);
+
+    unmount();
+
+    const keydownRemovals = removeSpy.mock.calls.filter(
+      ([type]) => type === "keydown",
+    );
+    expect(keydownRemovals).toHaveLength(1);
+  });
+
+  it("ignores focusables hidden with display:none when trapping focus", () => {
+    const container = document.createElement("div");
+    container.innerHTML = `
+      <button data-testid="hidden" style="display:none">Hidden</button>
+      <button data-testid="visible">Visible</button>
+      <button data-testid="last">Last</button>
+    `;
+    document.body.appendChild(container);
+    const containerRef: RefObject<HTMLDivElement | null> = { current: container };
+
+    renderHook(() => useFocusTrap(true, jest.fn(), containerRef));
+
+    expect(document.activeElement).toBe(
+      container.querySelector('[data-testid="visible"]'),
+    );
+  });
 });
