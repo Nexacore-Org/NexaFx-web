@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { apiClient } from "../api-client";
+import {
+  formatDateTimeGB,
+  formatShortDate,
+  formatShortDateTime,
+} from "../utils/format";
 
 export interface AdminUser {
   id: string;
@@ -137,13 +142,7 @@ export function mapAdminUser(user: any): AdminUser {
     user.kyc_status === "verified"
       ? "Verified"
       : "Unverified") as "Verified" | "Unverified",
-    createdAt: user.createdAt
-      ? new Date(user.createdAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : "",
+    createdAt: user.createdAt ? formatShortDate(user.createdAt) : "",
     createdAtRaw: user.createdAt ?? user.created_at ?? undefined,
     twoFactorEnabled:
       user.twoFactorEnabled ??
@@ -403,15 +402,7 @@ export async function getAdminTransactions(
 
   const mappedData = data.map((tx: any) => {
     const rawDate = tx.createdAt ?? tx.date ?? "";
-    const formattedDate = rawDate
-      ? new Date(rawDate).toLocaleString("en-GB", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "";
+    const formattedDate = rawDate ? formatDateTimeGB(rawDate) : "";
 
     return {
       id: tx.id ?? tx._id ?? "",
@@ -513,13 +504,7 @@ export async function getAnnouncements(): Promise<Announcement[]> {
         : ("Inactive" as const),
     colorTheme: item.colorTheme ?? "yellow",
     targetPage: item.targetPage ?? "all",
-    createdAt: item.createdAt
-      ? new Date(item.createdAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : "",
+    createdAt: item.createdAt ? formatShortDate(item.createdAt) : "",
   }));
 }
 
@@ -543,16 +528,8 @@ export async function createAnnouncement(data: {
     colorTheme: item.colorTheme ?? data.colorTheme,
     targetPage: item.targetPage ?? data.targetPage,
     createdAt: item.createdAt
-      ? new Date(item.createdAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }),
+      ? formatShortDate(item.createdAt)
+      : formatShortDate(new Date()),
   };
 }
 
@@ -606,13 +583,7 @@ export async function getBroadcastEmails(): Promise<BroadcastEmail[]> {
     scheduledAt: item.scheduledAt ?? undefined,
     sentAt: item.sentAt ?? undefined,
     recipientCount: Number(item.recipientCount) || 0,
-    createdAt: item.createdAt
-      ? new Date(item.createdAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : "",
+    createdAt: item.createdAt ? formatShortDate(item.createdAt) : "",
   }));
 }
 
@@ -638,16 +609,8 @@ export async function sendBroadcastEmail(data: {
     sentAt: item.sentAt ?? undefined,
     recipientCount: Number(item.recipientCount) || 0,
     createdAt: item.createdAt
-      ? new Date(item.createdAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }),
+      ? formatShortDate(item.createdAt)
+      : formatShortDate(new Date()),
   };
 }
 
@@ -712,15 +675,7 @@ export async function getUserNotes(userId: string): Promise<UserNote[]> {
     id: item.id ?? item._id ?? "",
     adminEmail: item.adminEmail ?? item.admin_email ?? "",
     content: item.content ?? item.note ?? "",
-    createdAt: item.createdAt
-      ? new Date(item.createdAt).toLocaleString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "",
+    createdAt: item.createdAt ? formatShortDateTime(item.createdAt) : "",
   }));
 }
 
@@ -739,20 +694,8 @@ export async function addUserNote(
     adminEmail: item.adminEmail ?? item.admin_email ?? "",
     content: item.content ?? content,
     createdAt: item.createdAt
-      ? new Date(item.createdAt).toLocaleString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : new Date().toLocaleString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
+      ? formatShortDateTime(item.createdAt)
+      : formatShortDateTime(new Date()),
   };
 }
 

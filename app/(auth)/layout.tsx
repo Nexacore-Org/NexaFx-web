@@ -15,7 +15,6 @@ export default function AuthLayout({
             alt="NexaFX logo"
             width={120}
             height={40}
-            priority
           />
         </Link>
       </div>

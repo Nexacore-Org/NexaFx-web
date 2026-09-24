@@ -210,7 +210,7 @@ export function ProfileTab() {
           </p>
         )}
 
-        <div className="flex gap-3 md:flex-row flex-col md:max-w-105.25 pt-4">
+        <div className="flex gap-3 md:flex-row flex-col md:max-w-105 pt-4">
           <button
             type="submit"
             disabled={isLoading}

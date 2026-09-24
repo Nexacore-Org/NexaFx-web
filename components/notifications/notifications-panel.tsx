@@ -76,15 +76,15 @@ export function NotificationsPanel() {
     }
   }, [isOpen, fetchNotifications]);
 
-  if (!isOpen) return null;
-
-  const handleNotificationClick = (id: string) => {
+  const handleNotificationClick = useCallback((id: string) => {
     markAsRead(id);
-  };
+  }, [markAsRead]);
 
-  const handleMarkAllAsRead = () => {
+  const handleMarkAllAsRead = useCallback(() => {
     markAllAsRead();
-  };
+  }, [markAllAsRead]);
+
+  if (!isOpen) return null;
 
   return (
     <>
@@ -183,7 +183,7 @@ export function NotificationsPanel() {
                 <NotificationItem
                   key={notification.id}
                   notification={notification}
-                  onClick={() => handleNotificationClick(notification.id)}
+                  onClick={handleNotificationClick}
                 />
               ))}
               {Array.from(pendingDeletes.entries()).map(

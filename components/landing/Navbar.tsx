@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { AuthCTAButtons } from "./auth-cta-buttons";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -17,6 +17,7 @@ export default function Navbar() {
           alt="NexaFX Logo"
           width={110}
           height={36}
+          sizes="110px"
           className="object-contain"
         />
 
@@ -28,18 +29,12 @@ export default function Navbar() {
         </div>
 
         {/* Desktop Auth */}
-        <div className="hidden md:flex items-center gap-6">
-          <Link href="/sign-in" className="font-semibold">
-            Sign In
-          </Link>
-
-          <Link
-            href="/signup"
-            className="bg-[#F39A00] text-white px-5 py-2 rounded-lg font-bold"
-          >
-            Sign Up
-          </Link>
-        </div>
+        <AuthCTAButtons
+          className="hidden md:flex items-center gap-6"
+          signInFirst
+          signInClassName="font-semibold"
+          signUpClassName="bg-[#F39A00] text-white px-5 py-2 rounded-lg font-bold"
+        />
 
         {/* Mobile Menu Button */}
         <button
@@ -61,21 +56,12 @@ export default function Navbar() {
             <a href="#security" className="py-3" onClick={() => setOpen(false)}>Security</a>
           </div>
 
-          <div className="flex flex-col gap-3 mt-6">
-            <Link
-              href="/sign-in"
-              className="text-center font-semibold py-3 border rounded-lg"
-            >
-              Sign In
-            </Link>
-
-            <Link
-              href="/signup"
-              className="text-center bg-[#F39A00] text-white py-3 rounded-lg font-bold"
-            >
-              Sign Up
-            </Link>
-          </div>
+          <AuthCTAButtons
+            className="flex flex-col gap-3 mt-6"
+            signInFirst
+            signInClassName="text-center font-semibold py-3 border rounded-lg"
+            signUpClassName="text-center bg-[#F39A00] text-white py-3 rounded-lg font-bold"
+          />
         </div>
       )}
     </nav>

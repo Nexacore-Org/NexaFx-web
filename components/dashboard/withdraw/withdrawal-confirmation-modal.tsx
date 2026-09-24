@@ -1,7 +1,7 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui";
 
 interface WithdrawalConfirmationModalProps {
   amount: string;
@@ -76,7 +76,7 @@ export function WithdrawalConfirmationModal({
           >
             {isLoading ? (
               <>
-                <Loader2 className="size-5 animate-spin" />
+                <Spinner className="size-5" />
                 Processing...
               </>
             ) : (
