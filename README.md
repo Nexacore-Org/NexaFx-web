@@ -91,6 +91,16 @@ git checkout -b feat/issue-123-your-description
 
 4. Make the smallest complete change that satisfies the issue.
 5. Run the required checks:
+### Test scripts
+
+The project uses Jest (with Testing Library for component tests). While writing
+or fixing tests, `test:watch` keeps Jest running so you can iterate quickly:
+
+- `npm test` — run all Jest tests once
+- `npm run test:watch` — run Jest in watch mode
+
+## 🔐 Security
+
 
 ```bash
 npm run build
