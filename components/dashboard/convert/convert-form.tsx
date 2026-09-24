@@ -23,6 +23,7 @@ import {
   type ConvertFormValues,
 } from "@/lib/validations/transactions";
 import { Input } from "@/components/ui/Input";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { CURRENCIES } from "@/lib/currencies";
 import {
   MAX_AMOUNT_INPUT_LENGTH,
@@ -755,8 +756,9 @@ export function ConvertForm() {
         </p>
 
         <div className="space-y-3">
-          <button
-            type="submit"
+          <SubmitButton
+            loading={isSubmitting}
+            loadingLabel="Converting..."
             disabled={isButtonDisabled}
             title={rateError ? "Rates unavailable" : undefined}
             className={cn(
@@ -766,14 +768,8 @@ export function ConvertForm() {
                 "opacity-60 cursor-not-allowed hover:bg-primary",
             )}
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" /> Converting...
-              </>
-            ) : (
-              "Convert Now"
-            )}
-          </button>
+            Convert Now
+          </SubmitButton>
           {rateError && (
             <p className="text-xs text-center text-destructive">
               Unable to fetch exchange rates. Please try again later.

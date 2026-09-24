@@ -10,19 +10,50 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import { resetPassword } from "@/lib/api/auth";
-import { resetPasswordSchema, type ResetPasswordFormValues } from "@/lib/validations/auth";
+import {
+  resetPasswordSchema,
+  type ResetPasswordFormValues,
+} from "@/lib/validations/auth";
 import { Input } from "@/components/ui/Input";
+import { SubmitButton } from "@/components/shared/submit-button";
 
 const EyeIcon = () => (
-  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+  <svg
+    width="18"
+    height="18"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+    />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+    />
   </svg>
 );
 
 const EyeOffIcon = () => (
-  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+  <svg
+    width="18"
+    height="18"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+    />
   </svg>
 );
 
@@ -75,7 +106,10 @@ function ResetPasswordContent() {
     if (value && index < 5) inputRefs.current[index + 1]?.focus();
   };
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
     if (e.key === "Backspace" && !digits[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
@@ -86,7 +120,9 @@ function ResetPasswordContent() {
     const pasted = e.clipboardData.getData("text").slice(0, 6);
     if (!/^\d+$/.test(pasted)) return;
     const updated = [...digits];
-    pasted.split("").forEach((char, i) => { if (i < 6) updated[i] = char; });
+    pasted.split("").forEach((char, i) => {
+      if (i < 6) updated[i] = char;
+    });
     updateOtp(updated);
     inputRefs.current[Math.min(pasted.length, 5)]?.focus();
   };
@@ -102,7 +138,9 @@ function ResetPasswordContent() {
       await resetPassword({ email, otp: data.otp, password: data.newPassword });
       router.push("/sign-in?reset=success");
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : "Invalid or expired OTP");
+      setApiError(
+        err instanceof Error ? err.message : "Invalid or expired OTP",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -116,6 +154,13 @@ function ResetPasswordContent() {
       {/* Desktop Header */}
       <div className="hidden md:block">
         <div className="flex justify-between items-center px-8 py-6 backdrop-blur-sm bg-white/10">
+          <Image
+            src="/logo.png"
+            alt="NexaFX logo"
+            width={120}
+            height={40}
+            priority
+          />
           <Image src="/logo.png" alt="NexaFX logo" width={120} height={40} />
         </div>
       </div>
@@ -124,6 +169,13 @@ function ResetPasswordContent() {
         <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 md:p-12">
           {/* Logo shown only on mobile */}
           <div className="flex justify-center mb-6 md:hidden">
+            <Image
+              src="/logo.png"
+              alt="NexaFX logo"
+              width={120}
+              height={40}
+              priority
+            />
             <Image src="/logo.png" alt="NexaFX logo" width={120} height={40} />
           </div>
 
@@ -148,7 +200,9 @@ function ResetPasswordContent() {
                 {digits.map((digit, index) => (
                   <input
                     key={index}
-                    ref={(el) => { inputRefs.current[index] = el; }}
+                    ref={(el) => {
+                      inputRefs.current[index] = el;
+                    }}
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
@@ -181,12 +235,17 @@ function ResetPasswordContent() {
               </div>
             </div>
               {errors.otp && (
-                <p className="mt-1.5 ml-1 text-xs text-red-500">{errors.otp.message}</p>
+                <p className="mt-1.5 ml-1 text-xs text-red-500">
+                  {errors.otp.message}
+                </p>
               )}
             </div>
 
             <div>
-              <label htmlFor="new-password-desktop" className="block text-xs font-medium text-gray-700 mb-1.5">
+              <label
+                htmlFor="new-password-desktop"
+                className="block text-xs font-medium text-gray-700 mb-1.5"
+              >
                 New Password
               </label>
               <div className="relative">
@@ -210,6 +269,10 @@ function ResetPasswordContent() {
             </div>
 
             <div>
+              <label
+                htmlFor="confirm-password-desktop"
+                className="block text-xs font-medium text-gray-700 mb-1.5"
+              >
               <div className="flex gap-1 justify-between">
                 {otp.map((digit, index) => (
                   <input
@@ -271,13 +334,13 @@ function ResetPasswordContent() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
+            <SubmitButton
+              loading={isLoading}
+              loadingLabel="Resetting..."
               className="w-full py-2.5 bg-[#F39A00] hover:bg-[#da8a00] text-black font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-6"
             >
-              {isLoading ? "Resetting..." : "Reset Password"}
-            </button>
+              Reset Password
+            </SubmitButton>
           </form>
         </div>
       </div>

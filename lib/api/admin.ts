@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { apiClient } from "../api-client";
+import { pickField } from "./pick-field";
 import {
   formatDateTimeGB,
   formatShortDate,
@@ -86,11 +87,11 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
     headers: getAuthHeaders(),
   });
   return {
-    registeredUsers: response?.registeredUsers ?? response?.totalUsers ?? 0,
+    registeredUsers: pickField(response, "registeredUsers", "totalUsers") ?? 0,
     totalTransactions: response?.totalTransactions ?? 0,
     pendingKyc: response?.pendingKyc ?? 0,
     currencies: response?.currencies ?? 0,
-    totalDeposits: response?.totalDeposits ?? response?.totalVolume ?? 0,
+    totalDeposits: pickField(response, "totalDeposits", "totalVolume") ?? 0,
     totalWithdrawals: response?.totalWithdrawals ?? 0,
   };
 }
@@ -101,53 +102,61 @@ export async function getCohortRetention(): Promise<CohortRetentionData[]> {
     headers: getAuthHeaders(),
   });
 
-  const data = (response?.data ??
-    response?.cohorts ??
-    response?.items ??
+  const data = (pickField(response, "data", "cohorts", "items") ??
     (Array.isArray(response) ? response : [])) as any[];
 
-  return data.map((cohort: any) => ({
-    cohortMonth:
-      cohort.cohortMonth ?? cohort.cohort_month ?? cohort.month ?? "",
-    cohortSize:
-      Number(cohort.cohortSize ?? cohort.cohort_size ?? cohort.size) || 0,
-    retentionByMonth: (
-      cohort.retentionByMonth ??
-      cohort.retention_by_month ??
-      cohort.retention ??
-      []
-    )
-      .map((value: unknown) => Number(value))
-      .filter((value: number) => Number.isFinite(value)),
-  }));
+  return data.map((cohort: any) => {
+    const retention = (pickField(
+      cohort,
+      "retentionByMonth",
+      "retention_by_month",
+      "retention",
+    ) ?? []) as unknown[];
+    return {
+      cohortMonth:
+        pickField(cohort, "cohortMonth", "cohort_month", "month") ?? "",
+      cohortSize:
+        Number(pickField(cohort, "cohortSize", "cohort_size", "size")) || 0,
+      retentionByMonth: retention
+        .map((value: unknown) => Number(value))
+        .filter((value: number) => Number.isFinite(value)),
+    };
+  });
 }
 
 export function mapAdminUser(user: any): AdminUser {
   return {
-    id: user.id ?? user._id ?? "",
+    id: pickField(user, "id", "_id") ?? "",
     email: user.email ?? "",
-    firstName: user.firstName ?? user.first_name ?? null,
-    lastName: user.lastName ?? user.last_name ?? null,
+    firstName: pickField(user, "firstName", "first_name") ?? null,
+    lastName: pickField(user, "lastName", "last_name") ?? null,
     phone: user.phone ?? null,
     walletAddress:
-      user.walletAddress ?? user.wallet_address ?? user.address ?? "",
+      pickField(user, "walletAddress", "wallet_address", "address") ?? "",
     username: user.username ?? user.email?.split("@")[0] ?? "",
-    avatarUrl: user.avatarUrl ?? user.avatar_url ?? null,
+    avatarUrl: pickField(user, "avatarUrl", "avatar_url") ?? null,
     transactions: Number(user.transactions) || 0,
-    totalDeposit: Number(user.totalDeposit ?? user.total_deposit) || 0,
-    totalWithdraw: Number(user.totalWithdraw ?? user.total_withdraw) || 0,
+    totalDeposit: Number(pickField(user, "totalDeposit", "total_deposit")) || 0,
+    totalWithdraw:
+      Number(pickField(user, "totalWithdraw", "total_withdraw")) || 0,
     kycStatus: (user.kycStatus === "Verified" ||
     user.kycStatus === "verified" ||
     user.kyc_status === "Verified" ||
     user.kyc_status === "verified"
       ? "Verified"
       : "Unverified") as "Verified" | "Unverified",
+    createdAt: user.createdAt
+      ? new Date(user.createdAt).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "",
+    createdAtRaw: pickField(user, "createdAt", "created_at") ?? undefined,
     createdAt: user.createdAt ? formatShortDate(user.createdAt) : "",
     createdAtRaw: user.createdAt ?? user.created_at ?? undefined,
     twoFactorEnabled:
-      user.twoFactorEnabled ??
-      user.two_factor_enabled ??
-      user.mfaEnabled ??
+      pickField(user, "twoFactorEnabled", "two_factor_enabled", "mfaEnabled") ??
       undefined,
     isActive: user.isActive ?? user.is_active ?? true,
   };
@@ -167,11 +176,10 @@ export async function getAdminUsers(
     params,
   });
 
-  const data = (response?.data ??
-    response?.users ??
-    response?.items ??
+  const data = (pickField(response, "data", "users", "items") ??
     (Array.isArray(response) ? response : [])) as any[];
-  const total = response?.total ?? response?.count ?? data.length;
+  const total = (pickField(response, "total", "count") ??
+    data.length) as number;
 
   let mappedData = data.map(mapAdminUser);
 
@@ -224,14 +232,17 @@ export async function getAdminKycSubmissions(): Promise<KycSubmission[]> {
     method: "GET",
     headers: getAuthHeaders(),
   });
-  const data = response?.data ?? response?.submissions ?? response ?? [];
+  const data = (pickField(response, "data", "submissions") ??
+    response ??
+    []) as any[];
   return (Array.isArray(data) ? data : []).map((item: any) => ({
-    id: item.id ?? item._id ?? "",
-    userName: item.userName ?? item.username ?? item.user?.name ?? "",
-    email: item.email ?? item.user?.email ?? "",
-    documentType: item.documentType ?? item.document_type ?? "Unknown",
+    id: pickField(item, "id", "_id") ?? "",
+    userName: pickField(item, "userName", "username", "user.name") ?? "",
+    email: pickField(item, "email", "user.email") ?? "",
+    documentType: pickField(item, "documentType", "document_type") ?? "Unknown",
     status: item.status ?? "Pending",
-    submittedAt: item.submittedAt ?? item.createdAt ?? new Date().toISOString(),
+    submittedAt:
+      pickField(item, "submittedAt", "createdAt") ?? new Date().toISOString(),
     reviewedAt: item.reviewedAt ?? undefined,
   }));
 }
@@ -300,30 +311,31 @@ export async function getFlaggedTransactions(): Promise<FlaggedTransaction[]> {
     params: { flagged: "true" },
   });
 
-  const data = (response?.data ??
-    response?.transactions ??
-    response?.items ??
+  const data = (pickField(response, "data", "transactions", "items") ??
     (Array.isArray(response) ? response : [])) as any[];
 
   return data.map((tx: any) => ({
-    id: tx.id ?? tx._id ?? "",
+    id: pickField(tx, "id", "_id") ?? "",
     amount: Number(tx.amount) || 0,
     currency: tx.currency ?? "",
     type: tx.type ?? "",
     username: tx.username ?? tx.user?.email ?? tx.email ?? "",
     email: tx.email ?? tx.user?.email ?? "",
-    date: tx.createdAt ?? tx.date ?? "",
-    txId: tx.txId ?? tx.reference ?? tx.transactionRef ?? "",
+    date: pickField(tx, "createdAt", "date") ?? "",
+    txId: pickField(tx, "txId", "reference", "transactionRef") ?? "",
     status: tx.status ?? "Pending",
-    flagReason: tx.flagReason ?? tx.flag_reason ?? "",
-    flaggedBy: tx.flaggedBy ?? tx.flagged_by ?? "",
-    flaggedAt: tx.flaggedAt ?? tx.flagged_at ?? "",
+    flagReason: pickField(tx, "flagReason", "flag_reason") ?? "",
+    flaggedBy: pickField(tx, "flaggedBy", "flagged_by") ?? "",
+    flaggedAt: pickField(tx, "flaggedAt", "flagged_at") ?? "",
     whitelisted: Boolean(tx.whitelisted),
-    whitelistedBy: tx.whitelistedBy ?? tx.whitelisted_by ?? undefined,
+    whitelistedBy:
+      pickField(tx, "whitelistedBy", "whitelisted_by") ?? undefined,
     whitelistedByEmail:
-      tx.whitelistedByEmail ?? tx.whitelisted_by_email ?? undefined,
-    whitelistedAt: tx.whitelistedAt ?? tx.whitelisted_at ?? undefined,
-    whitelistNotes: tx.whitelistNotes ?? tx.whitelist_notes ?? undefined,
+      pickField(tx, "whitelistedByEmail", "whitelisted_by_email") ?? undefined,
+    whitelistedAt:
+      pickField(tx, "whitelistedAt", "whitelisted_at") ?? undefined,
+    whitelistNotes:
+      pickField(tx, "whitelistNotes", "whitelist_notes") ?? undefined,
   }));
 }
 
@@ -394,35 +406,48 @@ export async function getAdminTransactions(
     params,
   });
 
-  const data = (response?.data ??
-    response?.transactions ??
-    response?.items ??
+  const data = (pickField(response, "data", "transactions", "items") ??
     (Array.isArray(response) ? response : [])) as any[];
-  const total = response?.total ?? response?.count ?? data.length;
+  const total = (pickField(response, "total", "count") ??
+    data.length) as number;
 
   const mappedData = data.map((tx: any) => {
+    const rawDate = (pickField(tx, "createdAt", "date") ?? "") as string;
+    const formattedDate = rawDate
+      ? new Date(rawDate).toLocaleString("en-GB", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "";
     const rawDate = tx.createdAt ?? tx.date ?? "";
     const formattedDate = rawDate ? formatDateTimeGB(rawDate) : "";
 
     return {
-      id: tx.id ?? tx._id ?? "",
+      id: pickField(tx, "id", "_id") ?? "",
       amount: Number(tx.amount) || 0,
       currency: tx.currency ?? "",
       type: tx.type ?? "",
-      userId: tx.userId ?? tx.user_id ?? tx.user?.id ?? tx.user?._id ?? "",
+      userId: pickField(tx, "userId", "user_id", "user.id", "user._id") ?? "",
       username: tx.username ?? tx.user?.email ?? tx.email ?? "",
       date: formattedDate,
       createdAt: rawDate,
-      txId: tx.txId ?? tx.reference ?? tx.transactionRef ?? "",
+      txId: pickField(tx, "txId", "reference", "transactionRef") ?? "",
       status: tx.status ?? "Pending",
-      toAmount: Number(tx.toAmount ?? tx.to_amount) || undefined,
-      toCurrency: tx.toCurrency ?? tx.to_currency ?? undefined,
+      toAmount: Number(pickField(tx, "toAmount", "to_amount")) || undefined,
+      toCurrency: pickField(tx, "toCurrency", "to_currency") ?? undefined,
       whitelisted: Boolean(tx.whitelisted),
-      whitelistedBy: tx.whitelistedBy ?? tx.whitelisted_by ?? undefined,
+      whitelistedBy:
+        pickField(tx, "whitelistedBy", "whitelisted_by") ?? undefined,
       whitelistedByEmail:
-        tx.whitelistedByEmail ?? tx.whitelisted_by_email ?? undefined,
-      whitelistedAt: tx.whitelistedAt ?? tx.whitelisted_at ?? undefined,
-      whitelistNotes: tx.whitelistNotes ?? tx.whitelist_notes ?? undefined,
+        pickField(tx, "whitelistedByEmail", "whitelisted_by_email") ??
+        undefined,
+      whitelistedAt:
+        pickField(tx, "whitelistedAt", "whitelisted_at") ?? undefined,
+      whitelistNotes:
+        pickField(tx, "whitelistNotes", "whitelist_notes") ?? undefined,
     };
   });
 
@@ -812,18 +837,17 @@ export async function getGeoAnalytics(): Promise<GeoData[]> {
     headers: getAuthHeaders(),
   });
   const data =
-    response?.data ??
-    response?.geo ??
-    response?.countries ??
+    pickField(response, "data", "geo", "countries") ??
     (Array.isArray(response) ? response : []);
   return (data as any[]).map((item: any) => ({
-    country: item.country ?? item.country_code ?? "",
-    countryName: item.countryName ?? item.country_name ?? item.name ?? "",
+    country: pickField(item, "country", "country_code") ?? "",
+    countryName: pickField(item, "countryName", "country_name", "name") ?? "",
     transactionCount:
-      Number(item.transactionCount ?? item.transaction_count ?? item.count) ||
-      0,
+      Number(
+        pickField(item, "transactionCount", "transaction_count", "count"),
+      ) || 0,
     totalVolume:
-      Number(item.totalVolume ?? item.total_volume ?? item.volume) || 0,
+      Number(pickField(item, "totalVolume", "total_volume", "volume")) || 0,
     currency: item.currency ?? "USD",
   }));
 }

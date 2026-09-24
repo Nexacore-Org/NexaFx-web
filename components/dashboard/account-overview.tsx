@@ -9,9 +9,7 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useAuthStore } from "@/hooks/use-auth-store";
-
-const truncateAddress = (addr: string) =>
-  `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+import { truncateAddress } from "@/lib/address";
 
 // Constructing an Intl.NumberFormat is comparatively expensive, and
 // formatCurrency is called on every balance render — cache one formatter per
