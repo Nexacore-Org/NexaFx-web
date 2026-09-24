@@ -4,6 +4,7 @@ import { ChevronDown, Download, Upload, CircleDollarSign } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getBalances } from "@/lib/api/wallet";
 import { getProfile } from "@/lib/api/users";
+import { formatCurrency } from "@/lib/formatCurrency";
 import { CopyButton } from "@/components/ui/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWebSocket } from "@/hooks/use-websocket";
