@@ -38,6 +38,7 @@ export default function Footer() {
             <p className="mb-4 text-gray-500">Support</p>
             <p className="mb-4 text-gray-500">About</p>
             <p className="mb-4 text-gray-500">Press</p>
+            <p className="mb-4 text-gray-500"><a href="/status" className="text-yellow-600">Status</a></p>
           </div>
         </div>
       </div>
