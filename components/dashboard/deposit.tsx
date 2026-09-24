@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import InstantModalDeposit from "./InstantDepositModal";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useResponsiveFocusTrap } from "@/hooks/use-focus-trap";
 import { MobileNotificationBanner } from "./notification";
 
 import { getProfile } from "@/lib/api/users";
@@ -48,22 +48,16 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
     toggleDeposit();
   };
 
-  // Focus trap for desktop modal
-  useFocusTrap(isQRModalOpen, () => setIsQRModalOpen(false), desktopModalRef);
+  // Focus trap for the QR modal (desktop and mobile variants)
+  useResponsiveFocusTrap(isQRModalOpen, () => setIsQRModalOpen(false), {
+    desktopRef: desktopModalRef,
+    mobileRef: mobileQRModalRef,
+  });
 
-  // Focus trap for mobile methods modal
-  useFocusTrap(
-    !isQRModalOpen && typeof window !== "undefined" && window.innerWidth < 768,
-    handleCloseDepositFlow,
-    mobileMethodsModalRef,
-  );
-
-  // Focus trap for mobile QR modal
-  useFocusTrap(
-    isQRModalOpen && typeof window !== "undefined" && window.innerWidth < 768,
-    handleCloseDepositFlow,
-    mobileQRModalRef,
-  );
+  // Focus trap for the mobile methods sheet (mobile only)
+  useResponsiveFocusTrap(!isQRModalOpen, handleCloseDepositFlow, {
+    mobileRef: mobileMethodsModalRef,
+  });
 
   const depositMethods: DepositMethod[] = [
     {

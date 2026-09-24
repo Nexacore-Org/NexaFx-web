@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useResponsiveFocusTrap } from "@/hooks/use-focus-trap";
 import { WithdrawalMethodSelect } from "./WithdrawalMethodSelect";
 import { WithdrawalForm } from "./WithdrawalForm";
 import { WithdrawalReview } from "./WithdrawalReview";
@@ -23,11 +23,11 @@ export function WithdrawalModal() {
     setTimeout(() => reset(), 300);
   };
 
-  // Use focus trap for desktop modal
-  useFocusTrap(isOpen, handleClose, desktopModalRef);
-
-  // Use focus trap for mobile modal
-  useFocusTrap(isOpen, handleClose, mobileModalRef);
+  // Viewport-reactive focus trap for the desktop/mobile modal variants
+  useResponsiveFocusTrap(isOpen, handleClose, {
+    desktopRef: desktopModalRef,
+    mobileRef: mobileModalRef,
+  });
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (isProcessing) return;

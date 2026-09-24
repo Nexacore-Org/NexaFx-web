@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Hook to manage focus trap for modals and dialogs
@@ -9,7 +9,7 @@ import { useEffect, useRef } from "react";
 export function useFocusTrap(
   isOpen: boolean,
   onClose: () => void,
-  containerRef: React.RefObject<HTMLDivElement | null>,
+  containerRef?: React.RefObject<HTMLDivElement | null> | null,
 ) {
   const triggerRef = useRef<HTMLElement | null>(null);
 
@@ -28,7 +28,7 @@ export function useFocusTrap(
       }
 
       // Tab key focus trap
-      if (event.key === "Tab" && containerRef.current) {
+      if (event.key === "Tab" && containerRef?.current) {
         const focusableElements =
           containerRef.current.querySelectorAll<HTMLElement>(
             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
@@ -60,7 +60,7 @@ export function useFocusTrap(
     document.addEventListener("keydown", handleKeyDown);
 
     // Focus the first focusable element in the modal
-    if (containerRef.current) {
+    if (containerRef?.current) {
       const focusableElements =
         containerRef.current.querySelectorAll<HTMLElement>(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
@@ -79,4 +79,36 @@ export function useFocusTrap(
       }
     };
   }, [isOpen, onClose, containerRef]);
+}
+
+interface ResponsiveFocusTrapRefs {
+  desktopRef?: React.RefObject<HTMLDivElement | null>;
+  mobileRef?: React.RefObject<HTMLDivElement | null>;
+}
+
+/**
+ * Hook to manage a viewport-reactive focus trap for modals that render a
+ * desktop and a mobile variant. Only the variant currently visible on the
+ * viewport receives the focus trap, and the choice reacts to resize events.
+ */
+export function useResponsiveFocusTrap(
+  isOpen: boolean,
+  onClose: () => void,
+  { desktopRef, mobileRef }: ResponsiveFocusTrapRefs,
+) {
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 768px)");
+    const update = () => setIsDesktop(mql.matches);
+    update();
+    mql.addEventListener("change", update);
+    return () => mql.removeEventListener("change", update);
+  }, []);
+
+  const activeRef = isDesktop ? desktopRef : mobileRef;
+
+  // The focus trap is only active when an applicable ref exists for the
+  // current viewport (mobile-only modals are inert on desktop and vice versa).
+  useFocusTrap(isOpen && !!activeRef, onClose, activeRef);
 }

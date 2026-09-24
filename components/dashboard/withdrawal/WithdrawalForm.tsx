@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
-import { ChevronDown, ChevronLeft, AlertCircle,  } from "lucide-react";
+import { ChevronLeft, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCurrencies, type Currency } from "@/lib/api/currencies";
 import { getBalances } from "@/lib/api/wallet";
+import {
+    CurrencySelector,
+    type CurrencySelectorOption,
+} from "@/components/ui/currency-selector";
+import { getCurrencyIcon } from "@/lib/currency-icons";
 
-interface CurrencyOption {
-    id: string;
-    name: string;
-    icon: React.ReactNode;
+interface CurrencyOption extends CurrencySelectorOption {
     balance: string;
 }
 
@@ -21,7 +23,7 @@ function toCurrencyOption(
     return {
         id: c.code,
         name: c.name,
-        icon: `/icons/${c.code.toLowerCase()}.svg`,
+        icon: getCurrencyIcon(c.code),
         balance: balanceMap[c.code] ?? "0.00",
     };
 }
@@ -199,66 +201,17 @@ const fetchCurrenciesAndBalances = async () => {
                                 </button>
                             </div>
                         ) : (
-                        <button
-                            type="button"
-                            disabled={isLoadingCurrencies}
-                            onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
-                            className={cn(
-                                "w-full flex items-center justify-between px-4 py-3 rounded-xl",
-                                "bg-muted/50 border border-border",
-                                "hover:bg-muted transition-colors",
-                                isLoadingCurrencies && "opacity-60 cursor-wait"
-                            )}
-                        >
-                            {isLoadingCurrencies ? (
-                                <span className="text-sm text-muted-foreground animate-pulse">
-                                    Loading currencies…
-                                </span>
-                            ) : selectedCurrency ? (
-                                <div className="flex items-center gap-3">
-                                    {selectedCurrency.icon}
-                                    <span className="font-medium text-foreground">
-                                        {selectedCurrency.id}
-                                    </span>
-                                </div>
-                            ) : null}
-                            <ChevronDown className={cn(
-                                "size-5 text-muted-foreground transition-transform",
-                                showCurrencyDropdown && "rotate-180"
-                            )} />
-                        </button>
-                        )}
-
-                        {/* Dropdown */}
-                        {showCurrencyDropdown && !isLoadingCurrencies && !currencyError && (
-                            <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10">
-                                {currencies.map((curr) => (
-                                    <button
-                                        key={curr.id}
-                                        type="button"
-                                        onClick={() => {
-                                            setFormData({ currency: curr.id });
-                                            setShowCurrencyDropdown(false);
-                                        }}
-                                        className={cn(
-                                            "w-full flex items-center justify-between px-4 py-3",
-                                            "hover:bg-muted transition-colors",
-                                            curr.id === currency && "bg-primary/10"
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            {curr.icon}
-                                            <div className="text-left">
-                                                <p className="font-medium text-foreground">{curr.id}</p>
-                                                <p className="text-xs text-muted-foreground">{curr.name}</p>
-                                            </div>
-                                        </div>
-                                        <span className="text-sm text-muted-foreground">
-                                            {curr.balance}
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
+                        <CurrencySelector
+                            selectedId={currency}
+                            options={currencies}
+                            isOpen={showCurrencyDropdown}
+                            onToggle={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
+                            onSelect={(id) => {
+                                setFormData({ currency: id });
+                                setShowCurrencyDropdown(false);
+                            }}
+                            isLoading={isLoadingCurrencies}
+                        />
                         )}
                     </div>
                 </div>

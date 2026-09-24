@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { ChevronDown, AlertCircle, ArrowDownUp, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowDownUp, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBalances } from "@/lib/api/wallet";
 import { createSwap } from "@/lib/api/transactions";
+import {
+    CurrencySelector,
+    type CurrencySelectorOption,
+} from "@/components/ui/currency-selector";
 
 interface CurrencyOption {
     id: string;
@@ -35,8 +39,12 @@ export function ConvertForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [rateError, setRateError] = useState<string | null>(null);
 
-    const fromCurrencyData = CURRENCIES.find(c => c.id === fromCurrency) || CURRENCIES[0];
-    const toCurrencyData = CURRENCIES.find(c => c.id === toCurrency) || CURRENCIES[1];
+    const currencyOptions: CurrencySelectorOption[] = CURRENCIES.map((c) => ({
+        id: c.id,
+        name: c.name,
+        symbol: c.symbol,
+        balance: balances[c.id] || "0.00",
+    }));
 
     useEffect(() => {
         getBalances().then((res) => {
@@ -190,67 +198,20 @@ export function ConvertForm() {
 
                         {/* Currency Selector */}
                         <div className="relative mb-4">
-                            <button
-                                type="button"
-                                onClick={() => {
+                            <CurrencySelector
+                                selectedId={fromCurrency}
+                                options={currencyOptions}
+                                isOpen={showFromDropdown}
+                                onToggle={() => {
                                     setShowFromDropdown(!showFromDropdown);
                                     setShowToDropdown(false);
                                 }}
-                                className={cn(
-                                    "w-full flex items-center justify-between px-4 py-3.5 rounded-xl",
-                                    "bg-muted/50 border border-border",
-                                    "hover:bg-muted transition-colors cursor-pointer"
-                                )}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary">
-                                        {fromCurrencyData.symbol.toUpperCase().substring(0, 1)}
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="font-semibold text-foreground">{fromCurrency}</p>
-                                        <p className="text-xs text-muted-foreground">{fromCurrencyData.name}</p>
-                                    </div>
-                                </div>
-                                <ChevronDown className={cn(
-                                    "h-5 w-5 text-muted-foreground transition-transform",
-                                    showFromDropdown && "rotate-180"
-                                )} />
-                            </button>
-
-                            {/* Dropdown */}
-                            {showFromDropdown && (
-                                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10">
-                                    {CURRENCIES.map((curr) => (
-                                        <button
-                                            key={curr.id}
-                                            type="button"
-                                            onClick={() => {
-                                                setFromCurrency(curr.id);
-                                                setShowFromDropdown(false);
-                                                setAmount("");
-                                            }}
-                                            className={cn(
-                                                "w-full flex items-center justify-between px-4 py-3 text-left",
-                                                "hover:bg-muted transition-colors",
-                                                curr.id === fromCurrency && "bg-primary/10"
-                                            )}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary">
-                                                    {curr.symbol.toUpperCase().substring(0, 1)}
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium text-foreground">{curr.id}</p>
-                                                    <p className="text-xs text-muted-foreground">{curr.name}</p>
-                                                </div>
-                                            </div>
-                                            <span className="text-sm text-muted-foreground">
-                                                {balances[curr.id] || "0.00"}
-                                            </span>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
+                                onSelect={(id) => {
+                                    setFromCurrency(id);
+                                    setShowFromDropdown(false);
+                                    setAmount("");
+                                }}
+                            />
                         </div>
 
                         {/* Amount Input */}
@@ -322,66 +283,19 @@ export function ConvertForm() {
 
                         {/* Currency Selector */}
                         <div className="relative mb-4">
-                            <button
-                                type="button"
-                                onClick={() => {
+                            <CurrencySelector
+                                selectedId={toCurrency}
+                                options={currencyOptions}
+                                isOpen={showToDropdown}
+                                onToggle={() => {
                                     setShowToDropdown(!showToDropdown);
                                     setShowFromDropdown(false);
                                 }}
-                                className={cn(
-                                    "w-full flex items-center justify-between px-4 py-3.5 rounded-xl",
-                                    "bg-muted/50 border border-border",
-                                    "hover:bg-muted transition-colors cursor-pointer"
-                                )}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary">
-                                        {toCurrencyData.symbol.toUpperCase().substring(0, 1)}
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="font-semibold text-foreground">{toCurrency}</p>
-                                        <p className="text-xs text-muted-foreground">{toCurrencyData.name}</p>
-                                    </div>
-                                </div>
-                                <ChevronDown className={cn(
-                                    "h-5 w-5 text-muted-foreground transition-transform",
-                                    showToDropdown && "rotate-180"
-                                )} />
-                            </button>
-
-                            {/* Dropdown */}
-                            {showToDropdown && (
-                                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10">
-                                    {CURRENCIES.map((curr) => (
-                                        <button
-                                            key={curr.id}
-                                            type="button"
-                                            onClick={() => {
-                                                setToCurrency(curr.id);
-                                                setShowToDropdown(false);
-                                            }}
-                                            className={cn(
-                                                "w-full flex items-center justify-between px-4 py-3 text-left",
-                                                "hover:bg-muted transition-colors",
-                                                curr.id === toCurrency && "bg-primary/10"
-                                            )}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary">
-                                                    {curr.symbol.toUpperCase().substring(0, 1)}
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium text-foreground">{curr.id}</p>
-                                                    <p className="text-xs text-muted-foreground">{curr.name}</p>
-                                                </div>
-                                            </div>
-                                            <span className="text-sm text-muted-foreground">
-                                                {balances[curr.id] || "0.00"}
-                                            </span>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
+                                onSelect={(id) => {
+                                    setToCurrency(id);
+                                    setShowToDropdown(false);
+                                }}
+                            />
                         </div>
 
                         {/* Amount Display */}
