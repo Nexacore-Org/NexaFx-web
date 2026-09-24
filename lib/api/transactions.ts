@@ -1,4 +1,5 @@
 import { apiClient } from "../api-client";
+import { pickField } from "./pick-field";
 
 export type TransactionStatus = "Success" | "Pending" | "Failed";
 export type TransactionType = "Deposit" | "Withdraw" | "Convert";
@@ -71,14 +72,15 @@ export function mapTransaction(dto: Record<string, any>): Transaction {
     statusMap[(dto.status as string)?.toLowerCase()] ??
     (dto.status as TransactionStatus);
 
-  const amount = Number(dto.amount) || 0;
   const currency = (dto.currency as string) ?? "";
+  const amount = Number(dto.amount) || 0;
 
   let amountString = `${amount.toLocaleString()} ${currency}`;
   if (type === "Deposit") amountString = `+ ${amountString}`;
   else if (type === "Withdraw") amountString = `- ${amountString}`;
 
-  const rawDate = (dto.createdAt ?? dto.date ?? dto.created_at) as string;
+  const rawDate = (pickField(dto, "createdAt", "date", "created_at") ??
+    "") as string;
   const date = rawDate
     ? new Date(rawDate).toLocaleString("en-GB", {
         day: "2-digit",
@@ -90,10 +92,11 @@ export function mapTransaction(dto: Record<string, any>): Transaction {
     : "";
 
   return {
-    id: (dto.id ?? dto._id) as string,
+    id: pickField(dto, "id", "_id") as string,
     type,
     currency,
-    toCurrency: (dto.toCurrency ?? dto.to_currency) as string | undefined,
+    toCurrency: pickField(dto, "toCurrency", "to_currency") as
+      string | undefined,
     amount,
     amountString,
     date,
@@ -102,16 +105,23 @@ export function mapTransaction(dto: Record<string, any>): Transaction {
     // for that purpose.
     rawDate: rawDate ?? "",
     status,
-    reference: (dto.reference ??
-      dto.transactionRef ??
-      dto.transaction_ref ??
-      "") as string,
+    reference: (pickField(
+      dto,
+      "reference",
+      "transactionRef",
+      "transaction_ref",
+    ) ?? "") as string,
     description: dto.description as string | undefined,
     fee: dto.fee as number | undefined,
-    exchangeRate: (dto.exchangeRate ?? dto.exchange_rate) as number | undefined,
-    toAmount: (dto.toAmount ?? dto.to_amount) as number | undefined,
-    walletAddress: (dto.walletAddress ?? dto.wallet_address ?? dto.address) as
-      string | undefined,
+    exchangeRate: pickField(dto, "exchangeRate", "exchange_rate") as
+      number | undefined,
+    toAmount: pickField(dto, "toAmount", "to_amount") as number | undefined,
+    walletAddress: pickField(
+      dto,
+      "walletAddress",
+      "wallet_address",
+      "address",
+    ) as string | undefined,
   };
 }
 
@@ -257,13 +267,16 @@ export async function createWithdrawal(
   });
 
   // Normalize response - backend may use different field names
-  const transactionId = (json.transactionId ??
-    json.transaction_id ??
-    json.id ??
-    json.data?.id ??
-    json.data?.transactionId) as string;
+  const transactionId = pickField(
+    json,
+    "transactionId",
+    "transaction_id",
+    "id",
+    "data.id",
+    "data.transactionId",
+  ) as string;
 
-  const status = (json.status ?? json.data?.status ?? "pending") as
+  const status = (pickField(json, "status", "data.status") ?? "pending") as
     "pending" | "success" | "failed";
 
   return {
@@ -271,35 +284,6 @@ export async function createWithdrawal(
     status,
     message: json.message as string | undefined,
   };
-  const idempotencyKey = crypto.randomUUID();
-
-  // TODO: Coordinate backend support for accepting and deduplicating this header.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const json = await apiClient<any>('/transactions/withdraw', {
-        method: 'POST',
-    headers: {
-      'Idempotency-Key': idempotencyKey,
-    },
-        body: JSON.stringify(data),
-    });
-
-    // Normalize response - backend may use different field names
-    const transactionId = (json.transactionId ??
-        json.transaction_id ??
-        json.id ??
-        json.data?.id ??
-        json.data?.transactionId) as string;
-
-    const status = (json.status ?? json.data?.status ?? 'pending') as
-        | 'pending'
-        | 'success'
-        | 'failed';
-
-    return {
-        transactionId,
-        status,
-        message: json.message as string | undefined,
-    };
 }
 
 // ==================== Deposit ====================
@@ -341,21 +325,27 @@ export async function createDeposit({
   });
 
   // Normalize response - backend may use different field names
-  const transactionId = (json.transactionId ??
-    json.transaction_id ??
-    json.id ??
-    json.data?.id ??
-    json.data?.transactionId) as string;
+  const transactionId = pickField(
+    json,
+    "transactionId",
+    "transaction_id",
+    "id",
+    "data.id",
+    "data.transactionId",
+  ) as string;
 
-  const status = (json.status ?? json.data?.status ?? "pending") as
+  const status = (pickField(json, "status", "data.status") ?? "pending") as
     "pending" | "success" | "failed";
 
   return {
     transactionId,
     status,
-    walletAddress: (json.walletAddress ??
-      json.wallet_address ??
-      json.address) as string | undefined,
+    walletAddress: pickField(
+      json,
+      "walletAddress",
+      "wallet_address",
+      "address",
+    ) as string | undefined,
     message: json.message as string | undefined,
   };
 }

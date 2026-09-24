@@ -1,5 +1,48 @@
 import Image from "next/image";
 
+export interface FooterLink {
+  label: string;
+  href: string;
+}
+
+export interface FooterColumn {
+  title: string;
+  links: FooterLink[];
+}
+
+// Data-driven footer link config (Issue #864): adding or reordering a link is
+// a one-line data change instead of a JSX edit.
+//
+// Hrefs map to real app routes where they exist. Routes that do not have a
+// page yet keep a `#` placeholder so the live app never 404s — the canonical
+// destinations are supplied by the separately-tracked Footer dead-link fix.
+const footerLinks: FooterColumn[] = [
+  {
+    title: "PLATFORM",
+    links: [
+      { label: "Exchange", href: "/dashboard/convert" },
+      { label: "Wallet", href: "/dashboard/transfers" },
+      { label: "Rates", href: "#" },
+    ],
+  },
+  {
+    title: "LEGAL",
+    links: [
+      { label: "Privacy", href: "#" },
+      { label: "Terms", href: "#" },
+      { label: "Security", href: "#" },
+    ],
+  },
+  {
+    title: "COMPANY",
+    links: [
+      { label: "Support", href: "/dashboard/support" },
+      { label: "About", href: "#" },
+      { label: "Press", href: "#" },
+    ],
+  },
+];
+
 export default function Footer() {
   return (
     <footer className="bg-slate-50 border-t py-12">
@@ -18,26 +61,20 @@ export default function Footer() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-10 md:gap-20 lg:gap-40 text-sm">
-          <div>
-            <p className="font-bold mb-4">PLATFORM</p>
-            <p className="mb-4 text-gray-500">Exchange</p>
-            <p className="mb-4 text-gray-500">Wallet</p>
-            <p className="mb-4 text-gray-500">Rates</p>
-          </div>
-
-          <div>
-            <p className="font-bold mb-4">LEGAL</p>
-            <p className="mb-4 text-gray-500">Privacy</p>
-            <p className="mb-4 text-gray-500">Terms</p>
-            <p className="mb-4 text-gray-500">Security</p>
-          </div>
-
-          <div>
-            <p className="font-bold mb-4">COMPANY</p>
-            <p className="mb-4 text-gray-500">Support</p>
-            <p className="mb-4 text-gray-500">About</p>
-            <p className="mb-4 text-gray-500">Press</p>
-          </div>
+          {footerLinks.map((column) => (
+            <div key={column.title}>
+              <p className="font-bold mb-4">{column.title}</p>
+              {column.links.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="block mb-4 text-gray-500 hover:text-gray-800 transition-colors"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
 
