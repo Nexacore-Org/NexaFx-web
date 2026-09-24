@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  ChevronDown,
-  Download,
-  Upload,
-  CircleDollarSign,
-} from "lucide-react";
+import { ChevronDown, Download, Upload, CircleDollarSign } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getBalances } from "@/lib/api/wallet";
 import { getProfile } from "@/lib/api/users";
@@ -13,19 +8,45 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useAuthStore } from "@/hooks/use-auth-store";
-import { logger } from "@/src/utils/logger";
 
 const truncateAddress = (addr: string) =>
   `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
-export function formatCurrency(amount: string | number | undefined, currency: string) {
+// Constructing an Intl.NumberFormat is comparatively expensive, and
+// formatCurrency is called on every balance render — cache one formatter per
+// locale/currency pair and reuse it instead of rebuilding one per call.
+const numberFormatCache = new Map<string, Intl.NumberFormat>();
+
+function getNumberFormatter(
+  locale: string,
+  currency: string,
+): Intl.NumberFormat {
+  const key = `${locale}|${currency}`;
+  let formatter = numberFormatCache.get(key);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+    });
+    numberFormatCache.set(key, formatter);
+  }
+  return formatter;
+}
+
+export function formatCurrency(
+  amount: string | number | undefined,
+  currency: string,
+) {
   if (amount === undefined || amount === null || amount === "") return "";
-  const raw = typeof amount === "string" ? amount.replace(/[^0-9.-]+/g, "") : String(amount);
+  const raw =
+    typeof amount === "string"
+      ? amount.replace(/[^0-9.-]+/g, "")
+      : String(amount);
   const num = Number(raw);
   if (!Number.isFinite(num)) return String(amount);
   try {
     const locale = currency === "NGN" ? "en-NG" : "en-US";
-    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(num);
+    return getNumberFormatter(locale, currency).format(num);
   } catch {
     return String(amount);
   }
@@ -40,9 +61,7 @@ export function formatCurrency(amount: string | number | undefined, currency: st
  */
 export function resolveBalances(
   balances:
-    | { currency?: string; balance?: string | number }[]
-    | null
-    | undefined,
+    { currency?: string; balance?: string | number }[] | null | undefined,
 ): { ngn: string; usd: string } {
   const balanceMap: Record<string, string> = {};
   for (const b of balances ?? []) {
@@ -84,12 +103,8 @@ export function AccountOverview({
     if (wsBalance && wsBalance.length > 0) {
       setError(null);
 
-      const ngnItem = wsBalance.find(
-        (b) => b.currency.toUpperCase() === "NGN"
-      );
-      const usdItem = wsBalance.find(
-        (b) => b.currency.toUpperCase() === "USD"
-      );
+      const ngnItem = wsBalance.find((b) => b.currency.toUpperCase() === "NGN");
+      const usdItem = wsBalance.find((b) => b.currency.toUpperCase() === "USD");
       const firstItem = wsBalance[0];
 
       if (ngnItem) {
@@ -111,7 +126,10 @@ export function AccountOverview({
         setIsLoading(true);
         setError(null);
 
-        const [profile, balances] = await Promise.all([getProfile(), getBalances()]);
+        const [profile, balances] = await Promise.all([
+          getProfile(),
+          getBalances(),
+        ]);
 
         if (cancelled) return;
 
@@ -178,7 +196,11 @@ export function AccountOverview({
                   <p className="text-xs font-medium text-foreground">
                     {truncateAddress(walletAddress)}
                   </p>
-                  <CopyButton value={walletAddress} label="Copy wallet address" size="sm" />
+                  <CopyButton
+                    value={walletAddress}
+                    label="Copy wallet address"
+                    size="sm"
+                  />
                 </div>
               ) : null}
             </div>
