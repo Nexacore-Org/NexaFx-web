@@ -15,6 +15,12 @@ interface WalletBalancesResponse {
   balances?: WalletBalance[];
 }
 
+/**
+ * GET /users/wallet/balances
+ *
+ * Fetches the signed-in user's wallet balances. Called directly (no proxy).
+ * Accepts a raw array or an object wrapping the balances under `data`/`balances`.
+ */
 export async function getBalances(): Promise<WalletBalance[]> {
   // The correct backend route is `/users/wallet/balances` (not `/wallets/balances`).
   // This route is protected and should be called directly (no proxy) —

@@ -128,6 +128,13 @@ export function mapTransaction(dto: Record<string, any>): Transaction {
   };
 }
 
+/**
+ * GET /transactions
+ *
+ * Fetches the paginated transaction list for the signed-in user. Accepts
+ * either a raw array response or an object wrapping the list under
+ * `data`/`transactions`/`items`, with the total under `total`/`totalCount`/`count`.
+ */
 export async function getTransactions(
   query: TransactionQueryDto & TransactionFilters = {},
   fetchOptions?: { signal?: AbortSignal },
@@ -193,6 +200,12 @@ export async function getTransactions(
   };
 }
 
+/**
+ * GET /transactions/:id
+ *
+ * Fetches a single transaction. The DTO may be nested under a `data` wrapper
+ * or returned at the top level; both shapes are normalized to `Transaction`.
+ */
 export async function getTransactionById(id: string): Promise<Transaction> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json = await apiClient<any>(`/transactions/${id}`);
@@ -260,6 +273,13 @@ export interface WithdrawalResponse {
   message?: string;
 }
 
+/**
+ * POST /transactions/withdraw
+ *
+ * Creates a withdrawal request. Normalizes the backend's id variants
+ * (`transactionId`/`transaction_id`/`id`/`data.id`/`data.transactionId`) and
+ * status (`status`/`data.status`, defaulting to `pending`).
+ */
 export async function createWithdrawal(
   data: CreateWithdrawalDto,
 ): Promise<WithdrawalResponse> {
@@ -320,6 +340,20 @@ export async function createDeposit({
 }: CreateDepositDto): Promise<DepositResponse> {
   const body: Record<string, string> = { amount, currency };
   if (sourceAddress) body.sourceAddress = sourceAddress;
+/**
+ * POST /transactions/deposit
+ *
+ * Creates a deposit request. Normalizes the same transaction-id variants as
+ * `createWithdrawal` plus the deposit address (`walletAddress`/`wallet_address`/`address`).
+ */
+export async function createDeposit(
+    data: CreateDepositDto
+): Promise<DepositResponse> {
+        const json = await apiClient<GenericApiResponse>('/transactions/deposit', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json = await apiClient<any>("/transactions/deposit", {
@@ -373,3 +407,37 @@ export async function createSwap(data: CreateSwapDto): Promise<Transaction> {
   const dto = (json.data ?? json) as Record<string, any>;
   return mapTransaction(dto);
 }
+
+/**
+ * POST /transactions/swap
+ *
+ * Creates a currency conversion. Normalizes the transaction-id variants and
+ * additionally the result amount (`toAmount`/`to_amount`) and rate
+ * (`exchangeRate`/`exchange_rate`).
+ */
+export async function createSwap(data: CreateSwapDto): Promise<SwapResponse> {
+        const json = await apiClient<GenericApiResponse>('/transactions/swap', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+
+    const transactionId = (json.transactionId ??
+        json.transaction_id ??
+        json.id ??
+        json.data?.id ??
+        json.data?.transactionId) as string;
+
+    const status = (json.status ?? json.data?.status ?? 'pending') as
+        | 'pending'
+        | 'success'
+        | 'failed';
+
+    return {
+        transactionId,
+        status,
+        toAmount: (json.toAmount ?? json.to_amount) as number | undefined,
+        exchangeRate: (json.exchangeRate ?? json.exchange_rate) as number | undefined,
+        message: json.message as string | undefined,
+    };
+}
+
