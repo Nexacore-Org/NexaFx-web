@@ -4,6 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { signUp } from "@/lib/api/auth";
+import {
+  validateEmail,
+  validatePassword,
+  validateConfirmPassword,
+} from "@/lib/validations/auth";
+import { SubmitButton } from "@/components/shared/submit-button";
+import { InlineFieldError } from "@/components/ui/inline-field-error";
 import { validateEmail, validatePassword, validateConfirmPassword } from "@/lib/validations/auth";
 
 export default function CreateAccountPage() {
@@ -33,7 +40,10 @@ export default function CreateAccountPage() {
     const passwordError = validatePassword(formData.password);
     if (passwordError) newErrors.password = passwordError;
 
-    const confirmPasswordError = validateConfirmPassword(formData.password, formData.confirmPassword);
+    const confirmPasswordError = validateConfirmPassword(
+      formData.password,
+      formData.confirmPassword,
+    );
     if (confirmPasswordError) newErrors.confirmPassword = confirmPasswordError;
 
     setErrors(newErrors);
@@ -82,9 +92,7 @@ export default function CreateAccountPage() {
               setFormData({ ...formData, email: e.target.value })
             }
           />
-          {errors.email && (
-            <p className="mt-1.5 ml-1 text-xs text-red-500">{errors.email}</p>
-          )}
+          <InlineFieldError message={errors.email} />
         </div>
 
         <div>
@@ -97,9 +105,7 @@ export default function CreateAccountPage() {
               setFormData({ ...formData, phone: e.target.value })
             }
           />
-          {errors.phone && (
-            <p className="mt-1.5 ml-1 text-xs text-red-500">{errors.phone}</p>
-          )}
+          <InlineFieldError message={errors.phone} />
         </div>
 
         <div className="relative">
@@ -119,11 +125,7 @@ export default function CreateAccountPage() {
           >
             {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
           </button>
-          {errors.password && (
-            <p className="mt-1.5 ml-1 text-xs text-red-500">
-              {errors.password}
-            </p>
-          )}
+          <InlineFieldError message={errors.password} />
         </div>
 
         <div className="relative">
@@ -143,11 +145,7 @@ export default function CreateAccountPage() {
           >
             {showConfirmPassword ? <EyeOff size={22} /> : <Eye size={22} />}
           </button>
-          {errors.confirmPassword && (
-            <p className="mt-1.5 ml-1 text-xs text-red-500">
-              {errors.confirmPassword}
-            </p>
-          )}
+          <InlineFieldError message={errors.confirmPassword} />
         </div>
 
         <div className="flex items-center gap-3 pt-2">
@@ -188,20 +186,14 @@ export default function CreateAccountPage() {
         {apiError && (
           <p className="text-xs text-red-500 text-center">{apiError}</p>
         )}
-        <button
-          type="submit"
-          disabled={isLoading || !formData.acceptTerms}
+        <SubmitButton
+          loading={isLoading}
+          loadingLabel="Processing..."
+          disabled={!formData.acceptTerms}
           className="w-full h-16 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl shadow-[0_4px_14px_0_rgb(249,115,22,0.39)] transition-all hover:scale-[1.01] active:scale-[0.99] mt-6"
         >
-          {isLoading ? (
-            <div className="flex items-center justify-center gap-2">
-              <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>Processing...</span>
-            </div>
-          ) : (
-            "Create an account"
-          )}
-        </button>
+          Create an account
+        </SubmitButton>
       </form>
     </div>
   );

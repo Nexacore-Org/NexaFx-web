@@ -13,6 +13,10 @@ import { setTokens as storeTokens, clearTokens as removeTokens } from "@/lib/uti
  * "Consolidate auth token storage to a single source of truth", is resolved.
  */
 
+/**
+ * Auth store — uses `persist` middleware to survive refresh.
+ * See `docs/store-conventions.md` for persistence and optimistic-update conventions.
+ */
 export interface UserProfileStore {
   id: string;
   firstName: string;

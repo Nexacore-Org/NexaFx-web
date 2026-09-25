@@ -54,6 +54,18 @@ const nextConfig: NextConfig = {
   },
 };
 
+// Enable bundle analysis with `npm run analyze` (sets ANALYZE=true).
+let config = nextConfig;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const withBundleAnalyzer = require("@next/bundle-analyzer");
+  if (process.env.ANALYZE === "true") {
+    config = withBundleAnalyzer({ enabled: true })(nextConfig);
+  }
+} catch {
+  // @next/bundle-analyzer not installed — keep the plain config.
+}
+
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const config = withPWAInit({
@@ -69,3 +81,4 @@ export default withSentryConfig(config, {
   silent: !process.env.CI,
   widenClientFileUpload: true,
 });
+

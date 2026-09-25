@@ -2,6 +2,10 @@
 
 NexaFx is a web app for currency exchange, crypto payments, wallet operations, invoices, KYC, and admin operations. The v2 branch is the active rebuild of the product frontend..
 
+![CI](https://github.com/Nexacore-Org/NexaFx-web/actions/workflows/ci.yml/badge.svg)
+
+NexaFX is a cutting-edge currency exchange platform that bridges traditional finance with blockchain technology, offering seamless conversions between the Nigerian Naira, global currencies, and cryptocurrencies. Built on Web3 principles and integrated with the Stellar ecosystem, NexaFX delivers a secure, transparent, and cost-effective solution for all your financial exchange needs.
+
 ## Tech Stack
 
 - Next.js 16 App Router
@@ -87,6 +91,16 @@ git checkout -b feat/issue-123-your-description
 
 4. Make the smallest complete change that satisfies the issue.
 5. Run the required checks:
+### Test scripts
+
+The project uses Jest (with Testing Library for component tests). While writing
+or fixing tests, `test:watch` keeps Jest running so you can iterate quickly:
+
+- `npm test` — run all Jest tests once
+- `npm run test:watch` — run Jest in watch mode
+
+## 🔐 Security
+
 
 ```bash
 npm run build
@@ -106,6 +120,14 @@ npm run test
 - [ ] No imports from `lib/admin-mock-data.ts`
 - [ ] PR targets the `v2` branch
 - [ ] PR description references the issue with `Closes #<issue-number>`
+## 📚 Documentation
+
+- [Store Conventions](docs/store-conventions.md) — Zustand store conventions (persistence, optimistic updates)
+- [Operational Runbook](docs/runbook.md) — Deploy rollback and log-checking steps
+- [Mock Cleanup Note](docs/mock-cleanup-note.md) — Historical mock file cleanup and test fixture locations
+
+## 🤝 Contributing
+
 
 ## Notes For Contributors
 
@@ -114,3 +136,25 @@ This project uses Next.js 16. Read the relevant local guide in `node_modules/nex
 For product and exchange terminology, see the [contributor glossary](docs/glossary.md).
 
 Commits run ESLint and Prettier on staged files through Husky. Bypass the hook with `git commit --no-verify` only when a genuine exception is necessary; the normal expectation is to fix the reported issues before committing.
+### 📚 Documentation
+- [Testing Guide](TESTING.md) — How to run and debug tests
+- [Contributing Guidelines](Contribution.md) — Full contribution workflow
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📞 Support
+
+Having trouble? Reach out to us:
+
+- Submit an issue on GitHub
+- Telegram: [https://t.me/NexaFx](https://t.me/+WkWO3kNnA-1mYzVk)
+- Email us at [contact@nexacore.org](mailto:nexacore.org@gmail.com)
+
+## 📧 Contact
+
+---
+
+**NexaFX** - Bridging Traditional Finance and DeFi for a Borderless Financial Future
+

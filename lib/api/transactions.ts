@@ -1,4 +1,5 @@
 import { apiClient } from "../api-client";
+import { pickField } from "./pick-field";
 import { formatDateTimeGB } from "../utils/format";
 
 export type TransactionStatus = "Success" | "Pending" | "Failed";
@@ -72,21 +73,33 @@ export function mapTransaction(dto: Record<string, any>): Transaction {
     statusMap[(dto.status as string)?.toLowerCase()] ??
     (dto.status as TransactionStatus);
 
-  const amount = Number(dto.amount) || 0;
   const currency = (dto.currency as string) ?? "";
+  const amount = Number(dto.amount) || 0;
 
   let amountString = `${amount.toLocaleString()} ${currency}`;
   if (type === "Deposit") amountString = `+ ${amountString}`;
   else if (type === "Withdraw") amountString = `- ${amountString}`;
 
+  const rawDate = (pickField(dto, "createdAt", "date", "created_at") ??
+    "") as string;
+  const date = rawDate
+    ? new Date(rawDate).toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "";
   const rawDate = (dto.createdAt ?? dto.date ?? dto.created_at) as string;
   const date = rawDate ? formatDateTimeGB(rawDate) : "";
 
   return {
-    id: (dto.id ?? dto._id) as string,
+    id: pickField(dto, "id", "_id") as string,
     type,
     currency,
-    toCurrency: (dto.toCurrency ?? dto.to_currency) as string | undefined,
+    toCurrency: pickField(dto, "toCurrency", "to_currency") as
+      string | undefined,
     amount,
     amountString,
     date,
@@ -95,19 +108,33 @@ export function mapTransaction(dto: Record<string, any>): Transaction {
     // for that purpose.
     rawDate: rawDate ?? "",
     status,
-    reference: (dto.reference ??
-      dto.transactionRef ??
-      dto.transaction_ref ??
-      "") as string,
+    reference: (pickField(
+      dto,
+      "reference",
+      "transactionRef",
+      "transaction_ref",
+    ) ?? "") as string,
     description: dto.description as string | undefined,
     fee: dto.fee as number | undefined,
-    exchangeRate: (dto.exchangeRate ?? dto.exchange_rate) as number | undefined,
-    toAmount: (dto.toAmount ?? dto.to_amount) as number | undefined,
-    walletAddress: (dto.walletAddress ?? dto.wallet_address ?? dto.address) as
-      string | undefined,
+    exchangeRate: pickField(dto, "exchangeRate", "exchange_rate") as
+      number | undefined,
+    toAmount: pickField(dto, "toAmount", "to_amount") as number | undefined,
+    walletAddress: pickField(
+      dto,
+      "walletAddress",
+      "wallet_address",
+      "address",
+    ) as string | undefined,
   };
 }
 
+/**
+ * GET /transactions
+ *
+ * Fetches the paginated transaction list for the signed-in user. Accepts
+ * either a raw array response or an object wrapping the list under
+ * `data`/`transactions`/`items`, with the total under `total`/`totalCount`/`count`.
+ */
 export async function getTransactions(
   query: TransactionQueryDto & TransactionFilters = {},
   fetchOptions?: { signal?: AbortSignal },
@@ -173,6 +200,12 @@ export async function getTransactions(
   };
 }
 
+/**
+ * GET /transactions/:id
+ *
+ * Fetches a single transaction. The DTO may be nested under a `data` wrapper
+ * or returned at the top level; both shapes are normalized to `Transaction`.
+ */
 export async function getTransactionById(id: string): Promise<Transaction> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json = await apiClient<any>(`/transactions/${id}`);
@@ -240,6 +273,13 @@ export interface WithdrawalResponse {
   message?: string;
 }
 
+/**
+ * POST /transactions/withdraw
+ *
+ * Creates a withdrawal request. Normalizes the backend's id variants
+ * (`transactionId`/`transaction_id`/`id`/`data.id`/`data.transactionId`) and
+ * status (`status`/`data.status`, defaulting to `pending`).
+ */
 export async function createWithdrawal(
   data: CreateWithdrawalDto,
 ): Promise<WithdrawalResponse> {
@@ -250,13 +290,16 @@ export async function createWithdrawal(
   });
 
   // Normalize response - backend may use different field names
-  const transactionId = (json.transactionId ??
-    json.transaction_id ??
-    json.id ??
-    json.data?.id ??
-    json.data?.transactionId) as string;
+  const transactionId = pickField(
+    json,
+    "transactionId",
+    "transaction_id",
+    "id",
+    "data.id",
+    "data.transactionId",
+  ) as string;
 
-  const status = (json.status ?? json.data?.status ?? "pending") as
+  const status = (pickField(json, "status", "data.status") ?? "pending") as
     "pending" | "success" | "failed";
 
   return {
@@ -264,35 +307,6 @@ export async function createWithdrawal(
     status,
     message: json.message as string | undefined,
   };
-  const idempotencyKey = crypto.randomUUID();
-
-  // TODO: Coordinate backend support for accepting and deduplicating this header.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const json = await apiClient<any>('/transactions/withdraw', {
-        method: 'POST',
-    headers: {
-      'Idempotency-Key': idempotencyKey,
-    },
-        body: JSON.stringify(data),
-    });
-
-    // Normalize response - backend may use different field names
-    const transactionId = (json.transactionId ??
-        json.transaction_id ??
-        json.id ??
-        json.data?.id ??
-        json.data?.transactionId) as string;
-
-    const status = (json.status ?? json.data?.status ?? 'pending') as
-        | 'pending'
-        | 'success'
-        | 'failed';
-
-    return {
-        transactionId,
-        status,
-        message: json.message as string | undefined,
-    };
 }
 
 // ==================== Deposit ====================
@@ -326,6 +340,20 @@ export async function createDeposit({
 }: CreateDepositDto): Promise<DepositResponse> {
   const body: Record<string, string> = { amount, currency };
   if (sourceAddress) body.sourceAddress = sourceAddress;
+/**
+ * POST /transactions/deposit
+ *
+ * Creates a deposit request. Normalizes the same transaction-id variants as
+ * `createWithdrawal` plus the deposit address (`walletAddress`/`wallet_address`/`address`).
+ */
+export async function createDeposit(
+    data: CreateDepositDto
+): Promise<DepositResponse> {
+        const json = await apiClient<GenericApiResponse>('/transactions/deposit', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json = await apiClient<any>("/transactions/deposit", {
@@ -334,21 +362,27 @@ export async function createDeposit({
   });
 
   // Normalize response - backend may use different field names
-  const transactionId = (json.transactionId ??
-    json.transaction_id ??
-    json.id ??
-    json.data?.id ??
-    json.data?.transactionId) as string;
+  const transactionId = pickField(
+    json,
+    "transactionId",
+    "transaction_id",
+    "id",
+    "data.id",
+    "data.transactionId",
+  ) as string;
 
-  const status = (json.status ?? json.data?.status ?? "pending") as
+  const status = (pickField(json, "status", "data.status") ?? "pending") as
     "pending" | "success" | "failed";
 
   return {
     transactionId,
     status,
-    walletAddress: (json.walletAddress ??
-      json.wallet_address ??
-      json.address) as string | undefined,
+    walletAddress: pickField(
+      json,
+      "walletAddress",
+      "wallet_address",
+      "address",
+    ) as string | undefined,
     message: json.message as string | undefined,
   };
 }
@@ -373,3 +407,37 @@ export async function createSwap(data: CreateSwapDto): Promise<Transaction> {
   const dto = (json.data ?? json) as Record<string, any>;
   return mapTransaction(dto);
 }
+
+/**
+ * POST /transactions/swap
+ *
+ * Creates a currency conversion. Normalizes the transaction-id variants and
+ * additionally the result amount (`toAmount`/`to_amount`) and rate
+ * (`exchangeRate`/`exchange_rate`).
+ */
+export async function createSwap(data: CreateSwapDto): Promise<SwapResponse> {
+        const json = await apiClient<GenericApiResponse>('/transactions/swap', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+
+    const transactionId = (json.transactionId ??
+        json.transaction_id ??
+        json.id ??
+        json.data?.id ??
+        json.data?.transactionId) as string;
+
+    const status = (json.status ?? json.data?.status ?? 'pending') as
+        | 'pending'
+        | 'success'
+        | 'failed';
+
+    return {
+        transactionId,
+        status,
+        toAmount: (json.toAmount ?? json.to_amount) as number | undefined,
+        exchangeRate: (json.exchangeRate ?? json.exchange_rate) as number | undefined,
+        message: json.message as string | undefined,
+    };
+}
+

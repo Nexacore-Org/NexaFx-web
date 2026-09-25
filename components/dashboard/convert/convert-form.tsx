@@ -2,18 +2,28 @@
 
 import { FeeEstimatorModal } from "@/components/shared/fee-estimator-modal";
 import { useState, useMemo, useEffect } from "react";
+import { AlertCircle, ArrowDownUp, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { getBalances } from "@/lib/api/wallet";
+import { createSwap } from "@/lib/api/transactions";
+import {
+    CurrencySelector,
+    type CurrencySelectorOption,
+} from "@/components/ui/currency-selector";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, AlertCircle, ArrowDownUp, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBalances } from "@/lib/api/wallet";
 import { createSwap } from "@/lib/api/transactions";
+import { InlineFieldError } from "@/components/ui/inline-field-error";
 import { getExchangeRate } from "@/lib/api/exchange-rates";
 import {
   convertSchema,
   type ConvertFormValues,
 } from "@/lib/validations/transactions";
 import { Input } from "@/components/ui/Input";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { CURRENCIES } from "@/lib/currencies";
 import {
   MAX_AMOUNT_INPUT_LENGTH,
@@ -31,6 +41,84 @@ interface ConvertFormSessionState {
 function getStoredConvertForm(): ConvertFormSessionState {
   const defaults = { amount: "", fromCurrency: "USD", toCurrency: "NGN" };
 
+export function ConvertForm() {
+    const [fromCurrency, setFromCurrency] = useState("USD");
+    const [toCurrency, setToCurrency] = useState("NGN");
+    const [amount, setAmount] = useState("");
+    const [showFromDropdown, setShowFromDropdown] = useState(false);
+    const [showToDropdown, setShowToDropdown] = useState(false);
+    const [errors, setErrors] = useState<{ amount?: string }>({});
+    
+    const [balances, setBalances] = useState<Record<string, string>>({});
+    const [exchangeRate, setExchangeRate] = useState<number>(0);
+    const [isLoadingRate, setIsLoadingRate] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [rateError, setRateError] = useState<string | null>(null);
+
+    const currencyOptions: CurrencySelectorOption[] = CURRENCIES.map((c) => ({
+        id: c.id,
+        name: c.name,
+        symbol: c.symbol,
+        balance: balances[c.id] || "0.00",
+    }));
+
+    useEffect(() => {
+        getBalances().then((res) => {
+            const newBalances: Record<string, string> = {};
+            res.forEach(b => {
+                newBalances[b.currency] = b.balance;
+            });
+            setBalances(newBalances);
+        }).catch((err) => {
+            console.error("Failed to fetch balances", err);
+        });
+    }, []);
+
+    useEffect(() => {
+        if (!fromCurrency || !toCurrency) return;
+        setIsLoadingRate(true);
+        setRateError(null);
+        
+        fetch(`/api/exchange-rates?from=${fromCurrency}&to=${toCurrency}`)
+            .then(res => {
+                if (!res.ok) throw new Error("Failed to fetch rate");
+                return res.json();
+            })
+            .then(data => {
+                if (data.rate) {
+                    setExchangeRate(Number(data.rate));
+                } else {
+                    setExchangeRate(0);
+                    setRateError("Rates unavailable");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                setExchangeRate(0);
+                setRateError("Rates unavailable");
+            })
+            .finally(() => {
+                setIsLoadingRate(false);
+            });
+    }, [fromCurrency, toCurrency]);
+
+    const convertedAmount = useMemo(() => {
+        if (!amount || isNaN(parseFloat(amount)) || exchangeRate === 0) return "";
+        const numAmount = parseFloat(amount);
+        const result = numAmount * exchangeRate;
+        return result.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: fromCurrency === "ETH" || toCurrency === "ETH" ? 8 : 2,
+        });
+    }, [amount, exchangeRate, fromCurrency, toCurrency]);
+
+    const handleSwap = () => {
+        setFromCurrency(toCurrency);
+        setToCurrency(fromCurrency);
+        setAmount("");
+        setShowFromDropdown(false);
+        setShowToDropdown(false);
+    };
   try {
     const stored = sessionStorage.getItem(CONVERT_FORM_STORAGE_KEY);
     if (!stored) return defaults;
@@ -165,6 +253,135 @@ export function ConvertForm() {
     );
   }, [amount, exchangeRate, fromCurrency, toCurrency]);
 
+                {/* From Section */}
+                <div className="space-y-4 bg-card rounded-2xl p-6 border border-border">
+                    <div>
+                        <label className="text-sm font-medium text-foreground block mb-3">
+                            From
+                        </label>
+
+                        {/* Currency Selector */}
+                        <div className="relative mb-4">
+                            <CurrencySelector
+                                selectedId={fromCurrency}
+                                options={currencyOptions}
+                                isOpen={showFromDropdown}
+                                onToggle={() => {
+                                    setShowFromDropdown(!showFromDropdown);
+                                    setShowToDropdown(false);
+                                }}
+                                onSelect={(id) => {
+                                    setFromCurrency(id);
+                                    setShowFromDropdown(false);
+                                    setAmount("");
+                                }}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowFromDropdown(!showFromDropdown);
+                                    setShowToDropdown(false);
+                                }}
+                                className={cn(
+                                    "w-full flex items-center justify-between px-4 py-3.5 rounded-xl",
+                                    "bg-muted/50 border border-border",
+                                    "hover:bg-muted transition-colors cursor-pointer"
+                                )}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary">
+                                        {fromCurrencyData.symbol.toUpperCase().substring(0, 1)}
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="font-semibold text-foreground">{fromCurrency}</p>
+                                        <p className="text-xs text-muted-foreground">{fromCurrencyData.name}</p>
+                                    </div>
+                                </div>
+                                <ChevronDown className={cn(
+                                    "h-5 w-5 text-muted-foreground transition-transform",
+                                    showFromDropdown && "rotate-180"
+                                )} />
+                            </button>
+
+                            {/* Dropdown */}
+                            {showFromDropdown && (
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10">
+                                    {CURRENCIES.map((curr) => (
+                                        <button
+                                            key={curr.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setFromCurrency(curr.id);
+                                                setShowFromDropdown(false);
+                                                setAmount("");
+                                            }}
+                                            className={cn(
+                                                "w-full flex items-center justify-between px-4 py-3 text-left",
+                                                "hover:bg-muted transition-colors",
+                                                curr.id === fromCurrency && "bg-primary/10"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary">
+                                                    {curr.symbol.toUpperCase().substring(0, 1)}
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-foreground">{curr.id}</p>
+                                                    <p className="text-xs text-muted-foreground">{curr.name}</p>
+                                                </div>
+                                            </div>
+                                            <span className="text-sm text-muted-foreground">
+                                                {balances[curr.id] || "0.00"}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Amount Input */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium text-foreground">
+                                    Amount
+                                </label>
+                                <span className="text-xs text-muted-foreground">
+                                    Balance: {fromBalanceStr}
+                                </span>
+                            </div>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    placeholder="0.00"
+                                    value={amount}
+                                    onChange={handleAmountChange}
+                                    className={cn(
+                                        "w-full px-4 py-3.5 pr-16 rounded-xl bg-muted/50 border",
+                                        "text-base text-foreground placeholder:text-muted-foreground",
+                                        "focus:outline-none focus:ring-2 focus:ring-primary/50",
+                                        "transition-all duration-200",
+                                        errors.amount ? "border-destructive" : "border-border"
+                                    )}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleMaxClick}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                                >
+                                    MAX
+                                </button>
+                            </div>
+                            {errors.amount && (
+                                <div className="flex items-center gap-1.5 text-destructive">
+                                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                                    <span className="text-xs">{errors.amount}</span>
+                                </div>
+                            )}
+                            <InlineFieldError message={errors.amount} />
+                        </div>
+                    </div>
+                </div>
   const handleSwap = () => {
     setFromCurrency(toCurrency);
     setToCurrency(fromCurrency);
@@ -287,6 +504,44 @@ export function ConvertForm() {
               />
             </button>
 
+                {/* To Section */}
+                <div className="space-y-4 bg-card rounded-2xl p-6 border border-border">
+                    <div>
+                        <label className="text-sm font-medium text-foreground block mb-3">
+                            To
+                        </label>
+
+                        {/* Currency Selector */}
+                        <div className="relative mb-4">
+                            <CurrencySelector
+                                selectedId={toCurrency}
+                                options={currencyOptions}
+                                isOpen={showToDropdown}
+                                onToggle={() => {
+                                    setShowToDropdown(!showToDropdown);
+                                    setShowFromDropdown(false);
+                                }}
+                                onSelect={(id) => {
+                                    setToCurrency(id);
+                                    setShowToDropdown(false);
+                                }}
+                            />
+                        </div>
+
+                        {/* Amount Display */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-foreground">
+                                Amount
+                            </label>
+                            <div className="px-4 py-3.5 rounded-xl bg-muted/50 border border-border flex items-center justify-between">
+                                <span className="text-base text-foreground font-semibold">
+                                    {convertedAmount || "0.00"}
+                                </span>
+                                <span className="text-sm text-muted-foreground">
+                                    {toCurrency}
+                                </span>
+                            </div>
+                        </div>
             {showFromDropdown && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10">
                 {CURRENCIES.map((curr) => (
@@ -501,8 +756,9 @@ export function ConvertForm() {
         </p>
 
         <div className="space-y-3">
-          <button
-            type="submit"
+          <SubmitButton
+            loading={isSubmitting}
+            loadingLabel="Converting..."
             disabled={isButtonDisabled}
             title={rateError ? "Rates unavailable" : undefined}
             className={cn(
@@ -512,14 +768,8 @@ export function ConvertForm() {
                 "opacity-60 cursor-not-allowed hover:bg-primary",
             )}
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" /> Converting...
-              </>
-            ) : (
-              "Convert Now"
-            )}
-          </button>
+            Convert Now
+          </SubmitButton>
           {rateError && (
             <p className="text-xs text-center text-destructive">
               Unable to fetch exchange rates. Please try again later.

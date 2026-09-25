@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef } from "react";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useResponsiveFocusTrap } from "@/hooks/use-focus-trap";
+import { StepModalShell } from "@/components/ui/step-modal-shell";
 import { WithdrawalMethodSelect } from "./WithdrawalMethodSelect";
 import { WithdrawalForm } from "./WithdrawalForm";
 import { WithdrawalReview } from "./WithdrawalReview";
+import { WithdrawalSuccess } from "./WithdrawalSuccess";
 import { WithdrawalSuccess } from "@/components/dashboard/withdraw/withdrawal-success";
 import type { Transaction } from "@/lib/api/transactions";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,11 @@ export function WithdrawalModal() {
     setTimeout(() => reset(), 300);
   };
 
+  // Viewport-reactive focus trap for the desktop/mobile modal variants
+  useResponsiveFocusTrap(isOpen, handleClose, {
+    desktopRef: desktopModalRef,
+    mobileRef: mobileModalRef,
+  });
   // Use a single focus trap for both the desktop and mobile dialogs
   useFocusTrap(isOpen, handleClose, modalRef);
 
@@ -92,6 +98,14 @@ export function WithdrawalModal() {
   }
 
   return (
+    <StepModalShell
+      isOpen={isOpen}
+      onClose={handleClose}
+      ariaLabel="Withdrawal"
+      closeDisabled={isProcessing}
+    >
+      {renderStep()}
+    </StepModalShell>
     <>
       {isOpen && (
         <>

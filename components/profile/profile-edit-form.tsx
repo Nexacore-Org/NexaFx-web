@@ -36,6 +36,15 @@ export function ProfileEditForm() {
     });
   }, [reset]);
 
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(null), 3000);
+    return () => clearTimeout(timer);
+  }, [message]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isLoading) return;
   const onSubmit = async (data: ProfileFormValues) => {
     setIsLoading(true);
     setApiError("");

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { apiClient } from "../api-client";
+import { pickField } from "./pick-field";
 import {
   formatDateTimeGB,
   formatShortDate,
@@ -86,11 +87,11 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
     headers: getAuthHeaders(),
   });
   return {
-    registeredUsers: response?.registeredUsers ?? response?.totalUsers ?? 0,
+    registeredUsers: pickField(response, "registeredUsers", "totalUsers") ?? 0,
     totalTransactions: response?.totalTransactions ?? 0,
     pendingKyc: response?.pendingKyc ?? 0,
     currencies: response?.currencies ?? 0,
-    totalDeposits: response?.totalDeposits ?? response?.totalVolume ?? 0,
+    totalDeposits: pickField(response, "totalDeposits", "totalVolume") ?? 0,
     totalWithdrawals: response?.totalWithdrawals ?? 0,
   };
 }
@@ -101,53 +102,61 @@ export async function getCohortRetention(): Promise<CohortRetentionData[]> {
     headers: getAuthHeaders(),
   });
 
-  const data = (response?.data ??
-    response?.cohorts ??
-    response?.items ??
+  const data = (pickField(response, "data", "cohorts", "items") ??
     (Array.isArray(response) ? response : [])) as any[];
 
-  return data.map((cohort: any) => ({
-    cohortMonth:
-      cohort.cohortMonth ?? cohort.cohort_month ?? cohort.month ?? "",
-    cohortSize:
-      Number(cohort.cohortSize ?? cohort.cohort_size ?? cohort.size) || 0,
-    retentionByMonth: (
-      cohort.retentionByMonth ??
-      cohort.retention_by_month ??
-      cohort.retention ??
-      []
-    )
-      .map((value: unknown) => Number(value))
-      .filter((value: number) => Number.isFinite(value)),
-  }));
+  return data.map((cohort: any) => {
+    const retention = (pickField(
+      cohort,
+      "retentionByMonth",
+      "retention_by_month",
+      "retention",
+    ) ?? []) as unknown[];
+    return {
+      cohortMonth:
+        pickField(cohort, "cohortMonth", "cohort_month", "month") ?? "",
+      cohortSize:
+        Number(pickField(cohort, "cohortSize", "cohort_size", "size")) || 0,
+      retentionByMonth: retention
+        .map((value: unknown) => Number(value))
+        .filter((value: number) => Number.isFinite(value)),
+    };
+  });
 }
 
 export function mapAdminUser(user: any): AdminUser {
   return {
-    id: user.id ?? user._id ?? "",
+    id: pickField(user, "id", "_id") ?? "",
     email: user.email ?? "",
-    firstName: user.firstName ?? user.first_name ?? null,
-    lastName: user.lastName ?? user.last_name ?? null,
+    firstName: pickField(user, "firstName", "first_name") ?? null,
+    lastName: pickField(user, "lastName", "last_name") ?? null,
     phone: user.phone ?? null,
     walletAddress:
-      user.walletAddress ?? user.wallet_address ?? user.address ?? "",
+      pickField(user, "walletAddress", "wallet_address", "address") ?? "",
     username: user.username ?? user.email?.split("@")[0] ?? "",
-    avatarUrl: user.avatarUrl ?? user.avatar_url ?? null,
+    avatarUrl: pickField(user, "avatarUrl", "avatar_url") ?? null,
     transactions: Number(user.transactions) || 0,
-    totalDeposit: Number(user.totalDeposit ?? user.total_deposit) || 0,
-    totalWithdraw: Number(user.totalWithdraw ?? user.total_withdraw) || 0,
+    totalDeposit: Number(pickField(user, "totalDeposit", "total_deposit")) || 0,
+    totalWithdraw:
+      Number(pickField(user, "totalWithdraw", "total_withdraw")) || 0,
     kycStatus: (user.kycStatus === "Verified" ||
     user.kycStatus === "verified" ||
     user.kyc_status === "Verified" ||
     user.kyc_status === "verified"
       ? "Verified"
       : "Unverified") as "Verified" | "Unverified",
+    createdAt: user.createdAt
+      ? new Date(user.createdAt).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "",
+    createdAtRaw: pickField(user, "createdAt", "created_at") ?? undefined,
     createdAt: user.createdAt ? formatShortDate(user.createdAt) : "",
     createdAtRaw: user.createdAt ?? user.created_at ?? undefined,
     twoFactorEnabled:
-      user.twoFactorEnabled ??
-      user.two_factor_enabled ??
-      user.mfaEnabled ??
+      pickField(user, "twoFactorEnabled", "two_factor_enabled", "mfaEnabled") ??
       undefined,
     isActive: user.isActive ?? user.is_active ?? true,
   };
@@ -167,11 +176,10 @@ export async function getAdminUsers(
     params,
   });
 
-  const data = (response?.data ??
-    response?.users ??
-    response?.items ??
+  const data = (pickField(response, "data", "users", "items") ??
     (Array.isArray(response) ? response : [])) as any[];
-  const total = response?.total ?? response?.count ?? data.length;
+  const total = (pickField(response, "total", "count") ??
+    data.length) as number;
 
   let mappedData = data.map(mapAdminUser);
 
@@ -224,14 +232,17 @@ export async function getAdminKycSubmissions(): Promise<KycSubmission[]> {
     method: "GET",
     headers: getAuthHeaders(),
   });
-  const data = response?.data ?? response?.submissions ?? response ?? [];
+  const data = (pickField(response, "data", "submissions") ??
+    response ??
+    []) as any[];
   return (Array.isArray(data) ? data : []).map((item: any) => ({
-    id: item.id ?? item._id ?? "",
-    userName: item.userName ?? item.username ?? item.user?.name ?? "",
-    email: item.email ?? item.user?.email ?? "",
-    documentType: item.documentType ?? item.document_type ?? "Unknown",
+    id: pickField(item, "id", "_id") ?? "",
+    userName: pickField(item, "userName", "username", "user.name") ?? "",
+    email: pickField(item, "email", "user.email") ?? "",
+    documentType: pickField(item, "documentType", "document_type") ?? "Unknown",
     status: item.status ?? "Pending",
-    submittedAt: item.submittedAt ?? item.createdAt ?? new Date().toISOString(),
+    submittedAt:
+      pickField(item, "submittedAt", "createdAt") ?? new Date().toISOString(),
     reviewedAt: item.reviewedAt ?? undefined,
   }));
 }
@@ -300,30 +311,31 @@ export async function getFlaggedTransactions(): Promise<FlaggedTransaction[]> {
     params: { flagged: "true" },
   });
 
-  const data = (response?.data ??
-    response?.transactions ??
-    response?.items ??
+  const data = (pickField(response, "data", "transactions", "items") ??
     (Array.isArray(response) ? response : [])) as any[];
 
   return data.map((tx: any) => ({
-    id: tx.id ?? tx._id ?? "",
+    id: pickField(tx, "id", "_id") ?? "",
     amount: Number(tx.amount) || 0,
     currency: tx.currency ?? "",
     type: tx.type ?? "",
     username: tx.username ?? tx.user?.email ?? tx.email ?? "",
     email: tx.email ?? tx.user?.email ?? "",
-    date: tx.createdAt ?? tx.date ?? "",
-    txId: tx.txId ?? tx.reference ?? tx.transactionRef ?? "",
+    date: pickField(tx, "createdAt", "date") ?? "",
+    txId: pickField(tx, "txId", "reference", "transactionRef") ?? "",
     status: tx.status ?? "Pending",
-    flagReason: tx.flagReason ?? tx.flag_reason ?? "",
-    flaggedBy: tx.flaggedBy ?? tx.flagged_by ?? "",
-    flaggedAt: tx.flaggedAt ?? tx.flagged_at ?? "",
+    flagReason: pickField(tx, "flagReason", "flag_reason") ?? "",
+    flaggedBy: pickField(tx, "flaggedBy", "flagged_by") ?? "",
+    flaggedAt: pickField(tx, "flaggedAt", "flagged_at") ?? "",
     whitelisted: Boolean(tx.whitelisted),
-    whitelistedBy: tx.whitelistedBy ?? tx.whitelisted_by ?? undefined,
+    whitelistedBy:
+      pickField(tx, "whitelistedBy", "whitelisted_by") ?? undefined,
     whitelistedByEmail:
-      tx.whitelistedByEmail ?? tx.whitelisted_by_email ?? undefined,
-    whitelistedAt: tx.whitelistedAt ?? tx.whitelisted_at ?? undefined,
-    whitelistNotes: tx.whitelistNotes ?? tx.whitelist_notes ?? undefined,
+      pickField(tx, "whitelistedByEmail", "whitelisted_by_email") ?? undefined,
+    whitelistedAt:
+      pickField(tx, "whitelistedAt", "whitelisted_at") ?? undefined,
+    whitelistNotes:
+      pickField(tx, "whitelistNotes", "whitelist_notes") ?? undefined,
   }));
 }
 
@@ -394,35 +406,48 @@ export async function getAdminTransactions(
     params,
   });
 
-  const data = (response?.data ??
-    response?.transactions ??
-    response?.items ??
+  const data = (pickField(response, "data", "transactions", "items") ??
     (Array.isArray(response) ? response : [])) as any[];
-  const total = response?.total ?? response?.count ?? data.length;
+  const total = (pickField(response, "total", "count") ??
+    data.length) as number;
 
   const mappedData = data.map((tx: any) => {
+    const rawDate = (pickField(tx, "createdAt", "date") ?? "") as string;
+    const formattedDate = rawDate
+      ? new Date(rawDate).toLocaleString("en-GB", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "";
     const rawDate = tx.createdAt ?? tx.date ?? "";
     const formattedDate = rawDate ? formatDateTimeGB(rawDate) : "";
 
     return {
-      id: tx.id ?? tx._id ?? "",
+      id: pickField(tx, "id", "_id") ?? "",
       amount: Number(tx.amount) || 0,
       currency: tx.currency ?? "",
       type: tx.type ?? "",
-      userId: tx.userId ?? tx.user_id ?? tx.user?.id ?? tx.user?._id ?? "",
+      userId: pickField(tx, "userId", "user_id", "user.id", "user._id") ?? "",
       username: tx.username ?? tx.user?.email ?? tx.email ?? "",
       date: formattedDate,
       createdAt: rawDate,
-      txId: tx.txId ?? tx.reference ?? tx.transactionRef ?? "",
+      txId: pickField(tx, "txId", "reference", "transactionRef") ?? "",
       status: tx.status ?? "Pending",
-      toAmount: Number(tx.toAmount ?? tx.to_amount) || undefined,
-      toCurrency: tx.toCurrency ?? tx.to_currency ?? undefined,
+      toAmount: Number(pickField(tx, "toAmount", "to_amount")) || undefined,
+      toCurrency: pickField(tx, "toCurrency", "to_currency") ?? undefined,
       whitelisted: Boolean(tx.whitelisted),
-      whitelistedBy: tx.whitelistedBy ?? tx.whitelisted_by ?? undefined,
+      whitelistedBy:
+        pickField(tx, "whitelistedBy", "whitelisted_by") ?? undefined,
       whitelistedByEmail:
-        tx.whitelistedByEmail ?? tx.whitelisted_by_email ?? undefined,
-      whitelistedAt: tx.whitelistedAt ?? tx.whitelisted_at ?? undefined,
-      whitelistNotes: tx.whitelistNotes ?? tx.whitelist_notes ?? undefined,
+        pickField(tx, "whitelistedByEmail", "whitelisted_by_email") ??
+        undefined,
+      whitelistedAt:
+        pickField(tx, "whitelistedAt", "whitelisted_at") ?? undefined,
+      whitelistNotes:
+        pickField(tx, "whitelistNotes", "whitelist_notes") ?? undefined,
     };
   });
 
@@ -438,6 +463,144 @@ export interface PushNotification {
   createdAt: string;
 }
 
+interface AdminUserDto {
+  id?: string | number;
+  _id?: string | number;
+  email?: string;
+  firstName?: string | null;
+  first_name?: string | null;
+  lastName?: string | null;
+  last_name?: string | null;
+  phone?: string | null;
+  walletAddress?: string | null;
+  wallet_address?: string | null;
+  address?: string | null;
+  username?: string | null;
+  avatarUrl?: string | null;
+  avatar_url?: string | null;
+  transactions?: number | string | null;
+  transactionCount?: number | string | null;
+  totalDeposit?: number | string | null;
+  total_deposit?: number | string | null;
+  totalWithdraw?: number | string | null;
+  total_withdraw?: number | string | null;
+  kycStatus?: string | null;
+  kyc_status?: string | null;
+  createdAt?: string | null;
+  created_at?: string | null;
+  isActive?: boolean | null;
+  is_active?: boolean | null;
+}
+
+interface AdminMetricsDto {
+  registeredUsers?: number | string | null;
+  totalTransactions?: number | string | null;
+  pendingKyc?: number | string | null;
+  currencies?: number | string | null;
+  totalDeposits?: number | string | null;
+  totalWithdrawals?: number | string | null;
+}
+
+interface AdminMetricsResponse {
+  data?: AdminMetricsDto;
+  registeredUsers?: number | string | null;
+  totalTransactions?: number | string | null;
+  pendingKyc?: number | string | null;
+  currencies?: number | string | null;
+  totalDeposits?: number | string | null;
+  totalWithdrawals?: number | string | null;
+}
+
+interface AdminUsersResponse {
+  data?: AdminUserDto[];
+}
+
+interface AdminUserResponse {
+  data?: AdminUserDto;
+}
+
+interface AdminTransactionDto {
+  id?: string | number;
+  _id?: string | number;
+  amount?: number | string | null;
+  currency?: string | null;
+  type?: string | null;
+  username?: string | null;
+  email?: string | null;
+  createdAt?: string | null;
+  date?: string | null;
+  txId?: string | null;
+  transactionRef?: string | null;
+  reference?: string | null;
+  status?: string | null;
+}
+
+interface AdminTransactionsResponse {
+  data?: AdminTransactionDto[];
+}
+
+interface PushNotificationDto {
+  id?: string | number;
+  _id?: string | number;
+  title?: string | null;
+  message?: string | null;
+  status?: string | null;
+  createdAt?: string | null;
+  created_at?: string | null;
+}
+
+interface PushNotificationsResponse {
+  data?: PushNotificationDto[];
+}
+
+interface PushNotificationResponse {
+  data?: PushNotificationDto;
+}
+
+// Returns the first non-null value from a list of candidates.
+function pickFirst<T>(...values: T[]): T | undefined {
+  for (const value of values) {
+    if (value !== undefined && value !== null) return value;
+  }
+  return undefined;
+}
+
+// Converts a value to a number, applying a fallback when it is absent.
+function toNumber(value: unknown, fallback = 0): number {
+  if (value === undefined || value === null) return fallback;
+  return Number(value);
+}
+
+// Safe normalization of Admin Users
+/**
+ * Normalizes a single admin-user DTO into the `AdminUser` shape. Accepts the
+ * backend's snake_case variants (`first_name`, `wallet_address`, `kyc_status`,
+ * `created_at`, `is_active`, ...) as well as camelCase.
+ */
+
+export function mapAdminUser(dto: AdminUserDto): AdminUser {
+  return {
+    id: String(pickFirst(dto.id, dto._id, '')),
+    email: String(pickFirst(dto.email, '')),
+    firstName: pickFirst(dto.firstName, dto.first_name) ?? null,
+    lastName: pickFirst(dto.lastName, dto.last_name) ?? null,
+    phone: dto.phone ?? null,
+    walletAddress: String(pickFirst(dto.walletAddress, dto.wallet_address, dto.address, '0x...')),
+    username: String(pickFirst(dto.username, dto.email?.split('@')[0], 'user')),
+    avatarUrl: pickFirst(dto.avatarUrl, dto.avatar_url) ?? null,
+    transactions: toNumber(pickFirst(dto.transactions, dto.transactionCount), 0),
+    totalDeposit: toNumber(pickFirst(dto.totalDeposit, dto.total_deposit), 0),
+    totalWithdraw: toNumber(pickFirst(dto.totalWithdraw, dto.total_withdraw), 0),
+    kycStatus: dto.kycStatus === 'Verified' || dto.kyc_status === 'Verified' ? 'Verified' : 'Unverified',
+    createdAt: (() => {
+      const dateVal = pickFirst(dto.createdAt, dto.created_at);
+      return dateVal ? new Date(dateVal).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      }) : 'N/A';
+    })(),
+    isActive: Boolean(pickFirst(dto.isActive, dto.is_active, true)),
 export async function getAdminPushNotifications(): Promise<PushNotification[]> {
   const response = await apiClient<any>("/admin/push-notifications", {
     method: "GET",
@@ -463,6 +626,17 @@ export async function createAdminPushNotification(payload: {
     body: JSON.stringify(payload),
   });
   const n = response?.data ?? response ?? {};
+/**
+ * GET /admin/metrics
+ *
+ * Fetches the admin dashboard metrics. Normalizes either a `{ data }` wrapper
+ * or a flat response and coerces every counter to a number (the backend may
+ * return numbers or numeric strings).
+ */
+export async function getAdminMetrics(): Promise<AdminMetrics> {
+  const response = await apiClient<AdminMetricsResponse>('/admin/metrics');
+  const data = response?.data ?? (response as AdminMetricsDto) ?? {};
+
   return {
     id: n.id ?? n._id ?? "",
     title: n.title ?? payload.title,
@@ -521,6 +695,12 @@ export async function createAnnouncement(data: {
   });
   const item = response?.data ?? response;
   return {
+    registeredUsers: toNumber(data.registeredUsers, 0),
+    totalTransactions: toNumber(data.totalTransactions, 0),
+    pendingKyc: toNumber(data.pendingKyc, 0),
+    currencies: toNumber(data.currencies, 0),
+    totalDeposits: toNumber(data.totalDeposits, 0),
+    totalWithdrawals: toNumber(data.totalWithdrawals, 0),
     id: item.id ?? item._id ?? "",
     title: item.title ?? data.title,
     message: item.message ?? data.message,
@@ -611,7 +791,93 @@ export async function sendBroadcastEmail(data: {
     createdAt: item.createdAt
       ? formatShortDate(item.createdAt)
       : formatShortDate(new Date()),
+/**
+ * GET /admin/users
+ *
+ * Fetches the admin user list. Accepts either a raw array or a `{ data: [] }`
+ * wrapper and maps each DTO through `mapAdminUser`.
+ */
+export async function getAdminUsers(): Promise<AdminUser[]> {
+  const response = await apiClient<AdminUsersResponse | AdminUserDto[]>('/admin/users');
+  const data = (Array.isArray(response) ? response : response?.data) ?? [];
+  return data.map(mapAdminUser);
+}
+
+/**
+ * GET /admin/users/:id
+ *
+ * Fetches a single admin user. Accepts a `{ data }` wrapper or the DTO at the
+ * top level and maps it through `mapAdminUser`.
+ */
+export async function getAdminUserById(id: string): Promise<AdminUser> {
+  const response = await apiClient<AdminUserResponse | AdminUserDto>(`/admin/users/${id}`);
+  const data = ('data' in response && response.data ? response.data : response) as AdminUserDto;
+  return mapAdminUser(data);
+}
+
+/**
+ * GET /admin/transactions
+ *
+ * Fetches the admin transaction list. Accepts a raw array or `{ data: [] }`
+ * wrapper, normalizes the transaction type synonyms
+ * (`withdrawal`/`withdraw` → Withdraw, `conversion`/`exchange` → Convert), the
+ * date (`createdAt`/`date`), and the reference (`txId`/`transactionRef`/`reference`).
+ */
+export async function getAdminTransactions(): Promise<AdminTransaction[]> {
+  const response = await apiClient<AdminTransactionsResponse | AdminTransactionDto[]>('/admin/transactions');
+  const data = (Array.isArray(response) ? response : response?.data) ?? [];
+  const typeMap: Record<string, 'Deposit' | 'Withdraw' | 'Convert'> = {
+    deposit: 'Deposit',
+    withdrawal: 'Withdraw',
+    withdraw: 'Withdraw',
+    convert: 'Convert',
+    conversion: 'Convert',
+
   };
+  return data.map((dto) => {
+    const rawDate = pickFirst(dto.createdAt, dto.date);
+    return {
+      id: String(pickFirst(dto.id, dto._id, '')),
+      amount: toNumber(pickFirst(dto.amount), 0),
+      currency: String(pickFirst(dto.currency, 'NGN')),
+      type: typeMap[String(pickFirst(dto.type, '')).toLowerCase()] ?? 'Deposit',
+      username: pickFirst(dto.username, dto.email) ?? 'Unknown User',
+      date: rawDate ? new Date(rawDate).toLocaleString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : 'N/A',
+      txId: String(pickFirst(dto.txId, dto.transactionRef, dto.reference, dto.id, '0x...')),
+      status: pickFirst(dto.status) ?? 'active',
+    };
+  });
+}
+
+/**
+ * GET /admin/push-notifications
+ *
+ * Fetches the admin push-notification list. Accepts a raw array or `{ data: [] }`
+ * wrapper and normalizes the status (`Active`/"active") and date
+ * (`createdAt`/`created_at`).
+ */
+export async function getAdminPushNotifications(): Promise<PushNotification[]> {
+  const response = await apiClient<PushNotificationsResponse | PushNotificationDto[]>('/admin/push-notifications');
+  const data = (Array.isArray(response) ? response : response?.data) ?? [];
+  return data.map((dto) => {
+    const rawDate = pickFirst(dto.createdAt, dto.created_at);
+    return {
+      id: String(pickFirst(dto.id, dto._id, '')),
+      title: String(pickFirst(dto.title, '')),
+      message: String(pickFirst(dto.message, '')),
+      status: dto.status === 'Active' || dto.status === 'active' ? 'Active' : 'Inactive',
+      createdAt: rawDate ? new Date(rawDate).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      }) : 'N/A',
+    };
 }
 
 export async function deleteBroadcastEmail(id: string): Promise<void> {
@@ -637,18 +903,17 @@ export async function getGeoAnalytics(): Promise<GeoData[]> {
     headers: getAuthHeaders(),
   });
   const data =
-    response?.data ??
-    response?.geo ??
-    response?.countries ??
+    pickField(response, "data", "geo", "countries") ??
     (Array.isArray(response) ? response : []);
   return (data as any[]).map((item: any) => ({
-    country: item.country ?? item.country_code ?? "",
-    countryName: item.countryName ?? item.country_name ?? item.name ?? "",
+    country: pickField(item, "country", "country_code") ?? "",
+    countryName: pickField(item, "countryName", "country_name", "name") ?? "",
     transactionCount:
-      Number(item.transactionCount ?? item.transaction_count ?? item.count) ||
-      0,
+      Number(
+        pickField(item, "transactionCount", "transaction_count", "count"),
+      ) || 0,
     totalVolume:
-      Number(item.totalVolume ?? item.total_volume ?? item.volume) || 0,
+      Number(pickField(item, "totalVolume", "total_volume", "volume")) || 0,
     currency: item.currency ?? "USD",
   }));
 }
@@ -687,7 +952,31 @@ export async function addUserNote(
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ content }),
+/**
+ * POST /admin/push-notifications
+ *
+ * Creates a push notification from `{ title, message }`. Accepts a `{ data }`
+ * wrapper or the DTO at the top level and normalizes id, status, and
+ * `createdAt`/`created_at` fields like `getAdminPushNotifications`.
+ */
+export async function createAdminPushNotification(payload: { title: string; message: string }): Promise<PushNotification> {
+  const response = await apiClient<PushNotificationResponse | PushNotificationDto>('/admin/push-notifications', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+
   });
+  const data = ('data' in response && response.data ? response.data : response) as PushNotificationDto;
+  const rawDate = pickFirst(data.createdAt, data.created_at);
+  return {
+    id: String(pickFirst(data.id, data._id, '')),
+    title: String(pickFirst(data.title, '')),
+    message: String(pickFirst(data.message, '')),
+    status: data.status === 'Active' || data.status === 'active' ? 'Active' : 'Inactive',
+    createdAt: rawDate ? new Date(rawDate).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }) : 'N/A',
   const item = response?.data ?? response;
   return {
     id: item.id ?? item._id ?? "",

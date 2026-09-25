@@ -191,6 +191,38 @@ chore: update dependencies
 
 ---
 
+## Development Scripts
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| **verify** | `npm run verify` | Runs lint, type-check, and tests in sequence. **Recommended pre-push local check** to catch issues before CI. |
+| **analyze** | `npm run analyze` | Runs `next build` with bundle analysis enabled (`ANALYZE=true`). Produces a bundle report in `.next/analyze/` (requires `@next/bundle-analyzer` — installed by the bundle-size-budget CI work). Without the analyzer, runs a normal build. |
+| **type-check** | `npm run type-check` | Runs `tsc --noEmit` for TypeScript type checking without emitting files. |
+| **lint** | `npm run lint` | Runs ESLint across the codebase. |
+| **test** | `npm run test` | Runs Jest tests (non-watch mode). |
+
+### Using `npm run verify`
+```bash
+npm run verify
+```
+This is the **single command to run before pushing** — it chains lint → type-check → test. If it passes locally, CI is very likely to pass.
+
+### Using `npm run analyze`
+```bash
+npm run analyze
+```
+Generates an interactive bundle analysis report (`.next/analyze/client.html`, `.next/analyze/server.html`, etc.). Open the HTML files in a browser to inspect bundle sizes, module breakdowns, and identify optimization opportunities.
+
+> **Note:** The analyzer is wired conditionally in `next.config.ts`. If `@next/bundle-analyzer` is not yet installed (it is added by the separate bundle-size-budget CI issue), the command runs a normal production build and prints a warning. The report is only generated once the dependency lands.
+## Useful Documentation
+
+- [Development Scripts](docs/store-conventions.md) — Zustand store conventions (persistence, optimistic updates)
+- [Operational Runbook](docs/runbook.md) — Deploy rollback and log-checking steps
+- [Mock Cleanup Note](docs/mock-cleanup-note.md) — Historical mock file cleanup and test fixture locations
+
+
+---
+
 ## Need Help?
 If you have any questions, feel free to ask in our **telegram community** [https://t.me/Nexafx](https://t.me/+WkWO3kNnA-1mYzVk).
 

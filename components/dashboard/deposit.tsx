@@ -1,5 +1,27 @@
 "use client";
 
+/**
+ * Deposit Flow State Machine
+ *
+ * Method Selection:
+ * idle ──click "Instant Deposit"──► QR Modal Open (isQRModalOpen=true)
+ * idle ──click "Buy Crypto (MoonPay)"──► handleMoonPayOpen()
+ *    │                                           │
+ *    │  (if NEXT_PUBLIC_MOONPAY_API_KEY unset)   │
+ *    └──────────────► moonPayError=true ─────────┘
+ *
+ * QR Modal:
+ * isQRModalOpen=true ──click backdrop/close──► idle
+ * isQRModalOpen=true ──deposit complete──► idle (via notification)
+ *
+ * MoonPay Button Guard:
+ * - Disabled while walletAddress === null (loading profile)
+ * - Enabled once walletAddress loaded from getProfile()
+ *
+ * Error State:
+ * - moonPayError shown when API key missing (dev) or MoonPay unavailable
+ * - Auto-clears when user selects "Instant Deposit"
+ */
 import React, { useState, useRef, useEffect } from "react";
 import {
   ArrowLeft,
@@ -11,6 +33,8 @@ import {
   X,
 } from "lucide-react";
 import InstantModalDeposit from "./InstantDepositModal";
+import { useResponsiveFocusTrap } from "@/hooks/use-focus-trap";
+import { MobileNotificationBanner } from "./notification";
 import { DepositInfoCard } from "./deposit/deposit-info-card";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -69,9 +93,16 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
     toggleDeposit();
   };
 
-  // Focus trap for desktop modal
-  useFocusTrap(isQRModalOpen, () => setIsQRModalOpen(false), desktopModalRef);
+  // Focus trap for the QR modal (desktop and mobile variants)
+  useResponsiveFocusTrap(isQRModalOpen, () => setIsQRModalOpen(false), {
+    desktopRef: desktopModalRef,
+    mobileRef: mobileQRModalRef,
+  });
 
+  // Focus trap for the mobile methods sheet (mobile only)
+  useResponsiveFocusTrap(!isQRModalOpen, handleCloseDepositFlow, {
+    mobileRef: mobileMethodsModalRef,
+  });
   // Focus trap for mobile methods modal
   useFocusTrap(
     !isQRModalOpen && isMobile,
