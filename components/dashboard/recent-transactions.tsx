@@ -18,7 +18,7 @@ import { TransactionDetailModal } from "./transaction-detail-modal";
 import { TransactionTableSkeleton } from "@/components/shared/page-skeletons";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useAuthStore } from "@/hooks/use-auth-store";
-export function RecentTransactions() {
+export function RecentTransactions({ readOnly, transactions: initialTransactions }: { readOnly?: boolean; transactions?: Transaction[] } = {}) {
   type State =
     | { status: "loading" }
     | { status: "error"; message: string }
@@ -56,6 +56,10 @@ export function RecentTransactions() {
   }, [wsTransactions]);
 
   useEffect(() => {
+    if (initialTransactions) {
+      setState({ status: "success", transactions: initialTransactions.slice(0, 5) });
+      return;
+    }
     const controller = new AbortController();
     getTransactions({ page: 1, limit: 5 }, { signal: controller.signal })
       .then((result) => {
@@ -70,7 +74,7 @@ export function RecentTransactions() {
     return () => {
       controller.abort();
     };
-  }, [retryCount]);
+  }, [retryCount, initialTransactions]);
 
   const fetchTxns = () => {
     setState({ status: "loading" });

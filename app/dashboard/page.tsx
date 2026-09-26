@@ -2,6 +2,7 @@
 import { useCallback, useState } from "react";
 import { Download, Upload } from "lucide-react";
 import { AccountOverview } from "@/components/dashboard/account-overview";
+import OnboardingChecklist from "@/components/dashboard/onboarding-checklist";
 import { ConversionChart } from "@/components/dashboard/conversion-chart";
 import { MarketOverview } from "@/components/dashboard/market-overview";
 import { PortfolioChart } from "@/components/dashboard/portfolio-chart";
@@ -67,6 +68,7 @@ export default function DashboardPage() {
         ) : (
           <>
             <Watchlist />
+            <OnboardingChecklist />
             <AccountOverview
               openDeposit={openDeposit}
               onDepositClick={toggleDeposit}

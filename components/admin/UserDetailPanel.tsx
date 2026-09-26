@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { type AdminUser, getAdminUserById, deleteAdminUser, updateUserKyc } from '@/lib/api/admin';
 import { getRequestErrorMessage, isOfflineError } from '@/lib/api-client';
 import { X, Eye, EyeOff, Copy, Trash2, Loader2, Check, Ban } from 'lucide-react';
+import Link from 'next/link';
 import { TrustScoreBadge } from '@/components/admin/trust-score-badge';
 import { logger } from '@/src/utils/logger';
 import { calculateTrustScore } from '@/lib/utils/trust-score';
@@ -92,6 +93,21 @@ export function UserDetailPanel({ user: initialUser, onClose, onSuccess }: UserD
       alert(errorMessage);
     } finally {
       setIsUpdatingKyc(false);
+    }
+  };
+
+  const handleViewAs = async () => {
+    try {
+      // Log the action client-side for now (backend TODO)
+      await fetch('/api/admin/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'view_as_user', targetUserId: currentUser.id }),
+      }).catch(() => {});
+      // Open a read-only view-as page in a new tab
+      window.open(`/admin/view-as/${currentUser.id}`, '_blank');
+    } catch (err) {
+      logger.error('Failed to trigger view-as', err);
     }
   };
 
@@ -272,6 +288,21 @@ export function UserDetailPanel({ user: initialUser, onClose, onSuccess }: UserD
                     <Trash2 className="w-4 h-4" />
                     Delete
                   </button>
+                </div>
+              </div>
+
+              <div className="bg-white lg:rounded-lg lg:border lg:border-gray-200 lg:p-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500">Support Tools</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleViewAs}
+                      className="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 text-sm font-medium"
+                    >
+                      View as user
+                    </button>
+                    <Link href={`/admin/users/${currentUser.id}`} className="px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 text-sm font-medium">Open full record</Link>
+                  </div>
                 </div>
               </div>
 

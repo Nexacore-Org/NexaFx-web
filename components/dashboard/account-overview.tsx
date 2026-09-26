@@ -74,12 +74,14 @@ type AccountOverviewTypes = {
   openDeposit: boolean;
   onDepositClick?: () => void;
   onWithdrawClick?: () => void;
+  readOnly?: boolean;
 };
 
 export function AccountOverview({
   openDeposit,
   onDepositClick,
   onWithdrawClick,
+  readOnly = false,
 }: AccountOverviewTypes) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -204,23 +206,25 @@ export function AccountOverview({
               ) : null}
             </div>
 
-            {/* Action buttons — always visible */}
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
-              <button
-                onClick={onDepositClick}
-                className="flex cursor-pointer items-center justify-center gap-2 rounded-sm bg-primary px-6 sm:px-8 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all active:scale-95"
-              >
-                <Download className="size-5" />
-                Deposit
-              </button>
-              <button
-                onClick={onWithdrawClick}
-                className="flex cursor-pointer items-center justify-center gap-2 rounded-sm bg-muted px-6 sm:px-8 py-2.5 text-sm font-semibold text-foreground hover:bg-muted/80 transition-all active:scale-95 border border-border"
-              >
-                <Upload className="size-5" />
-                Withdraw
-              </button>
-            </div>
+            {/* Action buttons — hidden in read-only view */}
+            {!readOnly && (
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
+                <button
+                  onClick={onDepositClick}
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-sm bg-primary px-6 sm:px-8 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all active:scale-95"
+                >
+                  <Download className="size-5" />
+                  Deposit
+                </button>
+                <button
+                  onClick={onWithdrawClick}
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-sm bg-muted px-6 sm:px-8 py-2.5 text-sm font-semibold text-foreground hover:bg-muted/80 transition-all active:scale-95 border border-border"
+                >
+                  <Upload className="size-5" />
+                  Withdraw
+                </button>
+              </div>
+            )}
 
             {/* Mini balance cards */}
             {isLoading ? (

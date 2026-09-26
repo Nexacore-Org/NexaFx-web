@@ -62,6 +62,27 @@ export default function Footer() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-10 md:gap-20 lg:gap-40 text-sm">
+          <div>
+            <p className="font-bold mb-4">PLATFORM</p>
+            <p className="mb-4 text-gray-500">Exchange</p>
+            <p className="mb-4 text-gray-500">Wallet</p>
+            <p className="mb-4 text-gray-500">Rates</p>
+          </div>
+
+          <div>
+            <p className="font-bold mb-4">LEGAL</p>
+            <p className="mb-4 text-gray-500">Privacy</p>
+            <p className="mb-4 text-gray-500">Terms</p>
+            <p className="mb-4 text-gray-500">Security</p>
+          </div>
+
+          <div>
+            <p className="font-bold mb-4">COMPANY</p>
+            <p className="mb-4 text-gray-500">Support</p>
+            <p className="mb-4 text-gray-500">About</p>
+            <p className="mb-4 text-gray-500">Press</p>
+            <p className="mb-4 text-gray-500"><a href="/status" className="text-yellow-600">Status</a></p>
+          </div>
           {footerLinks.map((column) => (
             <div key={column.title}>
               <p className="font-bold mb-4">{column.title}</p>

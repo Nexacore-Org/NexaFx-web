@@ -10,6 +10,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 
+import ActivityLog from '@/components/admin/ActivityLog';
 export default function AdminOverviewPage() {
   // Placeholder metrics as requested
   const metrics = [
