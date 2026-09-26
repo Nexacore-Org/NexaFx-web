@@ -85,6 +85,10 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
   ];
 
   const handleMoonPayOpen = () => {
+    if (!walletAddress) {
+      setMoonPayError(true);
+      return;
+    }
     const apiKey = process.env.NEXT_PUBLIC_MOONPAY_API_KEY;
     if (!apiKey) {
       if (process.env.NODE_ENV === "development") {
@@ -96,7 +100,7 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
     setMoonPayError(false);
     const url = new URL("https://buy.moonpay.com");
     url.searchParams.set("apiKey", apiKey);
-    url.searchParams.set("walletAddress", walletAddress!);
+    url.searchParams.set("walletAddress", walletAddress);
     url.searchParams.set("currencyCode", "usdc");
     url.searchParams.set("baseCurrencyCode", "ngn");
     window.open(url.toString(), "_blank");

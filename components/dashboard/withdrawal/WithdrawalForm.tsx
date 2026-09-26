@@ -154,9 +154,13 @@ const fetchCurrenciesAndBalances = async () => {
                     <label className="text-sm font-medium text-foreground">
                         Wallet Address
                     </label>
+                    {/* TODO(#818): this field accepts a raw wallet address only. There is no
+                        username-to-address resolution in the withdrawal flow or lib/api, so the
+                        copy must not imply username support. Revisit once a resolution endpoint
+                        (or the saved-beneficiaries feature) lands. */}
                     <input
                         type="text"
-                        placeholder="Enter wallet address or username"
+                        placeholder="Enter destination wallet address"
                         value={walletAddress}
                         onChange={(e) => {
                             setFormData({ walletAddress: e.target.value });

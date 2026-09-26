@@ -62,6 +62,12 @@ export default function UsersPage() {
     }
   };
 
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   const handleSeeAll = () => {
     setCurrentPage(1);
   };
@@ -216,8 +222,17 @@ export default function UsersPage() {
             See All
           </button>
           <button
+            onClick={handlePreviousPage}
+            disabled={currentPage <= 1}
+            aria-label="Go to previous page"
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+          >
+            Previous
+          </button>
+          <button
             onClick={handleNextPage}
             disabled={currentPage >= totalPages}
+            aria-label="Go to next page"
             className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next
