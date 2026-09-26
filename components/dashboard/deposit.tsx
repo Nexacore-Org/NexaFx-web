@@ -1,5 +1,27 @@
 "use client";
 
+/**
+ * Deposit Flow State Machine
+ *
+ * Method Selection:
+ * idle ──click "Instant Deposit"──► QR Modal Open (isQRModalOpen=true)
+ * idle ──click "Buy Crypto (MoonPay)"──► handleMoonPayOpen()
+ *    │                                           │
+ *    │  (if NEXT_PUBLIC_MOONPAY_API_KEY unset)   │
+ *    └──────────────► moonPayError=true ─────────┘
+ *
+ * QR Modal:
+ * isQRModalOpen=true ──click backdrop/close──► idle
+ * isQRModalOpen=true ──deposit complete──► idle (via notification)
+ *
+ * MoonPay Button Guard:
+ * - Disabled while walletAddress === null (loading profile)
+ * - Enabled once walletAddress loaded from getProfile()
+ *
+ * Error State:
+ * - moonPayError shown when API key missing (dev) or MoonPay unavailable
+ * - Auto-clears when user selects "Instant Deposit"
+ */
 import React, { useState, useRef, useEffect } from "react";
 import {
   ArrowLeft,
@@ -7,11 +29,16 @@ import {
   Wallet,
   ArrowLeftRight,
   ExternalLink,
+  Loader2,
   X,
 } from "lucide-react";
 import InstantModalDeposit from "./InstantDepositModal";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useResponsiveFocusTrap } from "@/hooks/use-focus-trap";
 import { MobileNotificationBanner } from "./notification";
+import { DepositInfoCard } from "./deposit/deposit-info-card";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { toast } from "@/hooks/use-toast-store";
 
 import { getProfile } from "@/lib/api/users";
 
@@ -30,12 +57,15 @@ type DepositMethodTypes = {
 
 const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
-  const [showNotification] = useState(false);
   const [moonPayError, setMoonPayError] = useState(false);
+  const [isMoonPayLoading, setIsMoonPayLoading] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const desktopModalRef = useRef<HTMLDivElement>(null);
   const mobileMethodsModalRef = useRef<HTMLDivElement>(null);
   const mobileQRModalRef = useRef<HTMLDivElement>(null);
+  const isMobile = useMediaQuery("(max-width: 767px)");
+  const moonPayPollRef = useRef<number | null>(null);
+  const moonPayTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     getProfile()
@@ -43,24 +73,46 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
       .catch(() => setWalletAddress(null));
   }, []);
 
+  const clearMoonPayLoading = () => {
+    setIsMoonPayLoading(false);
+    if (moonPayPollRef.current !== null) {
+      window.clearInterval(moonPayPollRef.current);
+      moonPayPollRef.current = null;
+    }
+    if (moonPayTimeoutRef.current !== null) {
+      window.clearTimeout(moonPayTimeoutRef.current);
+      moonPayTimeoutRef.current = null;
+    }
+  };
+
+  // Clear any pending timers if the user navigates away mid-flow.
+  useEffect(() => clearMoonPayLoading, []);
+
   const handleCloseDepositFlow = () => {
     setIsQRModalOpen(false);
     toggleDeposit();
   };
 
-  // Focus trap for desktop modal
-  useFocusTrap(isQRModalOpen, () => setIsQRModalOpen(false), desktopModalRef);
+  // Focus trap for the QR modal (desktop and mobile variants)
+  useResponsiveFocusTrap(isQRModalOpen, () => setIsQRModalOpen(false), {
+    desktopRef: desktopModalRef,
+    mobileRef: mobileQRModalRef,
+  });
 
+  // Focus trap for the mobile methods sheet (mobile only)
+  useResponsiveFocusTrap(!isQRModalOpen, handleCloseDepositFlow, {
+    mobileRef: mobileMethodsModalRef,
+  });
   // Focus trap for mobile methods modal
   useFocusTrap(
-    !isQRModalOpen && typeof window !== "undefined" && window.innerWidth < 768,
+    !isQRModalOpen && isMobile,
     handleCloseDepositFlow,
     mobileMethodsModalRef,
   );
 
   // Focus trap for mobile QR modal
   useFocusTrap(
-    isQRModalOpen && typeof window !== "undefined" && window.innerWidth < 768,
+    isQRModalOpen && isMobile,
     handleCloseDepositFlow,
     mobileQRModalRef,
   );
@@ -84,6 +136,8 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
     },
   ];
 
+  const moonPayAvailable = !!process.env.NEXT_PUBLIC_MOONPAY_API_KEY;
+
   const handleMoonPayOpen = () => {
     if (!walletAddress) {
       setMoonPayError(true);
@@ -91,30 +145,62 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
     }
     const apiKey = process.env.NEXT_PUBLIC_MOONPAY_API_KEY;
     if (!apiKey) {
-      if (process.env.NODE_ENV === "development") {
-        console.warn("MoonPay: NEXT_PUBLIC_MOONPAY_API_KEY is not set.");
-      }
+      toast.error("MoonPay is not configured — please contact support.");
       setMoonPayError(true);
       return;
     }
     setMoonPayError(false);
+    setIsMoonPayLoading(true);
+
     const url = new URL("https://buy.moonpay.com");
     url.searchParams.set("apiKey", apiKey);
     url.searchParams.set("walletAddress", walletAddress);
     url.searchParams.set("currencyCode", "usdc");
     url.searchParams.set("baseCurrencyCode", "ngn");
-    window.open(url.toString(), "_blank");
+
+    const popup = window.open(url.toString(), "_blank");
+
+    if (!popup) {
+      // Browser blocked the popup — this reads identically to a failed
+      // click if we leave the button spinning, so surface it right away.
+      setMoonPayError(true);
+      clearMoonPayLoading();
+      return;
+    }
+
+    // Keep the loading state up briefly so a near-instant open still
+    // registers as "your click did something", then clear it once the
+    // widget has had time to render.
+    moonPayTimeoutRef.current = window.setTimeout(() => {
+      setIsMoonPayLoading(false);
+    }, 1200);
+
+    // If the user cancels by closing the popup before that timeout
+    // elapses, clear the loading state immediately rather than waiting.
+    moonPayPollRef.current = window.setInterval(() => {
+      if (popup.closed) {
+        clearMoonPayLoading();
+      }
+    }, 300);
   };
 
   const MethodCard: React.FC<{ method: DepositMethod }> = ({ method }) => {
     const isMoonPay = method.id === "exchange";
-    const moonPayDisabled = isMoonPay && !walletAddress;
+    const moonPayDisabled =
+      isMoonPay && (!walletAddress || isMoonPayLoading || !moonPayAvailable);
 
     return (
       <button
         className="w-full text-left p-4 bg-card border border-border rounded-lg hover:border-border/70 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={moonPayDisabled}
-        title={moonPayDisabled ? "Wallet address is loading…" : undefined}
+        aria-busy={isMoonPay && isMoonPayLoading}
+        title={
+          isMoonPay && !moonPayAvailable
+            ? "MoonPay is not currently available"
+            : isMoonPay && !walletAddress && !isMoonPayLoading
+            ? "Wallet address is loading…"
+            : undefined
+        }
         onClick={() => {
           if (method.id === "instant") {
             setIsQRModalOpen(true);
@@ -136,14 +222,23 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
             ) : (
               method.icon
             )} */}
-            {method.icon}
+            {isMoonPay && isMoonPayLoading ? (
+              <Loader2
+                className="w-5 h-5 animate-spin text-muted-foreground"
+                data-testid="moonpay-loading-spinner"
+              />
+            ) : (
+              method.icon
+            )}
           </div>
           <div className="flex-1">
             <h3 className="font-medium text-foreground mb-1 text-sm md:text-base">
               {method.title}
             </h3>
             <p className="text-xs md:text-sm text-muted-foreground mb-2">
-              {method.description}
+              {isMoonPay && isMoonPayLoading
+                ? "Opening MoonPay…"
+                : method.description}
             </p>
             <p className="text-xs md:text-sm font-medium text-foreground">
               Fee: {method.fee}
@@ -214,11 +309,13 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
               ))}
             </div>
           </div>
+
+          <DepositInfoCard />
         </div>
       </div>
 
       {/* Mobile View */}
-      {typeof window !== "undefined" && window.innerWidth < 768 && (
+      {isMobile && (
         <>
           {!isQRModalOpen ? (
             <div
@@ -261,10 +358,14 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
                       <MethodCard key={method.id} method={method} />
                     ))}
                   </div>
+
+                  <div className="mt-4">
+                    <DepositInfoCard />
+                  </div>
                 </div>
               </div>
             </div>
-          ) : (
+            ) : (
             <div
               ref={mobileQRModalRef}
               role="dialog"
@@ -273,13 +374,6 @@ const DepositMethods: React.FC<DepositMethodTypes> = ({ toggleDeposit }) => {
               className="md:hidden p-2 fixed inset-0 bg-[#00000071] bg-opacity-50 flex items-center justify-center z-50"
               onClick={() => setIsQRModalOpen(false)}
             >
-{!showNotification && (
-                <MobileNotificationBanner
-                  message='Your deposit of'
-                  amount='₦50,000'
-                />
-              )}
-
               <div
                 className="bg-card text-card-foreground w-full mt-8 rounded-2xl max-h-[90vh] overflow-auto"
                 onClick={(e) => e.stopPropagation()}

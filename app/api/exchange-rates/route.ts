@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(data);
     } catch (error: unknown) {
         return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Failed to fetch exchange rates' },
+            { error: error instanceof Error ? error.message : "Failed to fetch exchange rates" },
             { status: 500 }
         );
     }

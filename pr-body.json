@@ -1,0 +1,6 @@
+{
+  "title": "feat: withdrawal/deposit state diagrams, TESTING.md, src status, coverage thresholds",
+  "head": "Muhammadjazuli:feature/muhammadjazuli-wave-docs-testing",
+  "base": "main",
+  "body": "Implements the following issues:\n\n- **Closes #897**: Document withdrawal/deposit step-machine flows with state diagrams in `hooks/useWithdrawalStore.ts` and `components/dashboard/deposit.tsx`\n- **Closes #896**: Add TESTING.md documenting Jest setup, module aliases, and how to run/debug tests\n- **Closes #895**: Document which src/ files are genuine vs dummy stubs in `docs/src-directory-status.md`\n- **Closes #894**: Add CI-enforced minimum test-coverage threshold in `jest.config.js` and `.github/workflows/ci.yml`\n\nAlso adds `test:coverage` npm script and links TESTING.md from README.md."
+}

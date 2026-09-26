@@ -1,58 +1,60 @@
-"use client"; 
+"use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { verifySignupOtp, resendSignupOtp } from "@/lib/api/auth";
+import OtpInput from "@/components/auth/otp-input";
+import { useOtpVerifyBackoff } from "@/hooks/use-otp-verify-backoff";
+
+const COOLDOWN_SECONDS = 60;
 
 export default function VerifyOtpPage() {
   const router = useRouter();
-  const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
+  const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState("");
   const [resendMessage, setResendMessage] = useState("");
   const [isResending, setIsResending] = useState(false);
   const [email, setEmail] = useState("");
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [cooldown, setCooldown] = useState(0);
+  const {
+    isBlocked: isBackoffBlocked,
+    secondsRemaining: backoffSeconds,
+    failedAttempts,
+    registerFailure: registerFailedAttempt,
+    reset: resetBackoff,
+  } = useOtpVerifyBackoff("signup-otp-verify-backoff");
 
   useEffect(() => {
-    inputRefs.current[0]?.focus();
     const stored = sessionStorage.getItem("signup_email");
     if (stored) setEmail(stored);
   }, []);
 
-  const handleChange = (element: HTMLInputElement, index: number) => {
-    if (isNaN(Number(element.value))) return;
-
-    const newOtp = [...otp];
-    newOtp[index] = element.value.substring(element.value.length - 1);
-    setOtp(newOtp);
-
-    // Auto-advance
-    if (element.value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    index: number,
-  ) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((prev) => {
+        if (prev <= 1) return 0;
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
-    if (otp.some((digit) => digit === "")) return;
+    if (isBackoffBlocked) return;
+    if (otp.length !== 6) return;
 
     setIsLoading(true);
     setApiError("");
     try {
-      await verifySignupOtp({ email, otp: otp.join("") });
+      await verifySignupOtp({ email, otp });
+      resetBackoff();
       router.push("/signup/success");
     } catch (err) {
+      registerFailedAttempt();
       setApiError(
         err instanceof Error ? err.message : "Invalid or expired OTP",
       );
@@ -68,14 +70,24 @@ export default function VerifyOtpPage() {
     try {
       await resendSignupOtp({ email });
       setResendMessage("Code resent successfully");
+      setCooldown(COOLDOWN_SECONDS);
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : "Failed to resend code");
+      const message = err instanceof Error ? err.message : "";
+      if (
+        message.toLowerCase().includes("rate") ||
+        message.toLowerCase().includes("too many")
+      ) {
+        setApiError("Too many requests. Please wait before trying again.");
+        setCooldown(COOLDOWN_SECONDS);
+      } else {
+        setApiError(message || "Failed to resend code");
+      }
     } finally {
       setIsResending(false);
     }
   };
 
-  const isOtpComplete = otp.every((digit) => digit !== "");
+  const isOtpComplete = otp.length === 6;
 
   return (
     <div className="w-full max-w-lg bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 sm:p-12 animate-in fade-in slide-in-from-bottom-5 duration-500">
@@ -89,23 +101,7 @@ export default function VerifyOtpPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-10">
-        <div className="flex justify-between gap-2 sm:gap-4">
-          {otp.map((digit, index) => (
-            <input
-              key={index}
-              ref={(el) => {
-                inputRefs.current[index] = el;
-              }}
-              type="text"
-              inputMode="numeric"
-              maxLength={1}
-              value={digit}
-              onChange={(e) => handleChange(e.target, index)}
-              onKeyDown={(e) => handleKeyDown(e, index)}
-              className="w-full aspect-square text-center text-2xl font-bold border-2 border-zinc-100 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-50 outline-none transition-all text-zinc-900 bg-zinc-50/50"
-            />
-          ))}
-        </div>
+        <OtpInput value={otp} onChange={(val) => setOtp(val)} />
 
         {apiError && (
           <p className="text-xs text-red-500 text-center">{apiError}</p>
@@ -113,10 +109,16 @@ export default function VerifyOtpPage() {
         {resendMessage && (
           <p className="text-xs text-green-600 text-center">{resendMessage}</p>
         )}
+        {isBackoffBlocked && (
+          <p role="status" className="text-center text-xs text-amber-600">
+            {failedAttempts} failed attempts. Please wait {backoffSeconds}s
+            before trying again.
+          </p>
+        )}
 
         <button
           type="submit"
-          disabled={isLoading || !isOtpComplete}
+          disabled={isLoading || !isOtpComplete || isBackoffBlocked}
           className="w-full h-16 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl shadow-[0_4px_14px_0_rgb(249,115,22,0.39)] transition-all hover:scale-[1.01] active:scale-[0.99]"
         >
           {isLoading ? (
@@ -124,6 +126,8 @@ export default function VerifyOtpPage() {
               <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               <span>Verifying...</span>
             </div>
+          ) : isBackoffBlocked ? (
+            `Wait ${backoffSeconds}s`
           ) : (
             "Proceed"
           )}
@@ -133,10 +137,14 @@ export default function VerifyOtpPage() {
           <button
             type="button"
             onClick={handleResend}
-            disabled={isResending}
+            disabled={isResending || cooldown > 0}
             className="text-sm font-medium text-zinc-500 hover:text-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isResending ? "Resending..." : "Didn't receive code? Resend"}
+            {cooldown > 0
+              ? `Resend in ${cooldown}s`
+              : isResending
+                ? "Resending..."
+                : "Didn't receive code? Resend"}
           </button>
         </div>
       </form>

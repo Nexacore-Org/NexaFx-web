@@ -1,5 +1,34 @@
 import { create } from "zustand";
 
+/**
+ * Withdrawal Flow State Machine
+ *
+ * Valid transitions:
+ *
+ * select ──open()──► form ──setFormData()──► review ──setStep('processing')──► processing
+ *    ▲                                                                    │
+ *    │                                                                    ▼
+ *    └────────────────────────────── reset() ◄────────────────── success/error
+ *
+ * Steps:
+ * - select: User chooses withdrawal currency
+ * - form: User enters amount and wallet address
+ * - review: User confirms transaction details
+ * - processing: Transaction submitted to blockchain
+ * - success: Transaction confirmed on-chain
+ * - error: Transaction failed (network error, insufficient funds, etc.)
+ *
+ * Transitions are triggered by:
+ * - open(): select → form (implicit via setStep in UI)
+ * - setStep(): explicit step navigation (forward/backward)
+ * - setTransactionResult(): processing → success | error
+ * - reset(): any → select (closes modal, clears form)
+ *
+ * Cross-referenced from: components/dashboard/withdrawal/WithdrawalModal.tsx
+ * Withdrawal store — step machine for withdrawal flow.
+ * See `docs/store-conventions.md` for persistence and optimistic-update conventions.
+
+ */
 export type WithdrawalStep = 'select' | 'form' | 'review' | 'processing' | 'success' | 'error';
 export type TransactionStatus = 'pending' | 'success' | 'failed' | null;
 

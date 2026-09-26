@@ -1,7 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { VerificationModal } from "@/components/profile/verification-modal";
+import { InfoIcon } from "@/components/ui/info-icon";
+import dynamic from "next/dynamic";
+
+const VerificationModal = dynamic(
+  () =>
+    import("@/components/profile/verification-modal").then(
+      (mod) => mod.VerificationModal
+    ),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center h-32">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-400" />
+      </div>
+    ),
+    ssr: false,
+  }
+);
 
 export function VerificationBanner() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -13,6 +29,7 @@ export function VerificationBanner() {
           <div className="space-y-1">
             <h3 className="text-lg font-bold text-foreground">
               Verify your account Now
+              <InfoIcon tooltip="KYC verification is required to access all features including withdrawals and higher transaction limits" />
             </h3>
             <p className="text-sm text-muted-foreground">
               Complete your verification to unlock full access

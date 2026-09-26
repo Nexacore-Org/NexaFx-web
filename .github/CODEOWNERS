@@ -1,1 +1,8 @@
+# Default owners for the whole repository
 * @aaseenib
+
+# Security- and correctness-sensitive files that should always be routed
+# to a reviewer before landing.
+/middleware.ts @aaseenib
+/lib/api-client.ts @aaseenib
+/app/api/proxy/ @aaseenib

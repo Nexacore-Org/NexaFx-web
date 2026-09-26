@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { memo, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Notification } from "@/types/notification";
 import { NotificationItem } from "./notification-item";
@@ -8,13 +8,13 @@ import { cn } from "@/lib/utils";
 
 interface SwipeableNotificationItemProps {
   notification: Notification;
-  onClick?: () => void;
-  onDelete?: () => void;
+  onClick?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 const SWIPE_THRESHOLD = 80;
 
-export function SwipeableNotificationItem({
+function SwipeableNotificationItemComponent({
   notification,
   onClick,
   onDelete,
@@ -50,7 +50,7 @@ export function SwipeableNotificationItem({
 
       // Call onDelete after animation
       setTimeout(() => {
-        onDelete?.();
+        onDelete?.(notification.id);
       }, 200);
     } else {
       // Snap back
@@ -93,3 +93,5 @@ style={{
     </div>
   );
 }
+
+export const SwipeableNotificationItem = memo(SwipeableNotificationItemComponent);

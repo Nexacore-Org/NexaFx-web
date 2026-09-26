@@ -7,6 +7,54 @@ Thank you for your interest in contributing to **NexaFx**! 🚀 We welcome contr
 
 ⚠️ **Avoid Generic Comments:** Comments such as 🚫
 "Can I help with this?" 🚫
+"I'd love to contribute!" 🚫
+"Check out my profile!" or 🚫
+"Can I work on this?"... these will not be considered.
+
+Instead, provide a **clear explanation of your approach**, which includes:
+
+- A brief introduction about yourself.
+- A concise plan outlining how you will address the issue (3–6 lines max).
+- Your estimated completion time (ETA).
+
+---
+
+How to Contribute🤝
+
+## Pull Request Template
+
+To ensure consistency and improve the review process, we've implemented a PR template. When creating a pull request, please:
+
+1. Follow the PR template that automatically loads when you create a new PR.
+
+2. Fill out all relevant sections of the template.
+
+3. Ensure your PR description clearly communicates the changes you've made.
+
+4. Include screenshots or recordings when applicable.
+
+5. Link to any related issues using keywords like "Closes #123" or "Fixes #123"
+
+The template location is at [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md) and provides a structured format to help maintainers understand and review your contribution more efficiently.
+
+---
+
+## Steps to apply
+
+Apply for an Issue
+   - Look for an open issue and comment expressing your interest in working on it.
+   - Wait for the maintainer to assign the issue to you.
+   - Remember to apply only if you can solve the issue.
+   Again, In the comment, Add a quick introduction about yourself, The ETA, and how you plan to tackle the issue.
+
+
+
+
+---
+### Important Note Before Applying 📝
+
+⚠️ **Avoid Generic Comments:** Comments such as 🚫
+"Can I help with this?" 🚫
 "I’d love to contribute!" 🚫
 "Check out my profile!" or 🚫
 "Can I work on this?"... these will not be considered.
@@ -94,6 +142,7 @@ The platform should now be running at `http://localhost:3000/`.
 ### Pull Requests
 - **Follow the coding standards** outlined below.
 - **Reference related issues** in the PR description.
+- **Add a changelog entry** under `Unreleased` in [CHANGELOG.md](CHANGELOG.md) for user-visible changes, behavior changes, fixes, or contributor-facing changes. Keep entries concise and remove them from `Unreleased` when preparing a release.
 - **Ensure your code is well-tested** before submitting.
 - **Keep pull requests focused** on a single change or feature.
 - **Use a descriptive title** and provide necessary context.
@@ -112,7 +161,7 @@ The platform should now be running at `http://localhost:3000/`.
 
 ## Branching Strategy & Commit Message Format
 ### Branching Strategy
-- **main**: Stable, production-ready code.
+- **v2**: Stable, production-ready code.
 - **dev**: Latest development changes.
 - **feature/xyz**: New features.
 - **bugfix/xyz**: Bug fixes.
@@ -139,6 +188,38 @@ chore: update dependencies
 - Check the browser console for **runtime errors**.
 - Use **Redux DevTools** or **React Developer Tools** for state debugging.
 - Ensure **API requests** return expected results before making changes.
+
+---
+
+## Development Scripts
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| **verify** | `npm run verify` | Runs lint, type-check, and tests in sequence. **Recommended pre-push local check** to catch issues before CI. |
+| **analyze** | `npm run analyze` | Runs `next build` with bundle analysis enabled (`ANALYZE=true`). Produces a bundle report in `.next/analyze/` (requires `@next/bundle-analyzer` — installed by the bundle-size-budget CI work). Without the analyzer, runs a normal build. |
+| **type-check** | `npm run type-check` | Runs `tsc --noEmit` for TypeScript type checking without emitting files. |
+| **lint** | `npm run lint` | Runs ESLint across the codebase. |
+| **test** | `npm run test` | Runs Jest tests (non-watch mode). |
+
+### Using `npm run verify`
+```bash
+npm run verify
+```
+This is the **single command to run before pushing** — it chains lint → type-check → test. If it passes locally, CI is very likely to pass.
+
+### Using `npm run analyze`
+```bash
+npm run analyze
+```
+Generates an interactive bundle analysis report (`.next/analyze/client.html`, `.next/analyze/server.html`, etc.). Open the HTML files in a browser to inspect bundle sizes, module breakdowns, and identify optimization opportunities.
+
+> **Note:** The analyzer is wired conditionally in `next.config.ts`. If `@next/bundle-analyzer` is not yet installed (it is added by the separate bundle-size-budget CI issue), the command runs a normal production build and prints a warning. The report is only generated once the dependency lands.
+## Useful Documentation
+
+- [Development Scripts](docs/store-conventions.md) — Zustand store conventions (persistence, optimistic updates)
+- [Operational Runbook](docs/runbook.md) — Deploy rollback and log-checking steps
+- [Mock Cleanup Note](docs/mock-cleanup-note.md) — Historical mock file cleanup and test fixture locations
+
 
 ---
 

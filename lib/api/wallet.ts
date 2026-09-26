@@ -15,6 +15,12 @@ interface WalletBalancesResponse {
   balances?: WalletBalance[];
 }
 
+/**
+ * GET /users/wallet/balances
+ *
+ * Fetches the signed-in user's wallet balances. Called directly (no proxy).
+ * Accepts a raw array or an object wrapping the balances under `data`/`balances`.
+ */
 export async function getBalances(): Promise<WalletBalance[]> {
   // The correct backend route is `/users/wallet/balances` (not `/wallets/balances`).
   // This route is protected and should be called directly (no proxy) —
@@ -24,4 +30,12 @@ export async function getBalances(): Promise<WalletBalance[]> {
     useProxy: false,
   });
   return (Array.isArray(data) ? data : (data.data ?? data.balances ?? [])) as WalletBalance[];
+}
+
+export async function importWallet(payload: { encryptedSecretKey: string; publicKey: string }): Promise<void> {
+  await apiClient<void>("/users/wallet/import", {
+    method: "POST",
+    useProxy: false,
+    body: JSON.stringify(payload),
+  });
 }
