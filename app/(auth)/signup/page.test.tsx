@@ -24,6 +24,13 @@ beforeEach(() => {
   sessionStorage.clear();
 });
 
+async function acceptTerms(user: ReturnType<typeof userEvent.setup>) {
+  const checkbox = screen.getByRole("checkbox", { name: /accept/i });
+  expect(checkbox).not.toBeChecked();
+  await user.click(checkbox);
+  expect(checkbox).toBeChecked();
+}
+
 const fields = () => ({
   email: screen.getByPlaceholderText(/email address/i),
   phone: screen.getByPlaceholderText(/phone number/i),
@@ -32,6 +39,19 @@ const fields = () => ({
 });
 
 describe("SignupPage", () => {
+  it("keeps the accept-terms checkbox unchecked by default and links to legal pages (issue #811)", async () => {
+    render(<SignupPage />);
+    const checkbox = screen.getByRole("checkbox", { name: /accept/i });
+    expect(checkbox).not.toBeChecked();
+
+    const terms = screen.getByRole("link", { name: /^terms$/i });
+    const conditions = screen.getByRole("link", { name: /^conditions$/i });
+    expect(terms).toHaveAttribute("href", "/terms");
+    expect(conditions).toHaveAttribute("href", "/privacy");
+
+    expect(screen.getByRole("button", { name: /create an account/i })).toBeDisabled();
+  });
+
   it("shows an error when the passwords do not match", async () => {
     const user = userEvent.setup();
     render(<SignupPage />);
@@ -41,6 +61,7 @@ describe("SignupPage", () => {
     await user.type(f.phone, "08012345678");
     await user.type(f.password, "Password123");
     await user.type(f.confirm, "Different123");
+    await acceptTerms(user);
     await user.click(screen.getByRole("button", { name: /create an account/i }));
 
     expect(await screen.findByText(/passwords do not match/i)).toBeInTheDocument();
@@ -56,6 +77,7 @@ describe("SignupPage", () => {
     await user.type(f.phone, "08012345678");
     await user.type(f.password, "short");
     await user.type(f.confirm, "short");
+    await acceptTerms(user);
     await user.click(screen.getByRole("button", { name: /create an account/i }));
 
     expect(
@@ -80,6 +102,7 @@ describe("SignupPage", () => {
     await user.type(f.phone, "08012345678");
     await user.type(f.password, "Password123");
     await user.type(f.confirm, "Password123");
+    await acceptTerms(user);
     await user.click(screen.getByRole("button", { name: /create an account/i }));
 
     await waitFor(() => expect(push).toHaveBeenCalledWith("/signup/verify"));
@@ -105,6 +128,7 @@ describe("SignupPage", () => {
     await user.type(f.phone, "08012345678");
     await user.type(f.password, "Password123");
     await user.type(f.confirm, "Password123");
+    await acceptTerms(user);
     await user.click(screen.getByRole("button", { name: /create an account/i }));
 
     expect(await screen.findByText(/email already exists/i)).toBeInTheDocument();

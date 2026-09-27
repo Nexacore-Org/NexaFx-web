@@ -6,10 +6,12 @@ import { setTokens as storeTokens, clearTokens as removeTokens } from "@/lib/uti
 /**
  * Auth tokens currently have two client-side storage representations: the
  * access and refresh tokens are written directly to localStorage as
- * `access_token` and `refresh_token` (and mirrored to cookies for the server
- * proxy), while Zustand persist writes the same values in its `auth-storage`
- * blob. The store is the application state source of truth today, but the
- * duplicate storage paths must remain synchronized until issue #745,
+ * `access_token` and `refresh_token` via `lib/utils/token.setTokens()`, which
+ * also mirrors them to document cookies so `app/api/proxy/[...path]` can
+ * authenticate server-side requests (see that route's token-resolution docs,
+ * issue #813). Zustand persist also stores the same values in its
+ * `auth-storage` blob. The store is the application state source of truth
+ * today, but the duplicate paths must remain synchronized until issue #745,
  * "Consolidate auth token storage to a single source of truth", is resolved.
  */
 
