@@ -24,7 +24,7 @@ export default function SignupLayout({
             <span className="text-zinc-600 hidden md:block">
               Already have an account?
             </span>
-            <Link href="/login" className="text-orange-500 hover:underline">
+            <Link href="/sign-in" className="text-orange-500 hover:underline">
               Log in
             </Link>
           </div>

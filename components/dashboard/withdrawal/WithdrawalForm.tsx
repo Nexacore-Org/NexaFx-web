@@ -32,11 +32,14 @@ function toCurrencyOption(
   c: Currency,
   balanceMap: Record<string, string>,
 ): CurrencyOption {
+  // Normalize code casing so a lowercase balances endpoint still matches
+  // uppercase currency codes (and vice versa) — see account-overview.tsx.
+  const codeKey = String(c.code).toUpperCase();
   return {
     id: c.code,
     name: c.name,
     icon: getCurrencyIcon(c.code),
-    balance: balanceMap[c.code] ?? "0.00",
+    balance: balanceMap[codeKey] ?? balanceMap[c.code] ?? "0.00",
   };
 }
 
@@ -65,7 +68,7 @@ export function WithdrawalForm() {
         ? FALLBACK_CURRENCIES.map((code) => ({
             id: code,
             name: code,
-            balance: balanceMap[code] ?? "0.00",
+            balance: balanceMap[code.toUpperCase()] ?? balanceMap[code] ?? "0.00",
           }))
         : currencies.map((c) => toCurrencyOption(c, balanceMap)),
     [currencies, balanceMap, usedFallbackCurrencies],
@@ -181,7 +184,9 @@ export function WithdrawalForm() {
   const handleMaxClick = () => {
     if (!selectedCurrency) return;
     clearErrors("amount");
-    setValue("amount", selectedCurrency.balance.replace(/,/g, ""), {
+    // Use shared parser so multi-comma balances (e.g. "1,234,567.89") are not truncated.
+    const numeric = parseBalanceAmount(selectedCurrency.balance);
+    setValue("amount", Number.isFinite(numeric) ? String(numeric) : "0", {
       shouldValidate: true,
     });
   };

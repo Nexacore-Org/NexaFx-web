@@ -15,11 +15,11 @@ jest.mock("./WithdrawalMethodSelect", () => ({
   WithdrawalMethodSelect: () => <div data-testid="withdrawal-method-select" />,
 }));
 
-jest.mock("@/components/dashboard/withdraw/withdrawal-success", () => ({
+jest.mock("./WithdrawalSuccess", () => ({
   WithdrawalSuccess: () => <div data-testid="withdrawal-success" />,
 }));
 
-describe("WithdrawalModal focus trap", () => {
+describe("WithdrawalModal focus trap (issue #815)", () => {
   beforeEach(() => {
     useWithdrawalStore.setState({
       isOpen: true,
@@ -30,6 +30,19 @@ describe("WithdrawalModal focus trap", () => {
       transactionId: null,
       transactionStatus: null,
       errorMessage: null,
+    });
+    // Default to desktop viewport for matchMedia
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      value: jest.fn().mockImplementation((query: string) => ({
+        matches: query.includes("min-width: 768px"),
+        media: query,
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        dispatchEvent: jest.fn(),
+      })),
     });
   });
 
