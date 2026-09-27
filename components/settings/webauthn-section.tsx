@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { registerPasskey, getPasskeys, deletePasskey, type Passkey } from "@/lib/auth/webauthn";
+import { registerPasskey, getPasskeys, deletePasskey, isPasskeySupported, type PasskeyInfo as Passkey } from "@/lib/auth/passkeys";
 import { Key, Trash2, Loader2, ShieldCheck } from "lucide-react";
 
 export function WebAuthnSection() {
@@ -50,7 +50,7 @@ export function WebAuthnSection() {
     }
   };
 
-  const isWebAuthnSupported = typeof window !== "undefined" && window.PublicKeyCredential !== undefined;
+  const isWebAuthnSupported = isPasskeySupported();
 
   if (!isWebAuthnSupported) {
     return (

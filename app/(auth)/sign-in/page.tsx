@@ -5,6 +5,7 @@ import Link from "next/link";
 import { login } from "@/lib/api/auth";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { PasskeySignInButton } from "@/components/auth/passkey-signin-button";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -168,6 +169,10 @@ export default function SignInPage() {
             </button>
           </form>
 
+          <div className="mt-4">
+            <PasskeySignInButton />
+          </div>
+
           <div className="mt-4 text-center text-xs text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link
@@ -298,6 +303,10 @@ export default function SignInPage() {
               {isLoading ? "Logging in..." : "Log in"}
             </button>
           </form>
+
+          <div className="mt-4">
+            <PasskeySignInButton />
+          </div>
 
           <div className="mt-4 text-center text-xs text-muted-foreground">
             Don&apos;t have an account?{" "}

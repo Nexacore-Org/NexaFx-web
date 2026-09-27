@@ -38,6 +38,18 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
       },
+      // Fallback avatar loaded by components/profile/profile-overview.tsx.
+      // Must stay in sync with the CSP img-src allow-list in middleware.ts.
+      {
+        protocol: "https",
+        hostname: "api.dicebear.com",
+      },
+      // User-uploaded avatarUrl values served from the backend API host
+      // (also allow-listed in the middleware CSP img-src directive).
+      {
+        protocol: "https",
+        hostname: "nexafx-backend.onrender.com",
+      },
     ],
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60,

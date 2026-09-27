@@ -1,38 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
-import { ChevronLeft, AlertCircle } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { FeeEstimatorModal } from "@/components/shared/fee-estimator-modal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useWithdrawalStore } from "@/hooks/use-withdrawal-store";
-import { ChevronDown, ChevronLeft, AlertCircle } from "lucide-react";
+import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
+import { ChevronLeft, AlertCircle } from "lucide-react";
 import { useWithdrawalLimits } from "@/hooks/use-withdrawal-limits";
 import { cn } from "@/lib/utils";
 import { getCurrencies, type Currency } from "@/lib/api/currencies";
 import { getBalances } from "@/lib/api/wallet";
-import { InlineFieldError } from "@/components/ui/inline-field-error";
 import {
-    CurrencySelector,
-    type CurrencySelectorOption,
+  CurrencySelector,
+  type CurrencySelectorOption,
 } from "@/components/ui/currency-selector";
 import { getCurrencyIcon } from "@/lib/currency-icons";
-
-interface CurrencyOption extends CurrencySelectorOption {
-    balance: string;
+import {
   createWithdrawalSchema,
   type WithdrawalFormValues,
 } from "@/lib/validations/transactions";
-import { Input } from "@/components/ui/Input";
+import { Input } from "@/components/ui/input";
 import { requiresMemo } from "@/lib/utils/stellar-validation";
 import { parseBalanceAmount } from "@/lib/utils/balance";
 import { MAX_AMOUNT_INPUT_LENGTH } from "@/lib/constants/limits";
+import { FeeEstimatorModal } from "@/components/shared/fee-estimator-modal";
 
-interface CurrencyOption {
-  id: string;
-  name: string;
+interface CurrencyOption extends CurrencySelectorOption {
   balance: string;
 }
 
@@ -40,13 +32,12 @@ function toCurrencyOption(
   c: Currency,
   balanceMap: Record<string, string>,
 ): CurrencyOption {
-    return {
-        id: c.code,
-        name: c.name,
-        icon: getCurrencyIcon(c.code),
-        balance: balanceMap[c.code] ?? "0.00",
-    };
-  return { id: c.code, name: c.name, balance: balanceMap[c.code] ?? "0.00" };
+  return {
+    id: c.code,
+    name: c.name,
+    icon: getCurrencyIcon(c.code),
+    balance: balanceMap[c.code] ?? "0.00",
+  };
 }
 
 // GET /currencies currently returns 500 (backend bug) — fall back to this
@@ -112,6 +103,9 @@ export function WithdrawalForm() {
     defaultValues: { walletAddress: "", amount: "" },
   });
 
+  // Single currency/balance loading implementation for this component --
+  // invoked on mount (below) and by the error-state Retry buttons. Keep all
+  // fetch-and-map logic here so fixes can't drift between copies.
   const fetchCurrenciesAndBalances = useCallback(async () => {
     setIsLoadingCurrencies(true);
     setCurrencyError(null);
@@ -121,7 +115,10 @@ export function WithdrawalForm() {
     try {
       const balanceData = await getBalances();
       const nextBalanceMap: Record<string, string> = {};
-      for (const b of balanceData) nextBalanceMap[b.currency] = b.balance;
+      // Normalize to uppercase so lookups by currency code always hit
+      // regardless of the casing the backend returns.
+      for (const b of balanceData)
+        nextBalanceMap[b.currency.toUpperCase()] = b.balance;
       setBalanceMap(nextBalanceMap);
     } catch {
       setCurrencyError(
@@ -162,7 +159,7 @@ export function WithdrawalForm() {
   const hasBalanceData =
     !isLoadingCurrencies && !currencyError && currencyOptions.length > 0;
   const hasAnyPositiveBalance = currencyOptions.some(
-    (c) => parseFloat(c.balance.replace(",", "")) > 0,
+    (c) => parseBalanceAmount(c.balance) > 0,
   );
   const isEmptyBalance = hasBalanceData && !hasAnyPositiveBalance;
   const canSubmit = hasBalanceData && !isEmptyBalance;
@@ -260,35 +257,6 @@ export function WithdrawalForm() {
         </div>
       )}
 
-            {/* Form */}
-            <div className="space-y-4">
-                {/* Wallet Address */}
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">
-                        Wallet Address
-                    </label>
-                    {/* TODO(#818): this field accepts a raw wallet address only. There is no
-                        username-to-address resolution in the withdrawal flow or lib/api, so the
-                        copy must not imply username support. Revisit once a resolution endpoint
-                        (or the saved-beneficiaries feature) lands. */}
-                    <input
-                        type="text"
-                        placeholder="Enter destination wallet address"
-                        value={walletAddress}
-                        onChange={(e) => {
-                            setFormData({ walletAddress: e.target.value });
-                            if (errors.address) setErrors(prev => ({ ...prev, address: undefined }));
-                        }}
-                        className={cn(
-                            "w-full px-4 py-3 rounded-xl bg-muted/50 border",
-                            "text-sm text-foreground placeholder:text-muted-foreground",
-                            "focus:outline-none focus:ring-2 focus:ring-primary/50",
-                            "transition-all duration-200",
-                            errors.address ? "border-destructive" : "border-border"
-                        )}
-                    />
-                    <InlineFieldError message={errors.address} />
-                </div>
       {!isLoadingCurrencies && !currencyError && isEmptyBalance && (
         <div className="space-y-4">
           <div className="px-4 py-3 rounded-xl bg-muted/50 border border-border text-sm text-muted-foreground">
@@ -304,41 +272,6 @@ export function WithdrawalForm() {
         </div>
       )}
 
-                {/* Currency Selector */}
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">
-                        Currency
-                    </label>
-                    <div className="relative">
-                        {currencyError ? (
-                            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-destructive/10 border border-destructive">
-                                <div className="flex items-center gap-2 text-destructive">
-                                    <AlertCircle className="size-4 shrink-0" />
-                                    <span className="text-sm">{currencyError}</span>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={fetchCurrenciesAndBalances}
-                                    className="text-xs font-semibold text-destructive underline underline-offset-2 hover:opacity-70 transition-opacity shrink-0"
-                                >
-                                    Retry
-                                </button>
-                            </div>
-                        ) : (
-                        <CurrencySelector
-                            selectedId={currency}
-                            options={currencies}
-                            isOpen={showCurrencyDropdown}
-                            onToggle={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
-                            onSelect={(id) => {
-                                setFormData({ currency: id });
-                                setShowCurrencyDropdown(false);
-                            }}
-                            isLoading={isLoadingCurrencies}
-                        />
-                        )}
-                    </div>
-                </div>
       {!isLoadingCurrencies && !currencyError && !isEmptyBalance && (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Wallet Address */}
@@ -365,97 +298,22 @@ export function WithdrawalForm() {
             )}
           </div>
 
-                {/* Amount */}
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                        <label className="text-sm font-medium text-foreground">
-                            Amount
-                        </label>
-                        <span className="text-xs text-muted-foreground">
-                            Balance: {selectedCurrency?.balance ?? "—"} {selectedCurrency?.id ?? ""}
-                        </span>
-                    </div>
-                    <div className="relative">
-                        <input
-                            type="text"
-                            inputMode="decimal"
-                            placeholder="0.00"
-                            value={amount}
-                            onChange={(e) => {
-                                const value = e.target.value.replace(/[^0-9.]/g, "");
-                                setFormData({ amount: value });
-                                if (errors.amount) setErrors(prev => ({ ...prev, amount: undefined }));
-                            }}
-                            className={cn(
-                                "w-full px-4 py-3 pr-16 rounded-xl bg-muted/50 border",
-                                "text-sm text-foreground placeholder:text-muted-foreground",
-                                "focus:outline-none focus:ring-2 focus:ring-primary/50",
-                                "transition-all duration-200",
-                                errors.amount ? "border-destructive" : "border-border"
-                            )}
-                        />
-                        <button
-                            type="button"
-                            onClick={handleMaxClick}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-                        >
-                            MAX
-                        </button>
-                    </div>
-                    <InlineFieldError message={errors.amount} />
           {/* Currency Selector */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
               Currency
             </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-muted/50 border border-border hover:bg-muted transition-colors"
-              >
-                {selectedCurrency ? (
-                  <span className="font-medium text-foreground">
-                    {selectedCurrency.id}
-                  </span>
-                ) : null}
-                <ChevronDown
-                  className={cn(
-                    "size-5 text-muted-foreground transition-transform",
-                    showCurrencyDropdown && "rotate-180",
-                  )}
-                />
-              </button>
-
-              {showCurrencyDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10">
-                  {currencyOptions.map((curr) => (
-                    <button
-                      key={curr.id}
-                      type="button"
-                      onClick={() => {
-                        setFormData({ currency: curr.id });
-                        setShowCurrencyDropdown(false);
-                      }}
-                      className={cn(
-                        "w-full flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors",
-                        curr.id === currency && "bg-primary/10",
-                      )}
-                    >
-                      <div className="text-left">
-                        <p className="font-medium text-foreground">{curr.id}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {curr.name}
-                        </p>
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        {curr.balance}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <CurrencySelector
+              selectedId={currency}
+              options={currencyOptions}
+              isOpen={showCurrencyDropdown}
+              onToggle={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
+              onSelect={(id) => {
+                setFormData({ currency: id });
+                setShowCurrencyDropdown(false);
+              }}
+              isLoading={isLoadingCurrencies}
+            />
             {usedFallbackCurrencies && (
               <p className="text-xs text-amber-700">
                 Currency list is temporarily limited. Contact support if your
