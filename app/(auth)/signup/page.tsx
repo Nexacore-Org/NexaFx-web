@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
@@ -23,7 +24,7 @@ export default function SignupPage() {
     formState: { errors },
   } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { acceptTerms: true },
+    defaultValues: { acceptTerms: false },
   });
 
   const acceptTerms = watch("acceptTerms");
@@ -123,8 +124,14 @@ export default function SignupPage() {
           </div>
           <label htmlFor="terms" className="text-sm font-medium text-muted-foreground cursor-pointer">
             By clicking, I accept{" "}
-            <span className="text-orange-500 hover:underline">terms</span> and{" "}
-            <span className="text-orange-500 hover:underline">conditions</span> of this project
+            <Link href="/terms" className="text-orange-500 hover:underline" target="_blank" rel="noopener noreferrer">
+              terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="text-orange-500 hover:underline" target="_blank" rel="noopener noreferrer">
+              conditions
+            </Link>{" "}
+            of this project
           </label>
         </div>
         {errors.acceptTerms && (

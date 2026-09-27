@@ -46,4 +46,15 @@ describe("WithdrawalForm", () => {
     });
     expect(amountInput).toHaveValue("100");
   });
+
+  it("renders currency icons as SVG nodes, not raw /icons/*.svg path text (issue #816)", async () => {
+    render(<WithdrawalForm />);
+    // Wait for form to settle after currency fetch fallback
+    await screen.findByPlaceholderText("0.00");
+    // Raw path strings must never appear in the document
+    expect(document.body.textContent).not.toMatch(/\/icons\/[a-z0-9]+\.svg/i);
+    // Lucide icons from getCurrencyIcon render as inline SVG
+    const svgs = document.querySelectorAll("svg");
+    expect(svgs.length).toBeGreaterThan(0);
+  });
 });

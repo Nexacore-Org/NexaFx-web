@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { signUp } from "@/lib/api/auth";
 import {
@@ -25,7 +26,7 @@ export default function CreateAccountPage() {
     phone: "",
     password: "",
     confirmPassword: "",
-    acceptTerms: true,
+    acceptTerms: false,
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -177,8 +178,13 @@ export default function CreateAccountPage() {
             className="text-sm font-medium text-muted-foreground cursor-pointer"
           >
             By clicking, I accept{" "}
-            <span className="text-orange-500 hover:underline">terms</span> and{" "}
-            <span className="text-orange-500 hover:underline">conditions</span>{" "}
+            <Link href="/terms" className="text-orange-500 hover:underline" target="_blank" rel="noopener noreferrer">
+              terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="text-orange-500 hover:underline" target="_blank" rel="noopener noreferrer">
+              conditions
+            </Link>{" "}
             of this project
           </label>
         </div>
