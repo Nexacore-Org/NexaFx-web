@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { login } from "@/lib/api/auth";
 import { loginSchema, type LoginFormValues } from "@/lib/validations/auth";
 import { Input } from "@/components/ui/Input";
+import { PasskeySignInButton } from "@/components/auth/passkey-signin-button";
 
 const EyeIcon = () => (
   <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,6 +135,10 @@ export default function LoginPage() {
               {isLoading ? "Logging in..." : "Log in"}
             </button>
           </form>
+
+          <div className="mt-4">
+            <PasskeySignInButton />
+          </div>
 
           <div className="mt-4 text-center text-xs text-muted-foreground">
             Don&apos;t have an account?{" "}

@@ -72,17 +72,24 @@ export function ProfileOverview() {
     );
   }
 
+  const avatarSrc =
+    profile.avatarUrl ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.firstName}`;
+  // The DiceBear fallback is an SVG, which the Next.js image optimizer does
+  // not process -- render it as a plain <img> so it isn't dropped. The host
+  // is allow-listed in both the middleware CSP img-src directive and the
+  // next.config.ts remotePatterns, so no image is silently blocked.
+  const isDiceBearFallback = !profile.avatarUrl;
+
   return (
     <div className="bg-white dark:bg-card rounded-xl p-8 border border-border/50 shadow-sm flex flex-col items-center text-center space-y-4 h-full min-h-[300px] justify-center">
       <div className="relative">
         <div className="h-24 w-24 rounded-2xl bg-[#5E5699] flex items-center justify-center overflow-hidden shadow-lg">
           <Image
-            src={
-              profile.avatarUrl ||
-              `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.firstName}`
-            }
+            src={avatarSrc}
             alt="User profile photo"
             fill
+            unoptimized={isDiceBearFallback}
             className="object-cover"
           />
         </div>

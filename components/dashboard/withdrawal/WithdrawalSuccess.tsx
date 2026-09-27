@@ -1,30 +1,49 @@
 "use client";
 
-import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
-import { CheckCircle2, XCircle, Copy, ExternalLink } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useState } from "react";
-import { getCurrencyIcon } from "@/lib/currency-icons";
-
-const currencies = [
-    { id: 'USDC', name: 'USD Coin' },
-    { id: 'ETH', name: 'Ethereum' },
-    { id: 'BNB', name: 'BNB' },
-];
+import { useEffect } from "react";
+import { useWithdrawalStore, type TransactionStatus } from "@/hooks/useWithdrawalStore";
 import { CheckCircle2, XCircle, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "@/components/ui/copy-button";
-import { haptics } from "@/lib/utils/haptics";
-import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast-store";
 import { WITHDRAWAL_SUCCESS_CURRENCIES } from "@/lib/currencies";
+import { getCurrencyIcon } from "@/lib/currency-icons";
+
+interface StatusDisplay {
+  label: string;
+  dotClassName: string;
+}
+
+/**
+ * Maps the real transaction status from the store to the Status row's
+ * label and indicator. Every status gets its own label so the row never
+ * implies a state the transaction isn't actually in.
+ */
+export function getWithdrawalStatusDisplay(status: TransactionStatus): StatusDisplay {
+  switch (status) {
+    case "success":
+      return { label: "Confirmed", dotClassName: "bg-green-500" };
+    case "failed":
+      return { label: "Failed", dotClassName: "bg-red-500" };
+    case "pending":
+      return {
+        label: "Pending Confirmation",
+        dotClassName: "bg-yellow-500 animate-pulse",
+      };
+    default:
+      return {
+        label: "Processing",
+        dotClassName: "bg-yellow-500 animate-pulse",
+      };
+  }
+}
 
 export function WithdrawalSuccess() {
     const { currency, amount, transactionId, transactionStatus, errorMessage, close, reset, setStep, setFormData } = useWithdrawalStore();
-    const [copied, setCopied] = useState(false);
 
     const selectedCurrency = WITHDRAWAL_SUCCESS_CURRENCIES.find(c => c.id === currency) || WITHDRAWAL_SUCCESS_CURRENCIES[0];
     const isSuccess = transactionStatus === 'success';
+    const statusDisplay = getWithdrawalStatusDisplay(transactionStatus);
 
     useEffect(() => {
         if (isSuccess) {
@@ -32,16 +51,6 @@ export function WithdrawalSuccess() {
             setFormData({ amount: "", walletAddress: "" });
         }
     }, [isSuccess, setFormData]);
-
-    const handleCopyTxId = () => {
-        if (transactionId) {
-            navigator.clipboard.writeText(transactionId);
-            setCopied(true);
-            haptics.light();
-            toast("Transaction ID copied to clipboard", "success");
-            setTimeout(() => setCopied(false), 2000);
-        }
-    };
 
     const handleDone = () => {
         close();
@@ -92,7 +101,7 @@ export function WithdrawalSuccess() {
             )}
 
             {/* Transaction Details */}
-            {isSuccess && transactionId && (
+            {transactionId && (
                 <div className="space-y-3">
                     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
                         <div className="space-y-0.5">
@@ -108,8 +117,8 @@ export function WithdrawalSuccess() {
                         <div className="space-y-0.5">
                             <p className="text-xs text-muted-foreground">Status</p>
                             <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-                                <p className="text-sm font-medium text-foreground">Pending Confirmation</p>
+                                <span className={cn("w-2 h-2 rounded-full", statusDisplay.dotClassName)} />
+                                <p className="text-sm font-medium text-foreground" data-testid="withdrawal-status">{statusDisplay.label}</p>
                             </div>
                         </div>
                     </div>
