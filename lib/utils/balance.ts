@@ -6,5 +6,6 @@
  * truncating large balances. This strips every separator before parsing.
  */
 export function parseBalanceAmount(balance: string): number {
-  return parseFloat(balance.replace(/,/g, ""));
+  if (balance == null || balance === "") return NaN;
+  return parseFloat(String(balance).replace(/,/g, ""));
 }

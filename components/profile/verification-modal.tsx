@@ -2,7 +2,8 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { CreditCard, FileText, Car, Upload, X, ArrowLeft, Check, AlertCircle, Image } from 'lucide-react';
+import { CreditCard, FileText, Car, Upload, X, ArrowLeft, Check, AlertCircle } from 'lucide-react';
+import { useAuthStore } from '@/hooks/use-auth-store';
 
 interface VerificationModalProps {
   isOpen: boolean;
@@ -44,6 +45,8 @@ export function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Identity details come from the authenticated user only — never hardcoded.
+  const user = useAuthStore((state) => state.user);
 
   const frontInputRef = useRef<HTMLInputElement>(null);
   const backInputRef = useRef<HTMLInputElement>(null);
@@ -139,7 +142,7 @@ export function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
           {step === 1 && (
             <div className='space-y-4'>
               <h3 className='text-lg font-semibold'>Select Document Type</h3>
-              <p className='text-sm text-muted-foreground'>Choose the type of government-issued ID you'd like to verify with.</p>
+              <p className='text-sm text-muted-foreground'>Choose the type of government-issued ID you&apos;d like to verify with.</p>
               <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4'>
                 {DOCUMENT_OPTIONS.map((opt) => {
                   const Icon = opt.icon;
@@ -223,6 +226,10 @@ export function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
               <p className='text-sm text-muted-foreground'>Please review your information before submitting.</p>
 
               <div className='rounded-xl border border-border bg-muted/20 p-4 space-y-3'>
+                <DetailRow label='First Name' value={user?.firstName} />
+                <DetailRow label='Last Name' value={user?.lastName} />
+                <DetailRow label='Email' value={user?.email} />
+                <div className='h-px bg-border' />
                 <div className='flex items-center justify-between text-sm'>
                   <span className='text-muted-foreground'>Document Type</span>
                   <span className='font-medium'>{selectedOption?.label}</span>
@@ -335,6 +342,8 @@ function UploadArea({
       {file ? (
         <div className='flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-4'>
           {showPreview && file.type.startsWith('image/') && (
+            // Local blob preview — next/image optimisation doesn't apply to object URLs.
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={URL.createObjectURL(file)}
               alt='Preview'
@@ -367,6 +376,19 @@ function UploadArea({
           <AlertCircle className='w-3.5 h-3.5' />
           {error}
         </p>
+      )}
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value?: string }) {
+  return (
+    <div className='flex items-center justify-between text-sm'>
+      <span className='text-muted-foreground'>{label}</span>
+      {value ? (
+        <span className='font-medium truncate max-w-[200px]' title={value}>{value}</span>
+      ) : (
+        <span className='text-muted-foreground/50 italic'>Not provided</span>
       )}
     </div>
   );

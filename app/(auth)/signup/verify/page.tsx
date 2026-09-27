@@ -53,7 +53,7 @@ export default function SignupVerifyPage() {
         SUCCESS_TOAST_KEY,
         "Account verified — please log in",
       );
-      router.replace("/login");
+      router.replace("/sign-in");
     } catch (error) {
       setApiError(
         error instanceof Error ? error.message : "Invalid or expired OTP",
