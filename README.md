@@ -1,160 +1,30 @@
-# NexaFx v2
+# NexaFx Web
 
-NexaFx is a web app for currency exchange, crypto payments, wallet operations, invoices, KYC, and admin operations. The v2 branch is the active rebuild of the product frontend..
+NexaFx is a Web3-powered currency exchange platform for Naira-to-multi-currency and crypto conversions on the Stellar network.
 
-![CI](https://github.com/Nexacore-Org/NexaFx-web/actions/workflows/ci.yml/badge.svg)
+This branch (`v2`) is a fresh rebuild on Next.js 16 (App Router), React 19, TypeScript and Tailwind CSS 4. The previous v2 code is preserved on the `archive/v2-2026-10` branch for reference.
 
-NexaFX is a cutting-edge currency exchange platform that bridges traditional finance with blockchain technology, offering seamless conversions between the Nigerian Naira, global currencies, and cryptocurrencies. Built on Web3 principles and integrated with the Stellar ecosystem, NexaFX delivers a secure, transparent, and cost-effective solution for all your financial exchange needs.
+## Getting started
 
-## Tech Stack
-
-- Next.js 16 App Router
-- React 19 and TypeScript
-- Tailwind CSS
-- Zustand for client state
-- Stellar blockchain integrations
-- Vitest, Testing Library, Playwright, and Storybook
-
-## Live App
-
-The production URL is managed by the NexaCore team. Ask a maintainer for the current deployed v2 URL before testing production-only flows.
-
-## Branch Strategy
-
-- `main`: production branch
-- `v1`: final touches on the original codebase
-- `v2`: full rebuild and active frontend development
-
-Always target pull requests to `v2` unless a maintainer explicitly says otherwise.
-
-## Prerequisites
-
-- Node.js 20 or newer
-- npm 10 or newer
-- GitHub CLI (`gh`) for issue and PR workflows
-- A NexaFx test account. Use the configured backend in `NEXT_PUBLIC_API_URL` to register one for local testing.
-
-## Environment Setup
-
-```bash
-git clone https://github.com/Nexacore-Org/NexaFx-web
-cd NexaFx-web
-git checkout v2
+```sh
 npm install
 cp .env.example .env.local
 npm run dev
 ```
 
-Fill in required values in `.env.local` before testing authenticated, payment, notification, or e2e flows.
+Open http://localhost:3000.
 
-## Environment Variables
+## Scripts
 
-| Variable                         | Required             | Description                                                                                      |
-| -------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------ |
-| `NEXT_PUBLIC_API_URL`            | Yes                  | Backend API origin used by direct API calls and the local proxy.                                 |
-| `NEXT_PUBLIC_MOONPAY_API_KEY`    | For MoonPay deposits | MoonPay publishable key from the MoonPay dashboard.                                              |
-| `TEST_ACCESS_TOKEN`              | Development only     | Optional local development fallback token for the API proxy. Never set in staging or production. |
-| `NEXT_PUBLIC_SESSION_TIMEOUT_MS` | Optional             | Session timeout in milliseconds. Defaults should match product requirements.                     |
-| `NEXT_PUBLIC_CRISP_WEBSITE_ID`   | For support chat     | Crisp website ID from the Crisp dashboard.                                                       |
-| `E2E_TEST_EMAIL`                 | For e2e tests        | Test user email used by Playwright flows.                                                        |
-| `E2E_TEST_PASSWORD`              | For e2e tests        | Test user password used by Playwright flows.                                                     |
-| `E2E_TEST_OTP`                   | For e2e tests        | OTP value for test login flows.                                                                  |
-| `E2E_BASE_URL`                   | For e2e tests        | App URL used by Playwright, usually `http://localhost:3000`.                                     |
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the development server |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+| `npm run lint` | ESLint |
+| `npm run type-check` | Generate route types and run `tsc --noEmit` |
+| `npm run verify` | Lint, type-check and build, the same checks CI runs |
 
-## Available Scripts
+## Contributing
 
-| Command                   | Description                                 |
-| ------------------------- | ------------------------------------------- |
-| `npm run dev`             | Start the local Next.js development server. |
-| `npm run build`           | Create a production build.                  |
-| `npm run start`           | Start the production server after a build.  |
-| `npm run lint`            | Run ESLint.                                 |
-| `npm run test`            | Run unit tests with Vitest.                 |
-| `npm run test:ui`         | Launch the Vitest UI.                       |
-| `npm run test:watch`      | Run Vitest in watch mode.                   |
-| `npm run test:coverage`   | Run unit tests with coverage.               |
-| `npm run e2e`             | Run Playwright end-to-end tests.            |
-| `npm run storybook`       | Launch Storybook on port 6006.              |
-| `npm run build-storybook` | Build Storybook.                            |
-
-## How To Pick Up An Issue
-
-1. Browse open GitHub issues and filter by the `frontend` label.
-2. Comment `I'll take this` on the issue before starting work.
-3. Create a branch from `v2`:
-
-```bash
-git checkout v2
-git pull origin v2
-git checkout -b feat/issue-123-your-description
-```
-
-4. Make the smallest complete change that satisfies the issue.
-5. Run the required checks:
-### Test scripts
-
-The project uses Jest (with Testing Library for component tests). While writing
-or fixing tests, `test:watch` keeps Jest running so you can iterate quickly:
-
-- `npm test` — run all Jest tests once
-- `npm run test:watch` — run Jest in watch mode
-
-## 🔐 Security
-
-
-```bash
-npm run build
-npm run lint
-npm run test
-```
-
-6. Open a PR targeting `v2`.
-7. Add `Closes #123` to the PR description.
-
-## PR Checklist
-
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
-- [ ] `npm run test` passes when code is changed
-- [ ] No hardcoded balances, users, wallet addresses, or mock-only data in production paths
-- [ ] No imports from `lib/admin-mock-data.ts`
-- [ ] PR targets the `v2` branch
-- [ ] PR description references the issue with `Closes #<issue-number>`
-## 📚 Documentation
-
-- [Store Conventions](docs/store-conventions.md) — Zustand store conventions (persistence, optimistic updates)
-- [Operational Runbook](docs/runbook.md) — Deploy rollback and log-checking steps
-- [Mock Cleanup Note](docs/mock-cleanup-note.md) — Historical mock file cleanup and test fixture locations
-
-## 🤝 Contributing
-
-
-## Notes For Contributors
-
-This project uses Next.js 16. Read the relevant local guide in `node_modules/next/dist/docs/` before changing Next-specific APIs, routing conventions, or configuration.
-
-For product and exchange terminology, see the [contributor glossary](docs/glossary.md).
-
-Commits run ESLint and Prettier on staged files through Husky. Bypass the hook with `git commit --no-verify` only when a genuine exception is necessary; the normal expectation is to fix the reported issues before committing.
-### 📚 Documentation
-- [Testing Guide](TESTING.md) — How to run and debug tests
-- [Contributing Guidelines](Contribution.md) — Full contribution workflow
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 📞 Support
-
-Having trouble? Reach out to us:
-
-- Submit an issue on GitHub
-- Telegram: [https://t.me/NexaFx](https://t.me/+WkWO3kNnA-1mYzVk)
-- Email us at [contact@nexacore.org](mailto:nexacore.org@gmail.com)
-
-## 📧 Contact
-
----
-
-**NexaFX** - Bridging Traditional Finance and DeFi for a Borderless Financial Future
-
+See [Contribution.md](Contribution.md). Branch from `v2` and open pull requests into `v2`.
