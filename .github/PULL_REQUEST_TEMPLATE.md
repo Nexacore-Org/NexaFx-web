@@ -8,10 +8,10 @@ Briefly describe the change.
 1. 
 
 ## Checklist
-- [ ] `npm run build` passes
 - [ ] `npm run lint` passes
+- [ ] `npm run type-check` passes
+- [ ] `npm run build` passes
 - [ ] No hardcoded values (balances, users, mock data)
-- [ ] No imports from `lib/admin-mock-data.ts`
 - [ ] PR targets `v2` branch
 
 ## Related Issues
