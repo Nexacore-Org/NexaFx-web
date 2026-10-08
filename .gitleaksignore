@@ -1,0 +1,6 @@
+# False positives: the stock NestJS README badge URL (shields.io circleci badge
+# for github/nestjs/nest, with a public ?token= parameter) in backend/README.md,
+# present in git history from the archived v2 backend. Not a NexaFx credential.
+fb5042a62eaaf370b22bb8e4f53cc79944cb11f7:backend/README.md:generic-api-key:5
+15812ed700ff24a403a09411ff12f075b431612a:backend/README.md:generic-api-key:5
+6bcf6d181f02de2c8b9f72147d3a563a0e618967:backend/README.md:generic-api-key:5
