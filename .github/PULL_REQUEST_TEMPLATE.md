@@ -1,13 +1,17 @@
 ## Description
+
 Briefly describe the change.
 
 ## Changes Implemented
-- [ ] 
+
+- [ ]
 
 ## How to Test
-1. 
+
+1.
 
 ## Checklist
+
 - [ ] `npm run lint` passes
 - [ ] `npm run type-check` passes
 - [ ] `npm run build` passes
@@ -15,4 +19,5 @@ Briefly describe the change.
 - [ ] PR targets `v2` branch
 
 ## Related Issues
+
 - Closes #<ISSUE_NUMBER>
