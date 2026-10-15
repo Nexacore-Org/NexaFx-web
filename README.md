@@ -16,14 +16,16 @@ Open http://localhost:3000.
 
 ## Scripts
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Start the development server |
-| `npm run build` | Production build |
-| `npm run start` | Serve the production build |
-| `npm run lint` | ESLint |
-| `npm run type-check` | Generate route types and run `tsc --noEmit` |
-| `npm run verify` | Lint, type-check and build, the same checks CI runs |
+| Command                | What it does                                        |
+| ---------------------- | --------------------------------------------------- |
+| `npm run dev`          | Start the development server                        |
+| `npm run build`        | Production build                                    |
+| `npm run start`        | Serve the production build                          |
+| `npm run lint`         | ESLint                                              |
+| `npm run type-check`   | Generate route types and run `tsc --noEmit`         |
+| `npm run format`       | Format all files with Prettier                      |
+| `npm run format:check` | Check that files are formatted, without writing     |
+| `npm run verify`       | Lint, type-check and build, the same checks CI runs |
 
 ## Contributing
 

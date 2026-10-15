@@ -8,7 +8,18 @@
     "start": "next start",
     "lint": "eslint",
     "type-check": "next typegen && tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky",
     "verify": "npm run lint && npm run type-check && npm run build"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs}": [
+      "eslint --fix"
+    ],
+    "*.{ts,tsx,js,mjs,json,md,css}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "next": "16.4.0",
@@ -22,6 +33,11 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10",
+    "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

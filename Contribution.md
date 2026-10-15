@@ -3,6 +3,7 @@
 Thank you for your interest in contributing to **NexaFx**! 🚀 We welcome contributions from the community and appreciate your efforts to improve the project. Please follow the guidelines below to ensure a smooth collaboration.
 
 ---
+
 ### Important Note Before Applying 📝
 
 ⚠️ **Avoid Generic Comments:** Comments such as 🚫
@@ -42,7 +43,9 @@ The template location is at [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQU
 ## Steps to apply
 
 Apply for an Issue
-   - Look for an open issue and comment expressing your interest in working on it.
+
+- Look for an open issue and comment expressing your interest in working on it.
+
 ---
 
 ## Steps to apply
@@ -84,3 +87,32 @@ npm run verify
 ```
 
 This runs lint, type-check and the production build. A PR is reviewed only when CI is green.
+
+To check formatting only, run:
+
+```sh
+npm run format:check
+```
+
+To format the codebase, run:
+
+```sh
+npm run format
+```
+
+## Pre-commit hook
+
+A Husky pre-commit hook runs `lint-staged` on every commit:
+
+- ESLint (`eslint --fix`) runs on staged `*.{ts,tsx,js,mjs}` files.
+- Prettier (`prettier --write`) runs on staged `*.{ts,tsx,js,mjs,json,md,css}` files.
+
+A commit with a lint error that cannot be fixed automatically is blocked, and staged files are auto-formatted on commit.
+
+In an emergency you can bypass the hook:
+
+```sh
+git commit --no-verify
+```
+
+CI runs `npm ci` with `HUSKY=0`, so the hook never interferes with the pipeline.
