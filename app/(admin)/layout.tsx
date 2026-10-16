@@ -10,5 +10,5 @@ export default function AdminLayout({
       </div>
       <div className="content">{children}</div>
     </div>
-  )
+  );
 }

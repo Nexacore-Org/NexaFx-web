@@ -4,17 +4,28 @@
  * protocol-relative URLs and absolute URLs are rejected.
  */
 
-export function isSafeRedirect(path: string | null | undefined): path is string {
-  if (!path) return false
+// Backslashes and ASCII control characters, including DEL. Browsers may
+// normalise these into a scheme-relative or absolute URL after a redirect.
+const UNSAFE_CHARS = /[\u0000-\u001f\u007f\\]/;
+
+export function isSafeRedirect(
+  path: string | null | undefined,
+): path is string {
+  if (!path) return false;
   // Must start with exactly one slash (not double slash or protocol-relative)
-  return path.startsWith('/') && !path.startsWith('//') && !path.includes('://')
+  if (!path.startsWith("/") || path.startsWith("//")) return false;
+  if (path.includes("://")) return false;
+  return !UNSAFE_CHARS.test(path);
 }
 
 /**
  * Returns `path` when it is a safe internal redirect, otherwise `fallback`.
  */
-export function safeRedirect(path: string | null, fallback: string = '/dashboard'): string {
-  return isSafeRedirect(path) ? path : fallback
+export function safeRedirect(
+  path: string | null,
+  fallback: string = "/dashboard",
+): string {
+  return isSafeRedirect(path) ? path : fallback;
 }
 
 /**
@@ -24,8 +35,8 @@ export function safeRedirect(path: string | null, fallback: string = '/dashboard
  */
 export function loginRedirectFor(
   nextPath: string | null | undefined,
-  fallback: string = '/dashboard'
+  fallback: string = "/dashboard",
 ): string {
-  const target = isSafeRedirect(nextPath) ? nextPath : fallback
-  return `/login?next=${encodeURIComponent(target)}`
+  const target = isSafeRedirect(nextPath) ? nextPath : fallback;
+  return `/login?next=${encodeURIComponent(target)}`;
 }
