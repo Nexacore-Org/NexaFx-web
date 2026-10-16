@@ -1,121 +1,159 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import type { ClipboardEvent, KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-interface OtpInputProps {
-  value: string;
-  onChange: (value: string) => void;
-  length?: number;
+type OTPInputProps = {
+  maxDigits?: number;
+  onSubmit: (code: string) => void;
+  onChange?: (code: string) => void;
+  resendCount?: number;
+  onResend?: () => void;
   disabled?: boolean;
-  autoFocus?: boolean;
-  ariaLabel?: string;
-}
+};
 
-export default function OtpInput({
-  value,
+export function OTPInput({
+  maxDigits = 6,
+  onSubmit,
   onChange,
-  length = 6,
+  resendCount = 3,
+  onResend,
   disabled = false,
-  autoFocus = true,
-  ariaLabel = "Verification code",
-}: OtpInputProps) {
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+}: OTPInputProps) {
+  const [digits, setDigits] = useState<string[]>(() =>
+    Array(maxDigits).fill(""),
+  );
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
-  const digits = Array.from({ length }, (_, index) => value[index] ?? "");
-  const isComplete = digits.every((digit) => digit !== "");
+  const isCountingDown = secondsLeft > 0;
+  const code = useMemo(() => digits.join(""), [digits]);
 
   useEffect(() => {
-    if (autoFocus) {
-      inputRefs.current[0]?.focus();
-    }
-  }, [autoFocus]);
+    if (!isCountingDown) return;
+    const id = setInterval(() => {
+      setSecondsLeft((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [isCountingDown]);
 
-  const focusInput = (index: number) => {
-    inputRefs.current[index]?.focus();
-  };
+  const commit = useCallback(
+    (next: string[]) => {
+      setDigits(next);
+      const value = next.join("");
+      onChange?.(value);
+      if (value.length === maxDigits && next.every((digit) => digit !== "")) {
+        onSubmit(value);
+      }
+    },
+    [maxDigits, onChange, onSubmit],
+  );
 
-  const updateDigit = (index: number, nextValue: string) => {
-    const nextDigits = [...digits];
-    nextDigits[index] = nextValue;
-    onChange(nextDigits.join(""));
-  };
+  const handleChange = useCallback(
+    (index: number, raw: string) => {
+      const value = raw.replace(/\D/g, "").slice(-1);
+      const next = [...digits];
+      next[index] = value;
+      commit(next);
+      if (value && index < maxDigits - 1) {
+        inputRefs.current[index + 1]?.focus();
+      }
+    },
+    [commit, digits, maxDigits],
+  );
 
-  const handleChange = (index: number, nextValue: string) => {
-    const digit = nextValue.replace(/\D/g, "").slice(-1);
-    updateDigit(index, digit);
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+      if (event.key === "Backspace" && digits[index] === "" && index > 0) {
+        const next = [...digits];
+        next[index - 1] = "";
+        commit(next);
+        inputRefs.current[index - 1]?.focus();
+        event.preventDefault();
+      }
+      if (event.key === "ArrowLeft" && index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      }
+      if (event.key === "ArrowRight" && index < maxDigits - 1) {
+        inputRefs.current[index + 1]?.focus();
+      }
+    },
+    [commit, digits, maxDigits],
+  );
 
-    if (digit && index < length - 1) {
-      focusInput(index + 1);
-    }
-  };
+  const handlePaste = useCallback(
+    (event: React.ClipboardEvent<HTMLInputElement>) => {
+      const pasted = event.clipboardData.getData("text").replace(/\D/g, "");
+      if (!pasted) return;
+      event.preventDefault();
+      const next = Array(maxDigits).fill("");
+      for (let i = 0; i < Math.min(pasted.length, maxDigits); i += 1) {
+        next[i] = pasted[i];
+      }
+      commit(next);
+      const focusIndex = Math.min(pasted.length, maxDigits - 1);
+      inputRefs.current[focusIndex]?.focus();
+    },
+    [commit, maxDigits],
+  );
 
-  const handlePaste = (
-    event: ClipboardEvent<HTMLInputElement>,
-    index: number,
-  ) => {
-    event.preventDefault();
-    const pasted = event.clipboardData.getData("text").replace(/\D/g, "");
-    if (!pasted) return;
-
-    const nextDigits = [...digits];
-    pasted
-      .slice(0, length - index)
-      .split("")
-      .forEach((digit, offset) => {
-        nextDigits[index + offset] = digit;
-      });
-
-    onChange(nextDigits.join(""));
-
-    const nextFocus = Math.min(index + pasted.length, length - 1);
-    focusInput(nextFocus);
-  };
-
-  const handleKeyDown = (
-    event: KeyboardEvent<HTMLInputElement>,
-    index: number,
-  ) => {
-    if (event.key === "Backspace" && !digits[index] && index > 0) {
-      focusInput(index - 1);
-    }
-    if (event.key === "ArrowLeft" && index > 0) {
-      focusInput(index - 1);
-    }
-    if (event.key === "ArrowRight" && index < length - 1) {
-      focusInput(index + 1);
-    }
-  };
+  const resend = useCallback(() => {
+    onResend?.();
+    setSecondsLeft(resendCount);
+  }, [onResend, resendCount]);
 
   return (
-    <div
-      className="grid gap-2 sm:gap-3"
-      role="group"
-      aria-label={ariaLabel}
-      aria-invalid={!isComplete && value.length > 0}
-    >
-      <div className="flex justify-between gap-2 sm:gap-4">
-        {digits.map((digit, index) => (
-          <input
-            key={index}
-            ref={(element) => {
-              inputRefs.current[index] = element;
-            }}
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            autoComplete={index === 0 ? "one-time-code" : "off"}
-            maxLength={1}
-            value={digit}
-            disabled={disabled}
-            onChange={(event) => handleChange(index, event.target.value)}
-            onPaste={(event) => handlePaste(event, index)}
-            onKeyDown={(event) => handleKeyDown(event, index)}
-            className="h-14 w-full rounded-xl border-2 border-zinc-100 bg-zinc-50/70 text-center text-2xl font-semibold text-zinc-900 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-50 disabled:cursor-not-allowed disabled:opacity-60 sm:h-16"
-            aria-label={`OTP digit ${index + 1}`}
-          />
-        ))}
-      </div>
+    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+      {Array.from({ length: maxDigits }, (_, i) => (
+        <input
+          key={i}
+          ref={(el) => {
+            inputRefs.current[i] = el;
+          }}
+          type="text"
+          maxLength={1}
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          aria-label={`OTP digit ${i + 1} of ${maxDigits}`}
+          value={digits[i] ?? ""}
+          disabled={disabled}
+          onChange={(e) => handleChange(i, e.target.value)}
+          onKeyDown={(e) => handleKeyDown(e, i)}
+          onPaste={handlePaste}
+          style={{
+            width: "40px",
+            height: "40px",
+            fontSize: "24px",
+            textAlign: "center",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+            display: "inline-block",
+          }}
+        />
+      ))}
+
+      <button
+        type="button"
+        onClick={resend}
+        disabled={isCountingDown || !onResend}
+        style={{ marginLeft: "8px", padding: "4px 8px", fontSize: "12px" }}
+      >
+        {isCountingDown ? `Resend in ${secondsLeft}s` : "Resend code"}
+      </button>
+
+      <span
+        aria-live="polite"
+        style={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          overflow: "hidden",
+        }}
+      >
+        {isCountingDown
+          ? `You can resend the code in ${secondsLeft} seconds`
+          : ""}
+        {code.length === maxDigits ? "Code complete" : ""}
+      </span>
     </div>
   );
 }

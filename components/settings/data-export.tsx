@@ -1,119 +1,205 @@
 "use client";
 
-import { useState } from "react";
-import { Download, Loader2, CheckCircle2 } from "lucide-react";
-import { getProfile } from "@/lib/api/users";
-import { getTransactions } from "@/lib/api/transactions";
-import { exportTransactionsToCSV } from "@/app/lib/utils/csv-export";
+import { useEffect, useState, type FormEvent } from "react";
 
-type ExportStatus = "idle" | "exporting" | "done" | "error";
+import { Dialog } from "@/components/ui/dialog";
+import { FormError } from "./settings-section";
+import {
+  type DataExportRequest,
+  type ExportStatus,
+  requestDataExport,
+  getDataExportStatus,
+} from "@/lib/api/user";
 
-export function DataExport() {
-  const [status, setStatus] = useState<ExportStatus>("idle");
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+function statusLabel(status: ExportStatus): string {
+  switch (status) {
+    case "requested":
+      return "Requested";
+    case "preparing":
+      return "Preparing";
+    case "ready":
+      return "Ready";
+    case "expired":
+      return "Expired";
+    default:
+      return status;
+  }
+}
 
-  const handleExport = async () => {
-    try {
-      setStatus("exporting");
-      setErrorMsg(null);
+/**
+ * Self-service "download my data" request.
+ *
+ * The user re-enters their password to confirm the request; the password is
+ * never persisted. While the backend prepares the archive, the status is
+ * polled until it is ready to download or has expired.
+ */
+export default function DataExport() {
+  const [open, setOpen] = useState(false);
+  const [exportInfo, setExportInfo] = useState<DataExportRequest | null>(null);
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-      const [profile, txResult] = await Promise.all([
-        getProfile(),
-        getTransactions({ page: 1, limit: 1000 }),
-      ]);
-
-      const profileData = {
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        email: profile.email,
-        phone: profile.phone ?? "",
-        walletAddress: profile.walletAddress ?? "",
-      };
-
-      const profileCsv = [
-        ["Field", "Value"],
-        ["First Name", profileData.firstName],
-        ["Last Name", profileData.lastName],
-        ["Email", profileData.email],
-        ["Phone", profileData.phone],
-        ["Wallet Address", profileData.walletAddress],
-      ]
-        .map((row) => row.map((f) => `"${f.replace(/"/g, '""')}"`).join(","))
-        .join("\n");
-
-      const profileBlob = new Blob([profileCsv], {
-        type: "text/csv;charset=utf-8;",
-      });
-      const profileUrl = URL.createObjectURL(profileBlob);
-      const profileLink = document.createElement("a");
-      profileLink.href = profileUrl;
-      profileLink.download = `nexafx-profile-${new Date().toISOString().split("T")[0]}.csv`;
-      profileLink.style.visibility = "hidden";
-      document.body.appendChild(profileLink);
-      profileLink.click();
-      document.body.removeChild(profileLink);
-      URL.revokeObjectURL(profileUrl);
-
-      if (txResult.data.length > 0) {
-        exportTransactionsToCSV(
-          txResult.data,
-          `nexafx-transactions-${new Date().toISOString().split("T")[0]}.csv`,
-        );
-      }
-
-      setStatus("done");
-      setTimeout(() => setStatus("idle"), 4000);
-    } catch (err) {
-      setStatus("error");
-      setErrorMsg(
-        err instanceof Error ? err.message : "Failed to export data",
-      );
-    }
+  const close = () => {
+    setOpen(false);
+    setPassword("");
+    setError(null);
   };
 
+  useEffect(() => {
+    let mounted = true;
+    async function fetchLatest() {
+      try {
+        const latest = await getDataExportStatus();
+        if (mounted) {
+          setExportInfo(latest);
+        }
+      } catch {
+        if (mounted) {
+          setError("Failed to load export status");
+        }
+      }
+    }
+    fetchLatest();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const pollingRequestId =
+    exportInfo?.status === "preparing" ? exportInfo.requestId : null;
+
+  // Poll while an export is being prepared. State is only updated from the
+  // async callback, never synchronously inside the effect body.
+  useEffect(() => {
+    if (!pollingRequestId) return;
+    const id = setInterval(async () => {
+      try {
+        const updated = await getDataExportStatus(pollingRequestId);
+        if (updated) {
+          setExportInfo(updated);
+        }
+      } catch {
+        // Ignore transient polling errors; the next tick retries.
+      }
+    }, 5000);
+    return () => clearInterval(id);
+  }, [pollingRequestId]);
+
+  const isPending =
+    exportInfo?.status === "requested" || exportInfo?.status === "preparing";
+  const isPolling = exportInfo?.status === "preparing";
+  const canDownload =
+    exportInfo?.status === "ready" && Boolean(exportInfo.downloadUrl);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await requestDataExport(password);
+      setExportInfo(res);
+      close();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to request export");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="rounded-2xl border border-border bg-card">
-      <div className="px-5 pt-6 pb-4 border-b border-border">
-        <h2 className="text-base font-semibold text-foreground">
-          Download My Data
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Export your profile information and transaction history as CSV files.
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-prose text-sm text-zinc-600 dark:text-zinc-400">
+          Request an export of your account data. We&apos;ll notify you when
+          it&apos;s ready to download.
         </p>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          disabled={isPending}
+          className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+        >
+          Request export
+        </button>
       </div>
 
-      <div className="px-5 py-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="max-w-lg">
-            <p className="text-sm text-foreground">
-              This will download two CSV files: your profile data and your full
-              transaction history.
-            </p>
-            {status === "done" && (
-              <p className="text-sm text-green-600 mt-2 flex items-center gap-1.5">
-                <CheckCircle2 className="size-4" />
-                Export complete. Check your downloads.
-              </p>
-            )}
-            {status === "error" && errorMsg && (
-              <p className="text-sm text-red-600 mt-2">{errorMsg}</p>
-            )}
+      <Dialog
+        open={open}
+        onClose={close}
+        title="Request data export"
+        description="Re-enter your password to confirm this request."
+      >
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div>
+            <label
+              className="mb-1 block text-sm font-medium"
+              htmlFor="data-export-password"
+            >
+              Password
+            </label>
+            <input
+              id="data-export-password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              disabled={loading}
+              className="w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            />
           </div>
 
-          <button
-            onClick={handleExport}
-            disabled={status === "exporting"}
-            className="flex shrink-0 items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {status === "exporting" ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Download className="size-4" />
+          <FormError message={error} />
+
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={close}
+              disabled={loading}
+              className="rounded border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || password.length === 0}
+              className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+            >
+              {loading ? "Requesting..." : "Request export"}
+            </button>
+          </div>
+        </form>
+      </Dialog>
+
+      {exportInfo && (
+        <div className="space-y-2 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="flex items-center justify-between">
+            <p className="text-sm">
+              <span className="font-medium">Export status:</span>{" "}
+              {statusLabel(exportInfo.status)}
+            </p>
+            {isPolling && (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Checking...
+              </p>
             )}
-            {status === "exporting" ? "Exporting..." : "Download Data"}
-          </button>
+          </div>
+          {canDownload && exportInfo.downloadUrl && (
+            <a
+              href={exportInfo.downloadUrl}
+              download
+              className="inline-flex items-center justify-center rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+            >
+              Download
+            </a>
+          )}
+          {exportInfo.status === "expired" && (
+            <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm dark:border-amber-800 dark:bg-amber-950/40">
+              Your export has expired. You can request a new export.
+            </p>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

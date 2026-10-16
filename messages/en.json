@@ -1,10 +1,18 @@
 {
-  "Navigation": {
-    "dashboard": "Dashboard",
-    "convert": "Convert",
-    "deposit": "Deposit",
-    "withdraw": "Withdraw",
-    "transactions": "Transactions",
-    "settings": "Settings"
+  "appName": "NexaFx",
+  "metadata": {
+    "title": "NexaFx",
+    "description": "Multi-currency exchange on the Stellar network."
+  },
+  "home": {
+    "tagline": "Multi-currency exchange on the Stellar network.",
+    "rebuild": "The v2 rebuild starts here.",
+    "appName": "NexaFx"
+  },
+  "language": {
+    "heading": "Language",
+    "description": "Choose the language used across the site. This affects visible text and how numbers and dates are formatted.",
+    "label": "Site language",
+    "saved": "Language updated."
   }
 }

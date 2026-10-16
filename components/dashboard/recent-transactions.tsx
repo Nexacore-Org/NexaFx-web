@@ -1,259 +1,102 @@
 "use client";
 
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  RefreshCw,
-  Check,
-  Download,
-  X,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Transaction, getTransactions } from "@/lib/api/transactions";
-import { TransactionEmptyState } from "@/components/transactions/empty-state";
-import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
-import { TransactionDetailModal } from "./transaction-detail-modal";
-import { TransactionTableSkeleton } from "@/components/shared/page-skeletons";
-import { useWebSocket } from "@/hooks/use-websocket";
-import { useAuthStore } from "@/hooks/use-auth-store";
-export function RecentTransactions() {
-  type State =
-    | { status: "loading" }
-    | { status: "error"; message: string }
-    | { status: "success"; transactions: Transaction[] };
+import { useRouter } from "next/navigation";
+import { useTransactions } from "@/hooks/use-transactions";
+import { TransactionRow } from "@/components/transactions/transaction-row";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 
-  const [state, setState] = useState<State>({ status: "loading" });
-  const [retryCount, setRetryCount] = useState(0);
+export interface RecentTransactionsProps {
+  limit?: number;
+}
 
-  const wsTransactions = useWebSocket((s) => s.transactions);
-  const accessToken = useAuthStore((s) => s.accessToken);
-  const subscribe = useWebSocket((s) => s.subscribe);
-
-  useEffect(() => {
-    if (accessToken) {
-      subscribe(accessToken);
-    }
-  }, [accessToken, subscribe]);
-
-  useEffect(() => {
-    if (wsTransactions.length > 0) {
-      setState({ status: "success", transactions: wsTransactions.slice(0, 5) });
-    }
-  }, [wsTransactions]);
-
-  useEffect(() => {
-    if (accessToken) {
-      subscribe(accessToken);
-    }
-  }, [accessToken, subscribe]);
-
-  useEffect(() => {
-    if (wsTransactions.length > 0) {
-      setState({ status: "success", transactions: wsTransactions.slice(0, 5) });
-    }
-  }, [wsTransactions]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    getTransactions({ page: 1, limit: 5 }, { signal: controller.signal })
-      .then((result) => {
-        if (!controller.signal.aborted)
-          setState({ status: "success", transactions: result.data });
-      })
-      .catch((err) => {
-        if (err?.name === "AbortError") return;
-        if (!controller.signal.aborted)
-          setState({ status: "error", message: "Failed to load transactions" });
-      });
-    return () => {
-      controller.abort();
-    };
-  }, [retryCount]);
-
-  const fetchTxns = () => {
-    setState({ status: "loading" });
-    setRetryCount((c) => c + 1);
-  };
+export function RecentTransactions({ limit = 5 }: RecentTransactionsProps) {
+  const router = useRouter();
+  const { data, isLoading, isError, refetch } = useTransactions({ limit });
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between px-3 md:px-0">
-        <h3 className="text-sm md:text-lg font-bold text-foreground">
-          Recent Transactions
-        </h3>
-        <Link
-          href="/dashboard/transactions"
-          className="text-xs md:text-sm font-semibold text-muted-foreground hover:text-primary transition-colors"
+    <section
+      aria-labelledby="recent-transactions-heading"
+      className="w-full rounded-xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900"
+    >
+      <div className="mb-4 flex items-center justify-between">
+        <h2
+          id="recent-transactions-heading"
+          className="text-base font-semibold text-zinc-900 dark:text-zinc-100"
         >
-          See All
+          Recent Transactions
+        </h2>
+        <Link
+          href="/transactions"
+          className="text-sm font-medium text-blue-600 hover:text-blue-500 hover:underline dark:text-blue-400"
+        >
+          View all
         </Link>
       </div>
 
-      <div className="rounded-xl md:rounded-sm bg-card md:border md:border-border md:shadow-sm overflow-hidden p-2 md:p-0">
-        {state.status === "loading" ? (
-          <TransactionTableSkeleton rows={5} />
-        ) : state.status === "error" ? (
-          <div className="flex flex-col items-center justify-center py-10 gap-3">
-            <p className="text-sm text-red-500">{state.message}</p>
-            <button
-              onClick={fetchTxns}
-              className="text-sm font-medium text-primary hover:underline"
+      {isLoading && (
+        <div className="space-y-3" aria-label="Loading recent transactions">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between gap-4 rounded-lg border border-zinc-100 p-4 dark:border-zinc-800/60"
             >
-              Retry
-            </button>
-          </div>
-        ) : state.transactions.length === 0 ? (
-          /* Empty state — reuses the existing TransactionEmptyState component */
-          <TransactionEmptyState />
-        ) : (
-          <>
-            {/* Desktop view */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Currency
-                    </th>
-                    <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Date
-                    </th>
-                    <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
-                      Amount
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y border-border">
-                  {state.transactions.map((tx) => (
-                    <tr
-                      key={tx.id}
-                      className="hover:bg-muted/20 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "h-8 w-8 rounded-full flex items-center justify-center",
-                              tx.type === "Deposit"
-                                ? "bg-green-500/10 text-green-500"
-                                : tx.type === "Withdraw"
-                                ? "bg-red-500/10 text-red-500"
-                                : "bg-orange-500/10 text-orange-500"
-                            )}
-                          >
-                            {tx.type === "Convert" ? (
-                              <RefreshCw className="h-4 w-4" />
-                            ) : tx.type === "Deposit" ? (
-                              <ArrowDownLeft className="h-4 w-4" />
-                            ) : (
-                              <ArrowUpRight className="h-4 w-4" />
-                            )}
-                          </div>
-                          <span className="font-medium text-foreground">
-                            {tx.type}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-foreground">
-                        {tx.currency}
-                        {tx.toCurrency && (
-                          <span className="text-muted-foreground">
-                            {" → "}
-                            {tx.toCurrency}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-muted-foreground">
-                        {tx.date}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={cn(
-                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                            tx.status === "Success"
-                              ? "bg-green-500/10 text-green-500"
-                              : tx.status === "Pending"
-                              ? "bg-yellow-500/10 text-yellow-500"
-                              : "bg-red-500/10 text-red-500"
-                          )}
-                        >
-                          {tx.status}
-                        </span>
-                      </td>
-                      <td
-                        className={cn(
-                          "px-6 py-4 text-sm font-bold text-right",
-                          tx.type === "Deposit"
-                            ? "text-green-500"
-                            : "text-foreground"
-                        )}
-                      >
-                        {tx.amountString}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile view */}
-            <div className="md:hidden space-y-4 p-4">
-              {state.transactions.map((tx) => (
-                <div key={tx.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={cn(
-                        "flex items-center justify-center h-12 w-12 rounded-xl border",
-                        tx.type === "Convert"
-                          ? "bg-orange-500/10 border-orange-200 text-orange-500"
-                          : tx.type === "Deposit"
-                          ? "bg-green-500/10 border-green-200 text-green-500"
-                          : "bg-red-500/10 border-red-200 text-red-500"
-                      )}
-                    >
-                      {tx.type === "Convert" ? (
-                        <RefreshCw className="h-6 w-6" />
-                      ) : tx.type === "Deposit" ? (
-                        <Download className="h-6 w-6" />
-                      ) : (
-                        <ArrowUpRight className="h-6 w-6" />
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-bold text-foreground">
-                        {tx.amountString}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{tx.date}</p>
-                    </div>
-                  </div>
-                  <div
-                    className={cn(
-                      "flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold",
-                      tx.status === "Success"
-                        ? "bg-green-500/10 text-green-600 border border-green-200"
-                        : tx.status === "Pending"
-                        ? "bg-yellow-500/10 text-yellow-600 border border-yellow-200"
-                        : "bg-red-500/10 text-red-600 border border-red-200"
-                    )}
-                  >
-                    {tx.status === "Success" && <Check className="h-3 w-3" />}
-                    {tx.status === "Failed" && <X className="h-3 w-3" />}
-                    {tx.status}
-                  </div>
+              <div className="flex items-center gap-3">
+                <Skeleton width="40px" height="40px" />
+                <div className="space-y-2">
+                  <Skeleton width="140px" height="16px" />
+                  <Skeleton width="90px" height="12px" />
                 </div>
-              ))}
+              </div>
+              <div className="space-y-2">
+                <Skeleton width="80px" height="16px" />
+                <Skeleton width="60px" height="12px" />
+              </div>
             </div>
-          </>
+          ))}
+        </div>
+      )}
+
+      {isError && (
+        <EmptyState
+          variant="error"
+          title="Failed to load transactions"
+          description="We couldn't fetch your latest transactions. Please try again."
+          retry={() => refetch()}
+        />
+      )}
+
+      {!isLoading &&
+        !isError &&
+        (!data?.transactions || data.transactions.length === 0) && (
+          <EmptyState
+            variant="empty"
+            title="No recent transactions"
+            description="Make your first conversion to get started with NexaFx."
+            action={{
+              label: "Convert now",
+              onClick: () => {
+                router.push("/convert");
+              },
+            }}
+          />
         )}
-      </div>
-    </div>
+
+      {!isLoading &&
+        !isError &&
+        data?.transactions &&
+        data.transactions.length > 0 && (
+          <div
+            className="space-y-3"
+            role="feed"
+            aria-label="Recent transactions list"
+          >
+            {data.transactions.slice(0, limit).map((transaction) => (
+              <TransactionRow key={transaction.id} transaction={transaction} />
+            ))}
+          </div>
+        )}
+    </section>
   );
 }

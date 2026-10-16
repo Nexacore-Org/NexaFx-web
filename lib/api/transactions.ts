@@ -1,192 +1,296 @@
-import { apiClient } from "../api-client";
+import { apiRequest } from "../api-client";
 import { generateIdempotencyKey, idempotencyHeader } from "../idempotency";
 
-export type TransactionStatus = "Success" | "Pending" | "Failed";
-export type TransactionType = "Deposit" | "Withdraw" | "Convert";
+/**
+ * NOTE: The backend transactions contract is NOT confirmed. The app has no reachable
+ * backend, so the shapes below are documented assumptions kept in this module.
+ * Every field is normalised at the read boundary with `??`, so a partial response
+ * renders safely rather than crashing.
+ */
 
-export interface TransactionFilters {
-  type?: string;
-  status?: string;
-  page?: number;
-  limit?: number;
-  startDate?: string;
-  endDate?: string;
-}
+export type TransactionType = "convert" | "deposit" | "withdraw" | "transfer";
+export type TransactionStatus = "completed" | "pending" | "failed";
 
 export interface Transaction {
   id: string;
   type: TransactionType;
-  currency: string;
-  toCurrency?: string;
-  amount: number;
-  amountString: string;
-  date: string;
-  rawDate?: string;
   status: TransactionStatus;
-  reference: string;
-  description?: string;
+  sourceAmount: number;
+  sourceCurrency: string;
+  destinationAmount?: number;
+  destinationCurrency?: string;
+  /** Exchange rate applied (source per destination unit). */
+  rate?: number;
+  /** Fee charged in source currency. */
   fee?: number;
-  exchangeRate?: number;
-  toAmount?: number;
-  walletAddress?: string;
+  createdAt: string;
+  updatedAt?: string;
+  counterparty?: string;
+  /** Stellar memo attached to the on-chain operation. */
+  memo?: string;
+  description?: string;
+  /** Stellar transaction hash (hex). */
+  hash?: string;
+  /** Human-readable reference ID (may differ from internal UUID). */
+  referenceId?: string;
 }
 
-export interface TransactionQueryDto {
-  page?: number;
+export interface TransactionsQuery {
   limit?: number;
+  /** Zero-based page index for page-based pagination. */
+  page?: number;
+  cursor?: string;
+  type?: TransactionType;
+  status?: TransactionStatus;
+  currency?: string;
   search?: string;
-  type?: string;
-  status?: string;
-  from?: string;
-  to?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
-export interface PaginatedTransactions {
-  data: Transaction[];
-  total: number;
-  page: number;
-  limit: number;
+export interface TransactionsResponse {
+  transactions: Transaction[];
+  nextCursor?: string | null;
+  total?: number;
+  /** Total number of pages when using page-based pagination. */
   totalPages?: number;
+  /** Current page (0-based). */
+  page?: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function mapTransaction(dto: Record<string, any>): Transaction {
-  const typeMap: Record<string, TransactionType> = {
-    deposit: "Deposit",
-    withdrawal: "Withdraw",
-    withdraw: "Withdraw",
-    convert: "Convert",
-    conversion: "Convert",
-    exchange: "Convert",
-  };
-  const statusMap: Record<string, TransactionStatus> = {
-    success: "Success",
-    pending: "Pending",
-    failed: "Failed",
-  };
+function num(val: unknown, fallback = 0): number {
+  if (typeof val === "number" && Number.isFinite(val)) return val;
+  if (typeof val === "string") {
+    const parsed = parseFloat(val);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
 
-  const type =
-    typeMap[(dto.type as string)?.toLowerCase()] ??
-    (dto.type as TransactionType);
-  const status =
-    statusMap[(dto.status as string)?.toLowerCase()] ??
-    (dto.status as TransactionStatus);
+function str(val: unknown, fallback = ""): string {
+  return typeof val === "string" ? val : fallback;
+}
 
-  const amount = Number(dto.amount) || 0;
-  const currency = (dto.currency as string) ?? "";
+export function normaliseTransaction(raw: unknown): Transaction {
+  if (!raw || typeof raw !== "object") {
+    return {
+      id: "unknown",
+      type: "convert",
+      status: "completed",
+      sourceAmount: 0,
+      sourceCurrency: "USD",
+      createdAt: new Date().toISOString(),
+    };
+  }
 
-  let amountString = `${amount.toLocaleString()} ${currency}`;
-  if (type === "Deposit") amountString = `+ ${amountString}`;
-  else if (type === "Withdraw") amountString = `- ${amountString}`;
+  const d = raw as Record<string, unknown>;
+  const rawType = str(d.type).toLowerCase();
+  const type: TransactionType = [
+    "convert",
+    "deposit",
+    "withdraw",
+    "transfer",
+  ].includes(rawType)
+    ? (rawType as TransactionType)
+    : "convert";
 
-  const rawDate = (dto.createdAt ?? dto.date ?? dto.created_at) as string;
-  const date = rawDate
-    ? new Date(rawDate).toLocaleString("en-GB", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "";
+  const rawStatus = str(d.status).toLowerCase();
+  const status: TransactionStatus = ["completed", "pending", "failed"].includes(
+    rawStatus,
+  )
+    ? (rawStatus as TransactionStatus)
+    : "completed";
+
+  const destAmt =
+    d.destinationAmount !== undefined ? num(d.destinationAmount) : undefined;
+  const destCurr =
+    typeof d.destinationCurrency === "string"
+      ? d.destinationCurrency
+      : undefined;
 
   return {
-    id: (dto.id ?? dto._id) as string,
+    id: str(d.id, Math.random().toString(36).substring(2, 9)),
     type,
-    currency,
-    toCurrency: (dto.toCurrency ?? dto.to_currency) as string | undefined,
-    amount,
-    amountString,
-    date,
-    // Display "date" is locale-formatted (DD/MM/YYYY) and isn't safely
-    // re-parseable for sorting — keep the original ISO-ish value around
-    // for that purpose.
-    rawDate: rawDate ?? "",
     status,
-    reference: (dto.reference ??
-      dto.transactionRef ??
-      dto.transaction_ref ??
-      "") as string,
-    description: dto.description as string | undefined,
-    fee: dto.fee as number | undefined,
-    exchangeRate: (dto.exchangeRate ?? dto.exchange_rate) as number | undefined,
-    toAmount: (dto.toAmount ?? dto.to_amount) as number | undefined,
-    walletAddress: (dto.walletAddress ?? dto.wallet_address ?? dto.address) as
-      string | undefined,
+    sourceAmount: num(d.sourceAmount ?? d.amount),
+    sourceCurrency: str(d.sourceCurrency ?? d.currency, "USD").toUpperCase(),
+    destinationAmount: destAmt,
+    destinationCurrency: destCurr ? destCurr.toUpperCase() : undefined,
+    rate: d.rate !== undefined ? num(d.rate) : undefined,
+    fee: d.fee !== undefined ? num(d.fee) : undefined,
+    createdAt: str(d.createdAt ?? d.timestamp, new Date().toISOString()),
+    updatedAt: typeof d.updatedAt === "string" ? d.updatedAt : undefined,
+    counterparty:
+      typeof d.counterparty === "string" ? d.counterparty : undefined,
+    memo: typeof d.memo === "string" ? d.memo : undefined,
+    description: typeof d.description === "string" ? d.description : undefined,
+    hash: typeof d.hash === "string" ? d.hash : undefined,
+    referenceId: typeof d.referenceId === "string" ? d.referenceId : undefined,
   };
 }
 
-export async function getTransactions(
-  query: TransactionQueryDto & TransactionFilters = {},
-  fetchOptions?: { signal?: AbortSignal },
-): Promise<PaginatedTransactions> {
-  const params: Record<string, string> = {};
-  if (query.page) params.page = String(query.page);
-  if (query.limit) params.limit = String(query.limit);
-  if (query.search) params.search = query.search;
+export async function fetchTransactions(
+  query: TransactionsQuery = {},
+): Promise<TransactionsResponse> {
+  try {
+    const queryParams: Record<string, string | number> = {};
+    if (query.limit) queryParams.limit = query.limit;
+    if (query.cursor) queryParams.cursor = query.cursor;
+    if (query.type) queryParams.type = query.type;
+    if (query.status) queryParams.status = query.status;
+    if (query.currency) queryParams.currency = query.currency;
+    if (query.search) queryParams.search = query.search;
+    if (query.dateFrom) queryParams.dateFrom = query.dateFrom;
+    if (query.dateTo) queryParams.dateTo = query.dateTo;
+    if (query.page !== undefined) queryParams.page = query.page;
 
-  const typeValue = query.type && query.type !== "All" ? query.type : undefined;
-  if (typeValue) {
-    const typeParam =
-      typeValue === "Withdraw" ? "withdrawal" : typeValue.toLowerCase();
-    params.type = typeParam;
+    const data = await apiRequest<unknown>("/api/transactions", {
+      query: queryParams,
+    });
+
+    if (!data || typeof data !== "object") {
+      return { transactions: [] };
+    }
+
+    const res = data as Record<string, unknown>;
+    const rawList = Array.isArray(res.transactions)
+      ? res.transactions
+      : Array.isArray(data)
+        ? data
+        : [];
+
+    const total = typeof res.total === "number" ? res.total : rawList.length;
+    const limit = query.limit ?? 10;
+
+    return {
+      transactions: rawList.map(normaliseTransaction),
+      nextCursor: typeof res.nextCursor === "string" ? res.nextCursor : null,
+      total,
+      totalPages:
+        typeof res.totalPages === "number"
+          ? res.totalPages
+          : Math.ceil(total / limit),
+      page: query.page ?? 0,
+    };
+  } catch (err) {
+    // If backend is unreachable, gracefully return mock recent transactions for development if empty
+    if (process.env.NODE_ENV !== "production") {
+      return getFallbackTransactions(query.limit ?? 5, query.page ?? 0);
+    }
+    throw err;
   }
+}
 
-  const statusValue =
-    query.status && query.status !== "All" ? query.status : undefined;
-  if (statusValue) {
-    params.status = statusValue.toLowerCase();
-  }
+function getFallbackTransactions(
+  limit: number,
+  page = 0,
+): TransactionsResponse {
+  const fallbackList: Transaction[] = [
+    {
+      id: "tx-1",
+      type: "convert",
+      status: "completed",
+      sourceAmount: 100,
+      sourceCurrency: "USDC",
+      destinationAmount: 155000,
+      destinationCurrency: "NGN",
+      rate: 1550,
+      fee: 0.5,
+      createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+      description: "Convert USDC to NGN",
+      referenceId: "REF-001",
+    },
+    {
+      id: "tx-2",
+      type: "deposit",
+      status: "completed",
+      sourceAmount: 250,
+      sourceCurrency: "USDC",
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+      description: "Deposit via Stellar Horizon",
+      hash: "abc123def456abc123def456abc123def456abc123def456abc123def456abc1",
+      referenceId: "REF-002",
+    },
+    {
+      id: "tx-3",
+      type: "withdraw",
+      status: "completed",
+      sourceAmount: 50000,
+      sourceCurrency: "NGN",
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+      counterparty: "Access Bank ****1234",
+      description: "Bank transfer payout",
+      fee: 100,
+      referenceId: "REF-003",
+    },
+    {
+      id: "tx-4",
+      type: "convert",
+      status: "completed",
+      sourceAmount: 50,
+      sourceCurrency: "EUR",
+      destinationAmount: 54.5,
+      destinationCurrency: "USDC",
+      rate: 1.09,
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+      description: "Convert EUR to USDC",
+      referenceId: "REF-004",
+    },
+    {
+      id: "tx-5",
+      type: "transfer",
+      status: "pending",
+      sourceAmount: 120,
+      sourceCurrency: "XLM",
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
+      counterparty: "GABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRS",
+      description: "Transfer to external wallet",
+      memo: "payment-ref-42",
+      referenceId: "REF-005",
+    },
+  ];
 
-  const from = query.from || query.startDate;
-  if (from) params.from = from;
-
-  const to = query.to || query.endDate;
-  if (to) params.to = to;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const json = await apiClient<any>("/transactions", {
-    params,
-    signal: fetchOptions?.signal,
-  });
-
-  let dataList: Array<Record<string, unknown>> = [];
-  let total = 0;
-  let page = query.page ?? 1;
-  let limit = query.limit ?? 20;
-
-  if (Array.isArray(json)) {
-    dataList = json;
-    total = json.length;
-  } else {
-    dataList = (json.data ?? json.transactions ?? json.items ?? []) as Array<
-      Record<string, unknown>
-    >;
-    total = (json.total ??
-      json.totalCount ??
-      json.count ??
-      dataList.length) as number;
-    page = (json.page ?? query.page ?? 1) as number;
-    limit = (json.limit ?? query.limit ?? 20) as number;
-  }
-
-  const totalPages = Math.ceil(total / limit);
+  const start = page * limit;
+  const paged = fallbackList.slice(start, start + limit);
 
   return {
-    data: dataList.map(mapTransaction),
-    total,
+    transactions: paged,
+    total: fallbackList.length,
+    totalPages: Math.ceil(fallbackList.length / limit),
     page,
-    limit,
-    totalPages,
   };
 }
 
-export async function getTransactionById(id: string): Promise<Transaction> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const json = await apiClient<any>(`/transactions/${id}`);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const dto = (json.data ?? json) as Record<string, any>;
-  return mapTransaction(dto);
+/**
+ * Fetch a single transaction by ID.
+ *
+ * Returns the transaction if found, or `null` if the server returns 404.
+ * Throws for other errors.
+ */
+export async function fetchTransaction(
+  id: string,
+): Promise<Transaction | null> {
+  try {
+    const data = await apiRequest<unknown>(
+      `/api/transactions/${encodeURIComponent(id)}`,
+    );
+    if (!data) return null;
+    return normaliseTransaction(data);
+  } catch (err) {
+    // 404 — not found or forbidden
+    if (
+      err instanceof Error &&
+      (err.message.includes("404") || err.message.includes("403"))
+    ) {
+      return null;
+    }
+    // Dev fallback: look up from mock list
+    if (process.env.NODE_ENV !== "production") {
+      const { transactions } = getFallbackTransactions(10);
+      return transactions.find((tx) => tx.id === id) ?? null;
+    }
+    throw err;
+  }
 }
 
 // ==================== Conversion Summary ====================
@@ -202,24 +306,24 @@ export interface ConversionSummary {
 export const getConversionSummary = (
   transactions: Transaction[],
 ): ConversionSummary[] => {
-  const convertTxs = transactions.filter((t) => t.type === "Convert");
+  const convertTxs = transactions.filter((t) => t.type === "convert");
   const grouped: Record<string, ConversionSummary> = {};
 
   convertTxs.forEach((tx) => {
-    const date = new Date(tx.date);
+    const date = new Date(tx.createdAt);
     const period = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-    const key = `${period}-${tx.currency}-${tx.toCurrency || ""}`;
+    const key = `${period}-${tx.sourceCurrency}-${tx.destinationCurrency ?? ""}`;
 
     if (!grouped[key]) {
       grouped[key] = {
         period,
-        fromCurrency: tx.currency,
-        toCurrency: tx.toCurrency || "",
+        fromCurrency: tx.sourceCurrency,
+        toCurrency: tx.destinationCurrency ?? "",
         totalAmount: 0,
         transactionCount: 0,
       };
     }
-    grouped[key].totalAmount += tx.amount;
+    grouped[key].totalAmount += tx.sourceAmount;
     grouped[key].transactionCount += 1;
   });
 
@@ -259,7 +363,7 @@ export async function createWithdrawal(
   // honours this header for deduplication, the client-side `useSubmitOnce`
   // guard prevents duplicate in-flight requests.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const json = await apiClient<any>("/transactions/withdraw", {
+  const json = await apiRequest<any>("/transactions/withdraw", {
     method: "POST",
     headers: idempotencyHeader(key),
     body: JSON.stringify(data),
@@ -283,16 +387,7 @@ export async function createWithdrawal(
 }
 
 // ==================== Deposit ====================
-//
-// Confirmed via live probe: POST /v1/transactions/deposit returns 401 (requires auth).
-// The backend could not be tested with a valid token (auth endpoints returning 500).
-//
-// Required fields (based on audit + Stellar convention):
-//   amount        — deposit amount as string
-//   currency      — currency code (e.g. "USDC")
-//   sourceAddress — the user's Stellar wallet public key; enables the backend to match
-//                   incoming on-chain transactions to this user's account.
-//                   Added as optional pending live verification.
+
 export interface CreateDepositDto {
   amount: string;
   currency: string;
@@ -317,7 +412,7 @@ export async function createDeposit({
   const key = generateIdempotencyKey();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const json = await apiClient<any>("/transactions/deposit", {
+  const json = await apiRequest<any>("/transactions/deposit", {
     method: "POST",
     headers: idempotencyHeader(key),
     body: JSON.stringify(body),
@@ -336,9 +431,7 @@ export async function createDeposit({
   return {
     transactionId,
     status,
-    walletAddress: (json.walletAddress ??
-      json.wallet_address ??
-      json.address) as string | undefined,
+    walletAddress: json.walletAddress as string | undefined,
     message: json.message as string | undefined,
   };
 }
@@ -356,7 +449,7 @@ export async function createSwap(data: CreateSwapDto): Promise<Transaction> {
   const key = generateIdempotencyKey();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const json = await apiClient<any>("/transactions/swap", {
+  const json = await apiRequest<any>("/transactions/swap", {
     method: "POST",
     headers: idempotencyHeader(key),
     body: JSON.stringify(data),
@@ -364,5 +457,5 @@ export async function createSwap(data: CreateSwapDto): Promise<Transaction> {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dto = (json.data ?? json) as Record<string, any>;
-  return mapTransaction(dto);
+  return normaliseTransaction(dto);
 }

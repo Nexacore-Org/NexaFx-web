@@ -1,102 +1,43 @@
-"use client";
-
+import Link from "next/link";
 import { AccountOverview } from "@/components/dashboard/account-overview";
 import { MarketOverview } from "@/components/dashboard/market-overview";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
-import { ArrowUpDown, Download, Upload } from "lucide-react";
-import { useState } from "react";
-import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
-import Link from "next/link";
-import dynamic from "next/dynamic";
-import { ErrorBoundary } from "@/components/shared/error-boundary";
-
-const DepositMethods = dynamic(
-  () => import("@/components/dashboard/deposit"),
-  {
-    loading: () => (
-      <div className="flex items-center justify-center h-48">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
-      </div>
-    ),
-    ssr: false,
-  }
-);
-
-const WithdrawalModal = dynamic(
-  () =>
-    import("@/components/dashboard/withdrawal/WithdrawalModal").then(
-      (mod) => mod.WithdrawalModal
-    ),
-  { ssr: false }
-);
 
 export default function DashboardPage() {
-  const [openDeposit, setOpenDeposit] = useState(false);
-  const openWithdrawal = useWithdrawalStore((state) => state.open);
-
-  const toggleDeposit = () => {
-    setOpenDeposit(!openDeposit);
-  };
-
   return (
-    <div className="flex flex-col gap-5 md:gap-10">
-      <ErrorBoundary
-        onDismiss={() => useWithdrawalStore.getState().close()}
-        sectionName="Withdrawal"
-      >
-        <WithdrawalModal />
-      </ErrorBoundary>
-      {openDeposit ? (
-        <ErrorBoundary
-          onDismiss={toggleDeposit}
-          sectionName="Deposit"
-        >
-          <DepositMethods toggleDeposit={toggleDeposit} />
-        </ErrorBoundary>
-      ) : (
-        <div className="md:px-4 space-y-4">
-          <div className="grid grid-cols-3 gap-4 px-6 pb-6 md:p-0">
-            <button
-              className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966] hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 active:scale-95"
-              onClick={toggleDeposit}
-              aria-label="Open deposit modal"
-            >
-              <Download />
-              <p className="text-sm md:text-base font-medium">Deposit</p>
-            </button>
-            <button
-              className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966] cursor-pointer hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 active:scale-95"
-              onClick={openWithdrawal}
-              aria-label="Open withdrawal modal"
-            >
-              <Upload />
-              <p className="text-sm md:text-base font-medium">Withdraw</p>
-            </button>
-            <Link
-              href="/dashboard/convert"
-              className="flex flex-col items-center justify-center bg-card rounded-xl md:rounded-sm py-6 md:py-10 gap-2 border-[0.43px] border-[#79797966] cursor-pointer hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 active:scale-95"
-              aria-label="Go to convert page"
-            >
-              <ArrowUpDown />
-              <p className="text-sm md:text-base font-medium">Convert</p>
-            </Link>
-          </div>
-
-          <div className="space-y-4 px-3 md:px-0">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm md:text-lg font-semibold">
-                Exchange Rates
-              </h3>
-              <p className="text-xs md:text-sm text-muted-foreground">
-                Live updates
-              </p>
-            </div>
-            <MarketOverview />
-          </div>
-
-          <RecentTransactions />
+    <div className="mx-auto w-full max-w-5xl space-y-8 p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-100">
+            Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            Overview of your multi-currency accounts and recent activity.
+          </p>
         </div>
-      )}
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/convert"
+            className="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-xs transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          >
+            Convert
+          </Link>
+          <Link
+            href="/kyc"
+            className="inline-flex items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-xs transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+          >
+            Verify KYC
+          </Link>
+        </div>
+      </div>
+
+      <AccountOverview />
+      <MarketOverview />
+
+      <div className="grid grid-cols-1 gap-6">
+        <RecentTransactions limit={5} />
+      </div>
     </div>
   );
 }

@@ -1,10 +1,18 @@
 {
-  "Navigation": {
-    "dashboard": "Ojú-iṣẹ́",
-    "convert": "Ṣe ìyípadà",
-    "deposit": "Fi owó pamọ́",
-    "withdraw": "Yọ owó",
-    "transactions": "Àwọn ìbánisọ̀rọ̀",
-    "settings": "Ètò"
+  "appName": "NexaFx",
+  "metadata": {
+    "title": "NexaFx",
+    "description": "Ìtàdé ọkọ ìjàní púpọ̀ lórí nẹ́tìwọ̀kì Stellar."
+  },
+  "home": {
+    "tagline": "Ìtàdé ọkọ ìjàní púpọ̀ lórí nẹ́tìwọ̀kì Stellar.",
+    "rebuild": "Ìtúnṣe v2 bẹ̀rẹ̀ ní ibí.",
+    "appName": "NexaFx"
+  },
+  "language": {
+    "heading": "Èdè",
+    "description": "Yan èdè tí a ń lò lórí gbogbo ojú-ìwé. Èyí yí ipa lórí ọ̀rọ̀ tí a ń hàn àti ọ̀nọ́ àti ọjọ́.",
+    "label": "Èdè ojú-ìwé",
+    "saved": "A ti ṣe àtúnṣe èdè náà."
   }
 }

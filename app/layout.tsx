@@ -1,125 +1,66 @@
-import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Inter, Manrope } from "next/font/google";
-import { Toaster } from "@/components/ui/toaster";
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages, getTranslations } from "next-intl/server";
 import "./globals.css";
-import { ToastViewport } from "@/components/ui/toast";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { PwaInstallPrompt } from "@/components/shared/pwa-install-prompt";
-import { LanguageSwitcher } from "@/components/shared/language-switcher";
-import { ThemeProvider } from "@/components/theme-provider";
-import { OfflineBanner } from "@/components/shared/offline-banner";
-import { SessionTimeoutWarning } from "@/components/shared/session-timeout-warning";
-import { GlobalSearch } from "@/components/shared/global-search";
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { QueryProvider } from "@/components/providers/query-provider";
+import { Toaster } from "@/app/(client)/toaster";
+import { resolveLocale } from "@/i18n/locale";
+import { SkipLink } from "@/components/a11y/skip-link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-  display: "swap",
 });
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
+export const instant = false;
 
-const manrope = Manrope({
-  subsets: ["latin"],
-  variable: "--font-manrope",
-  display: "swap",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await resolveLocale();
+  const t = await getTranslations({ locale, namespace: "metadata" });
 
-export const metadata: Metadata = {
-  title: {
-    default: "NexaFx — Multi-Currency Finance on Stellar",
-    template: "%s | NexaFx",
-  },
-  description:
-    "Convert, deposit, and transfer currencies instantly on the Stellar blockchain.",
-  keywords: [
-    "currency exchange",
-    "Stellar blockchain",
-    "cross-border payments",
-    "NGN to USD",
-    "crypto finance",
-  ],
-  authors: [{ name: "Nexacore" }],
-  creator: "Nexacore",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "NexaFx",
-  },
-  icons: {
-    apple: [
-      { url: "/icons/icon-152x152.png", sizes: "152x152", type: "image/png" },
-    ],
-  },
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "https://nexafx.io",
-    siteName: "NexaFx",
-    title: "NexaFx — Multi-Currency Finance on Stellar",
-    description:
-      "Convert, deposit, and transfer currencies instantly on the Stellar blockchain.",
-    images: [
-      { url: "/og-image.png", width: 1200, height: 630, alt: "NexaFx" },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "NexaFx — Multi-Currency Finance on Stellar",
-    description:
-      "Convert, deposit, and transfer currencies instantly on the Stellar blockchain.",
-    images: ["/og-image.png"],
-  },
-  robots: { index: true, follow: true },
-};
-
-export const viewport: Viewport = {
-  themeColor: "#F39A00",
-};
+  return {
+    title: t("title"),
+    description: t("description"),
+  };
+}
 
 export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
-  const messages = await getMessages();
+}) {
+  const locale = await resolveLocale();
+  const messages = await getMessages({ locale });
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} ${manrope.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <NextIntlClientProvider messages={messages}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <TooltipProvider>
-              <LanguageSwitcher />
-              {children}
-              <GlobalSearch />
-              <PwaInstallPrompt />
-              <OfflineBanner />
-              <SessionTimeoutWarning />
+    <html
+      lang={locale}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="flex min-h-full flex-col">
+        <SkipLink />
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <QueryProvider>
+            <AuthProvider>
+              <header role="banner" className="sr-only">
+                Site header
+              </header>
+              <main id="main-content" role="main" className="flex-1">
+                {children}
+              </main>
+              <footer role="contentinfo" className="sr-only">
+                Site footer
+              </footer>
               <Toaster />
-              <ToastViewport />
-            </TooltipProvider>
-          </ThemeProvider>
+            </AuthProvider>
+          </QueryProvider>
         </NextIntlClientProvider>
       </body>
     </html>

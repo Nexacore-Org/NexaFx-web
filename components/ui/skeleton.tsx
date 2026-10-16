@@ -1,32 +1,31 @@
-import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+"use client";
 
-const skeletonVariants = cva("animate-pulse bg-muted", {
-  variants: {
-    variant: {
-      text: "h-4 w-full rounded",
-      circle: "rounded-full",
-      rect: "rounded-md",
-    },
-  },
-  defaultVariants: {
-    variant: "rect",
-  },
-});
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 
-function Skeleton({
-  className,
-  variant,
-  ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof skeletonVariants>) {
+export function Skeleton({
+  width = "100%",
+  height = "16px",
+  animation = true,
+}: {
+  width?: string | number;
+  height?: string | number;
+  animation?: boolean;
+}) {
+  const reducedMotion = usePrefersReducedMotion();
+  const animate = animation && !reducedMotion;
+
   return (
     <div
-      data-slot="skeleton"
-      className={cn(skeletonVariants({ variant }), className)}
-      {...props}
+      aria-hidden="true"
+      style={{
+        width,
+        height,
+        backgroundColor: "#e5e7eb",
+        borderRadius: "4px",
+        animation: animate
+          ? "skeleton-pulse 1.5s ease-in-out infinite"
+          : undefined,
+      }}
     />
   );
 }
-
-export { Skeleton };

@@ -1,19 +1,14 @@
-import type { Metadata } from "next";
-import AdminLayoutClient from "./admin-layout-client";
-import { AdminErrorBoundary } from "@/components/shared/error-boundary";
-
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
-
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <AdminErrorBoundary>
-      <AdminLayoutClient>{children}</AdminLayoutClient>
-    </AdminErrorBoundary>
+    <div className="flex min-h-full flex-col items-start p-6">
+      <div className="sidebar">
+        <h2>Admin</h2>
+      </div>
+      <div className="content">{children}</div>
+    </div>
   );
 }

@@ -2,152 +2,178 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff } from "lucide-react";
-import { signUp } from "@/lib/api/auth";
-import { signupSchema, type SignupFormValues } from "@/lib/validations/auth";
-import { Input } from "@/components/ui/Input";
 
 export default function SignupPage() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [terms, setTerms] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [apiError, setApiError] = useState("");
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<SignupFormValues>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: { acceptTerms: true },
-  });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setPending(true);
 
-  const acceptTerms = watch("acceptTerms");
+    // Terms must be checked
+    if (!terms) {
+      setError("You must accept the terms and conditions");
+      setPending(false);
+      return;
+    }
 
-  const onSubmit = async (data: SignupFormValues) => {
-    setApiError("");
-    setIsLoading(true);
+    // Basic validation
+    if (!firstName.trim() || !lastName.trim()) {
+      setError("Name is required");
+      setPending(false);
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Valid email is required");
+      setPending(false);
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      setPending(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      setPending(false);
+      return;
+    }
+
     try {
-      await signUp({ email: data.email, phone: data.phone, password: data.password });
-      sessionStorage.setItem("signup_email", data.email);
-      router.push("/signup/verify");
-    } catch (err) {
-      setApiError(err instanceof Error ? err.message : "Something went wrong");
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firstName, lastName, email, phone, password }),
+        credentials: "include",
+      });
+
+      if (res.status === 409) {
+        setError("Email already taken");
+        setPending(false);
+        return;
+      }
+
+      if (!res.ok) {
+        setError("Failed to create account");
+        setPending(false);
+        return;
+      }
+
+      // On success, navigate to OTP verification carrying the email
+      router.replace(`/verify?email=${encodeURIComponent(email)}`);
+    } catch {
+      setError("Network error. Please try again.");
     } finally {
-      setIsLoading(false);
+      setPending(false);
     }
   };
 
   return (
-    <div className="w-full max-w-lg bg-card text-card-foreground rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 sm:p-12 animate-in fade-in zoom-in duration-500 border border-border/50">
-      <div className="text-center mb-10">
-        <h1 className="text-4xl font-bold text-foreground mb-2">Create an account</h1>
-        <p className="text-muted-foreground">Let&#39;s get started...</p>
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <Input
-          {...register("email")}
-          type="email"
-          placeholder="Email address"
-          error={errors.email?.message}
-          className="h-14 px-6 rounded-xl border bg-background border-zinc-200 dark:border-border outline-none focus:border-blue-500 focus:ring-blue-100"
-        />
-
-        <Input
-          {...register("phone")}
-          type="tel"
-          placeholder="Phone Number"
-          error={errors.phone?.message}
-          className="h-14 px-6 rounded-xl border bg-background border-zinc-200 dark:border-border outline-none focus:border-blue-500 focus:ring-blue-100"
-        />
-
-        <div className="relative">
-          <Input
-            {...register("password")}
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
-            error={errors.password?.message}
-            className="h-14 px-6 pr-14 rounded-xl border bg-background border-zinc-200 dark:border-border outline-none focus:border-blue-500 focus:ring-blue-100"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
+    <div className="max-w-md p-6">
+      <h2>Sign Up</h2>
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        <div>
+          <label
+            className="mb-2 block text-sm font-medium"
+            htmlFor="first-name"
           >
-            {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
-          </button>
+            First Name
+          </label>
+          <input
+            id="first-name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+            className="w-full appearance-none rounded border border-gray-400 px-3 py-2 leading-tight text-gray-700 shadow focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            placeholder="first name"
+          />
         </div>
 
-        <div className="relative">
-          <Input
-            {...register("confirmPassword")}
-            type={showConfirmPassword ? "text" : "password"}
-            placeholder="Confirm Password"
-            error={errors.confirmPassword?.message}
-            className="h-14 px-6 pr-14 rounded-xl border bg-background border-zinc-200 dark:border-border outline-none focus:border-blue-500 focus:ring-blue-100"
+        <div>
+          <label className="mb-2 block text-sm font-medium" htmlFor="last-name">
+            Last Name
+          </label>
+          <input
+            id="last-name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+            className="w-full appearance-none rounded border border-gray-400 px-3 py-2 leading-tight text-gray-700 shadow focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            placeholder="last name"
           />
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {showConfirmPassword ? <EyeOff size={22} /> : <Eye size={22} />}
-          </button>
         </div>
 
-        <div className="flex items-center gap-3 pt-2">
-          <div className="relative flex items-center">
+        <div>
+          <label className="mb-2 block text-sm font-medium" htmlFor="email">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full appearance-none rounded border border-gray-400 px-3 py-2 leading-tight text-gray-700 shadow focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            placeholder="enter your email"
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium" htmlFor="phone">
+            Phone (optional)
+          </label>
+          <input
+            id="phone"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className="w-full appearance-none rounded border border-gray-400 px-3 py-2 leading-tight text-gray-700 shadow focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            placeholder="enter your phone (optional)"
+          />
+          <p className="text-xs text-gray-500">
+            E.164 format (e.g., +1234567890)
+          </p>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium">
             <input
               type="checkbox"
-              id="terms"
-              {...register("acceptTerms")}
-              className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-zinc-300 dark:border-border transition-all checked:bg-orange-500 checked:border-orange-500"
+              checked={terms}
+              onChange={(e) => setTerms(e.target.checked)}
+              className="gray-500 rounded border"
             />
-            <svg
-              className="pointer-events-none absolute h-5 w-5 stroke-white opacity-0 peer-checked:opacity-100"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <label htmlFor="terms" className="text-sm font-medium text-muted-foreground cursor-pointer">
-            By clicking, I accept{" "}
-            <span className="text-orange-500 hover:underline">terms</span> and{" "}
-            <span className="text-orange-500 hover:underline">conditions</span> of this project
+            I accept the <a href="/terms">Terms of Service</a> and{" "}
+            <a href="/privacy">Privacy Policy</a>
           </label>
         </div>
-        {errors.acceptTerms && (
-          <p className="text-xs text-red-500">{errors.acceptTerms.message}</p>
-        )}
-
-        {apiError && <p className="text-xs text-red-500 text-center">{apiError}</p>}
 
         <button
           type="submit"
-          disabled={isLoading || !acceptTerms}
-          className="w-full h-16 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl shadow-[0_4px_14px_0_rgb(249,115,22,0.39)] transition-all hover:scale-[1.01] active:scale-[0.99] mt-6"
+          disabled={pending}
+          className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
         >
-          {isLoading ? (
-            <div className="flex items-center justify-center gap-2">
-              <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>Processing...</span>
-            </div>
-          ) : (
-            "Create an account"
-          )}
+          {pending ? "Creating account..." : "Sign Up"}
         </button>
       </form>
+
+      <p className="mt-4 text-center text-sm">
+        Already have an account? <a href="/login">Sign in</a>
+      </p>
     </div>
   );
 }

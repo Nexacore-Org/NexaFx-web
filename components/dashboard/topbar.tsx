@@ -1,197 +1,78 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Bell, Menu, User, Moon, Sun, HelpCircle, Search } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useTheme } from "next-themes";
-import { useSidebarStore } from "@/hooks/use-sidebar-store";
-import { useNotificationsStore } from "@/hooks/use-notifications-store";
-import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
-import { KeyboardShortcutsModal } from "@/components/shared/keyboard-shortcuts-modal";
-import { NotificationsPanel } from "@/components/notifications";
-import { LanguageSwitcher } from "@/components/shared/language-switcher";
-import { GlobalSearch } from "@/components/shared/global-search";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { deriveTitle } from "@/lib/navigation";
+import { useAuth } from "@/components/providers/auth-provider";
+import { NotificationBell } from "@/components/notifications/notification-bell";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 
 export function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const openSidebar = useSidebarStore((state) => state.open);
-  const [shortcutsModalOpen, setShortcutsModalOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const { user, logout, displayName } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const { theme, setTheme } = useTheme();
-  const isDarkMode = theme === "dark";
-
-  const {
-    unreadCount,
-    fetchUnreadCount,
-    toggle: toggleNotifications,
-  } = useNotificationsStore();
-
-  useEffect(() => {
-    fetchUnreadCount();
-  }, [fetchUnreadCount]);
-
-  const toggleTheme = () => {
-    setTheme(isDarkMode ? "light" : "dark");
+  const handleLogout = () => {
+    setMenuOpen(false);
+    logout();
+    router.push("/login");
   };
 
-  const shortcuts = [
-    {
-      keys: "g d",
-      handler: () => router.push("/dashboard"),
-      description: "Go to Dashboard",
-      category: "Navigation" as const,
-    },
-    {
-      keys: "g t",
-      handler: () => router.push("/transactions"),
-      description: "Go to Transactions",
-      category: "Navigation" as const,
-    },
-    {
-      keys: "g c",
-      handler: () => router.push("/convert"),
-      description: "Go to Convert",
-      category: "Navigation" as const,
-    },
-    {
-      keys: "g s",
-      handler: () => router.push("/settings"),
-      description: "Go to Settings",
-      category: "Navigation" as const,
-    },
-    {
-      keys: "?",
-      handler: () => setShortcutsModalOpen(true),
-      description: "Show keyboard shortcuts",
-      category: "General" as const,
-    },
-    {
-      keys: "Escape",
-      handler: () => setShortcutsModalOpen(false),
-      description: "Close modal",
-      category: "General" as const,
-    },
-    {
-      keys: "cmd k",
-      handler: () => setSearchOpen(true),
-      description: "Open search",
-      category: "General" as const,
-    },
-  ];
-  useKeyboardShortcuts(shortcuts);
-
-  // Format title from pathname: /dashboard -> Dashboard
-  const title = pathname.split("/").filter(Boolean).pop() || "Dashboard";
-  const capitalisedTitle = title.charAt(0).toUpperCase() + title.slice(1);
-
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
   return (
-    <>
-      <GlobalSearch isOpen={searchOpen} setIsOpen={setSearchOpen} />
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={openSidebar}
-            className="md:hidden flex items-center justify-center min-h-[44px] min-w-[44px] p-2 hover:bg-muted rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
-            aria-label="Open navigation menu"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">
-            {capitalisedTitle}
-          </h1>
-        </div>
+    <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4">
+      <h1 className="text-base font-semibold text-gray-900">
+        {deriveTitle(pathname)}
+      </h1>
 
-        <div className="flex items-center gap-2 sm:gap-4">
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2 hover:bg-muted rounded-full transition-colors text-foreground focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
-            aria-label="Open search"
-          >
-            <Search className="h-5 w-5" />
-          </button>
-          <LanguageSwitcher />
+      <div className="flex items-center gap-2">
+        <NotificationBell />
 
+        <div className="relative">
           <button
-            onClick={toggleTheme}
-            className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2 hover:bg-muted rounded-full transition-colors text-foreground focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
-            aria-label={
-              isDarkMode ? "Switch to light mode" : "Switch to dark mode"
-            }
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            className="flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
           >
-            {mounted ? (
-              isDarkMode ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )
-            ) : (
-              <span className="h-5 w-5" />
-            )}
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+              {(user ? displayName(user) : "N").charAt(0).toUpperCase()}
+            </span>
+            <span className="hidden sm:inline">
+              {user ? displayName(user) : "Account"}
+            </span>
           </button>
 
-          <button
-            onClick={() => setShortcutsModalOpen(true)}
-            className="hidden md:flex items-center justify-center min-h-[44px] min-w-[44px] p-2 hover:bg-muted rounded-full transition-colors text-foreground focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
-            aria-label="Keyboard shortcuts (?)"
-            title="Keyboard shortcuts (?)"
-          >
-            <HelpCircle className="h-5 w-5" />
-          </button>
-
-          <div className="relative">
-            {/* Mobile: Link to notifications page */}
-            <Link
-              href="/notifications"
-              className="md:hidden relative flex items-center justify-center min-h-[44px] min-w-[44px] p-2 hover:bg-muted rounded-full transition-colors text-foreground focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
-              aria-label={`View notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ""}`}
+          {menuOpen && (
+            <div
+              role="menu"
+              className="absolute right-0 z-50 mt-2 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg"
             >
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <span
-                  className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border-2 border-background"
-                  aria-label={`${unreadCount} unread notifications`}
-                />
-              )}
-            </Link>
-
-            {/* Desktop: Toggle notifications panel */}
-            <button
-              onClick={toggleNotifications}
-              className="hidden md:block relative p-2 hover:bg-muted rounded-full transition-colors text-foreground focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
-              aria-label={`Toggle notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ""}`}
-            >
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <span
-                  className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border-2 border-background"
-                  aria-label={`${unreadCount} unread notifications`}
-                />
-              )}
-            </button>
-
-            {/* Desktop notifications panel */}
-            <div className="hidden md:block">
-              <NotificationsPanel />
+              <Link
+                href="/profile"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                Profile
+              </Link>
+              <div className="px-4 py-2">
+                <ThemeToggle />
+              </div>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleLogout}
+                className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+              >
+                Log out
+              </button>
             </div>
-          </div>
-
-          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
-            <User className="h-6 w-6 text-muted-foreground" />
-          </div>
+          )}
         </div>
-      </header>
-
-      <KeyboardShortcutsModal
-        shortcuts={shortcuts}
-        isOpen={shortcutsModalOpen}
-        onClose={() => setShortcutsModalOpen(false)}
-      />
-    </>
+      </div>
+    </header>
   );
 }

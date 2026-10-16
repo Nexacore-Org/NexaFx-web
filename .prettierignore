@@ -1,9 +1,6 @@
 .next
 node_modules
-out
-build
-coverage
-playwright-report
-test-results
-frontend
-backend
+package-lock.json
+next-env.d.ts
+app/turbo.json
+app/field.json

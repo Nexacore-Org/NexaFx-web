@@ -1,321 +1,163 @@
-import { useAuthStore } from "@/hooks/use-auth-store";
-import * as Sentry from "@sentry/nextjs";
-import { parseRetryAfter } from "./utils/retry-after";
-
-// ---------------------------------------------------------------------------
-// Startup guard — NEXT_PUBLIC_API_URL is required for every API call.
-// Throwing at module-load time surfaces the misconfiguration immediately
-// during `next dev` or `next build` instead of silently failing at runtime.
-// ---------------------------------------------------------------------------
-if (typeof process !== "undefined" && !process.env.NEXT_PUBLIC_API_URL) {
-  throw new Error(
-    "[NexaFx] NEXT_PUBLIC_API_URL is not set. " +
-      "Add it to your .env.local file. " +
-      "See .env.example for the required variables.",
-  );
+export interface RequestOptions {
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  body?: unknown;
+  query?: Record<string, string | number | boolean | string[]>;
+  headers?: Record<string, string>;
 }
 
-export class RateLimitError extends Error {
-  retryAfterSeconds: number;
-
-  constructor(retryAfterSeconds: number) {
-    super("Rate limit exceeded");
-    this.name = "RateLimitError";
-    this.retryAfterSeconds = retryAfterSeconds;
-  }
+export interface ApiErrorInit {
+  status: number | null;
+  code: string | null;
+  message: string;
+  details: unknown | null;
+  isNetworkError: boolean;
 }
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
-const PROXY_URL = "/api/proxy";
-const MAX_AUTH_RETRIES = 1;
-
-/**
- * API modules should use the default `useProxy: true` for requests that can be
- * routed through Next.js. The proxy translates the browser's `x-client-token`
- * into the backend's `Authorization` header and keeps that token forwarding in
- * one place. Use `useProxy: false` only for modules that call the backend
- * directly and therefore depend on backend CORS configuration (currently auth,
- * users, notifications, currencies, and similar user-scoped APIs). See the
- * "Proxy and Token Behaviour" section of API_AUDIT.md for the module list and
- * the security rationale behind this distinction.
- */
-
-export const OFFLINE_STALE_DATA_MESSAGE =
-  "You're offline. This data may be out of date.";
-export const OFFLINE_EMPTY_DATA_MESSAGE =
-  "Unable to load — you appear to be offline.";
 
 export class ApiError extends Error {
-  status: number;
+  status: number | null;
+  code: string | null;
+  details: unknown | null;
+  isNetworkError: boolean;
 
-  constructor(message: string, status: number) {
+  constructor({
+    status,
+    code,
+    message,
+    details,
+    isNetworkError,
+  }: ApiErrorInit) {
     super(message);
     this.name = "ApiError";
     this.status = status;
-  }
-}
-
-export class OfflineError extends ApiError {
-  constructor(message = "No internet connection") {
-    super(message, 0);
-    this.name = "OfflineError";
+    this.code = code;
+    this.message = message;
+    this.details = details;
+    this.isNetworkError = isNetworkError;
   }
 }
 
 /**
- * Thrown by a direct (non-proxied, `useProxy: false`) API call when `fetch`
- * fails before a response is received. This is distinct from a normal HTTP
- * error response (which has a real status code) and from being offline: it
- * almost always means either the backend hasn't been configured to allow
- * cross-origin requests from this app's origin (CORS), or NEXT_PUBLIC_API_URL
- * points at a host the browser cannot reach.
+ * A 401 handler registered by the auth layer. It returns `true` when the
+ * request was refreshed and should be retried once, or `false` when recovery
+ * is not possible (e.g. the refresh token itself expired).
  */
-export class DirectApiUnreachableError extends ApiError {
-  constructor(url: string) {
-    super(
-      `Unable to reach ${url}. This usually means the backend hasn't been ` +
-        "configured to allow requests from this app's origin (CORS), or " +
-        "NEXT_PUBLIC_API_URL is pointing at a host that isn't reachable. " +
-        "Check the browser console for a CORS error and confirm " +
-        "NEXT_PUBLIC_API_URL is set correctly.",
-      0,
-    );
-    this.name = "DirectApiUnreachableError";
-  }
+export type UnauthorizedHandler = (path: string) => Promise<boolean>;
+
+let unauthorizedHandler: UnauthorizedHandler | null = null;
+
+export function setUnauthorizedHandler(
+  handler: UnauthorizedHandler | null,
+): void {
+  unauthorizedHandler = handler;
 }
 
-export function isOfflineError(error: unknown): error is OfflineError {
-  return error instanceof OfflineError;
-}
-
-export function isDirectApiUnreachableError(
-  error: unknown,
-): error is DirectApiUnreachableError {
-  return error instanceof DirectApiUnreachableError;
-}
-
-export function getOfflineMessage(hasCachedData: boolean) {
-  return hasCachedData
-    ? OFFLINE_STALE_DATA_MESSAGE
-    : OFFLINE_EMPTY_DATA_MESSAGE;
-}
-
-export function getRequestErrorMessage(
-  error: unknown,
-  options: {
-    fallback: string;
-    hasCachedData?: boolean;
-  },
-) {
-  if (isOfflineError(error)) {
-    return getOfflineMessage(Boolean(options.hasCachedData));
-  }
-
-  return error instanceof Error ? error.message : options.fallback;
-}
-
-interface RequestOptions extends RequestInit {
-  params?: Record<string, string>;
-  useProxy?: boolean;
-}
-
-let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
-
-function subscribeTokenRefresh(cb: (token: string) => void) {
-  refreshSubscribers.push(cb);
-}
-
-function onRefreshed(token: string) {
-  refreshSubscribers.map((cb) => cb(token));
-  refreshSubscribers = [];
-}
-
-function captureApiError(error: ApiError, endpoint: string) {
-  Sentry.captureException(error, {
-    extra: {
-      endpoint,
-      status: error.status,
+async function execute(
+  url: string,
+  { method, body, headers }: RequestOptions,
+): Promise<Response> {
+  return fetch(url, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...headers,
     },
+    body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(10000),
   });
 }
 
-async function refreshToken(): Promise<string | null> {
-  const refreshTokenStr =
-    typeof window !== "undefined"
-      ? localStorage.getItem("refresh_token")
-      : null;
-  if (!refreshTokenStr) return null;
+async function parseResponse<T>(res: Response): Promise<T> {
+  const contentType = res.headers.get("content-type");
 
-  try {
-    const response = await fetch(`${BASE_URL}/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken: refreshTokenStr }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to refresh token");
+  if (contentType && contentType.includes("application/json")) {
+    const data = await res.json();
+    if (!res.ok) {
+      throw new ApiError({
+        status: res.status,
+        code: data?.code ?? null,
+        message: data?.message ?? `Request failed with status ${res.status}`,
+        details: data ?? null,
+        isNetworkError: false,
+      });
     }
-
-    const data = await response.json();
-    const { accessToken, refreshToken: newRefreshToken } = data;
-
-    if (accessToken && newRefreshToken) {
-      useAuthStore.getState().setTokens(accessToken, newRefreshToken);
-      return accessToken;
-    }
-    return null;
-  } catch (error) {
-    console.error("Refresh token error:", error);
-    useAuthStore.getState().logout();
-    return null;
+    return data as T;
   }
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new ApiError({
+      status: res.status,
+      code: null,
+      message: `Request failed with status ${res.status}`,
+      details: text.substring(0, 200),
+      isNetworkError: false,
+    });
+  }
+
+  const text = await res.text();
+  throw new ApiError({
+    status: res.status,
+    code: null,
+    message: "Unexpected non-JSON response",
+    details: text.substring(0, 200),
+    isNetworkError: false,
+  });
 }
 
-export async function apiClient<T>(
+export async function apiRequest<T>(
   path: string,
-  options: RequestOptions = {},
+  { method = "GET", body, query, headers }: RequestOptions = {},
 ): Promise<T> {
-  if (typeof navigator !== "undefined" && !navigator.onLine) {
-    throw new OfflineError("No internet connection");
+  // Build URL with query string
+  const baseUrl =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "http://localhost:3000";
+  const url = new URL(path, baseUrl);
+
+  // Add query parameters safely
+  if (query) {
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        const arr = Array.isArray(value) ? value : [value];
+        arr.forEach((item) => url.searchParams.append(key, String(item)));
+      }
+    });
   }
 
-  const { params, useProxy = true, ...fetchOptions } = options;
+  try {
+    const options: RequestOptions = { method, body, headers };
+    let res = await execute(url.toString(), options);
 
-  let url = "";
-  if (useProxy) {
-    url = `${PROXY_URL}${path.startsWith("/") ? path : `/${path}`}`;
-  } else {
-    url = `${BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
-  }
-
-  const searchParams = new URLSearchParams();
-  if (params) {
-    Object.keys(params).forEach((key) => searchParams.append(key, params[key]));
-  }
-  const finalUrl = searchParams.toString()
-    ? `${url}?${searchParams.toString()}`
-    : url;
-
-  const getHeaders = () => {
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("access_token")
-        : null;
-    const headers = new Headers(fetchOptions.headers || {});
-    if (!headers.has("Content-Type")) {
-      headers.set("Content-Type", "application/json");
-    }
-    if (token) {
-      if (useProxy) {
-        headers.set("x-client-token", token);
-      } else {
-        // When not using the proxy, send the Authorization header with Bearer token
-        headers.set("Authorization", `Bearer ${token}`);
+    // On 401, give the auth layer a chance to refresh and retry once.
+    if (res.status === 401 && unauthorizedHandler) {
+      const recovered = await unauthorizedHandler(path);
+      if (recovered) {
+        res = await execute(url.toString(), options);
       }
     }
 
-    return headers;
-  };
+    return await parseResponse<T>(res);
+  } catch (err: unknown) {
+    if (err instanceof ApiError) throw err;
 
-  const executeRequest = async (): Promise<Response> => {
-    try {
-      return await fetch(finalUrl, {
-        ...fetchOptions,
-        headers: getHeaders(),
-      });
-    } catch (error) {
-      if (typeof navigator !== "undefined" && !navigator.onLine) {
-        throw new OfflineError("No internet connection");
-      }
-
-      // A direct (non-proxied) call depends on the backend's CORS config
-      // and on NEXT_PUBLIC_API_URL being correct. When fetch fails before
-      // producing a response here -- while the browser reports itself
-      // online -- that's the likely cause, so surface a clearer, more
-      // actionable error instead of the raw (often just "Failed to
-      // fetch") error.
-      if (!useProxy) {
-        throw new DirectApiUnreachableError(finalUrl);
-      }
-
-      throw error;
-    }
-  };
-
-  let authRetryCount = 0;
-  let response = await executeRequest();
-
-  if (response.status === 401 && authRetryCount < MAX_AUTH_RETRIES) {
-    authRetryCount += 1;
-    if (!isRefreshing) {
-      isRefreshing = true;
-      const newToken = await refreshToken();
-      isRefreshing = false;
-      if (newToken) {
-        onRefreshed(newToken);
-      } else {
-        refreshSubscribers = [];
-        const data = await response
-          .clone()
-          .json()
-          .catch(() => ({}));
-        const error = new ApiError(
-          data?.message || "Unauthorized",
-          response.status,
-        );
-        captureApiError(error, finalUrl);
-        throw error;
-      }
-    } else {
-      return new Promise<T>((resolve, reject) => {
-        subscribeTokenRefresh(async () => {
-          try {
-            const retryResponse = await executeRequest();
-            if (retryResponse.status === 401) {
-              useAuthStore.getState().logout();
-            }
-            if (!retryResponse.ok) {
-              const data = await retryResponse.json().catch(() => ({}));
-              const error = new ApiError(
-                data?.message ||
-                  `Request failed with status ${retryResponse.status}`,
-                retryResponse.status,
-              );
-              captureApiError(error, finalUrl);
-              reject(error);
-              return;
-            }
-            resolve(await retryResponse.json());
-          } catch (err) {
-            reject(err);
-          }
-        });
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new ApiError({
+        status: 0,
+        code: "REQUEST_TIMEOUT",
+        message: "Request timed out",
+        details: null,
+        isNetworkError: true,
       });
     }
 
-    response = await executeRequest();
-    if (response.status === 401) {
-      useAuthStore.getState().logout();
-    }
+    // Network error
+    throw new ApiError({
+      status: 0,
+      code: "NETWORK_ERROR",
+      message: "Network error. Please check your connection.",
+      details: err instanceof Error ? err.message : String(err),
+      isNetworkError: true,
+    });
   }
-
-  if (response.status === 429) {
-    const retryAfterHeader = response.headers.get("Retry-After");
-    const retryAfterSeconds = parseRetryAfter(retryAfterHeader);
-    throw new RateLimitError(retryAfterSeconds);
-  }
-
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    const error = new ApiError(
-      data?.message || `Request failed with status ${response.status}`,
-      response.status,
-    );
-    captureApiError(error, finalUrl);
-    throw error;
-  }
-
-  return response.json();
 }

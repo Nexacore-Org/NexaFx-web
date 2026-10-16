@@ -1,264 +1,150 @@
 "use client";
 
-import { ChevronDown, Download, Upload, CircleDollarSign } from "lucide-react";
-import { useEffect, useState } from "react";
-import { getBalances } from "@/lib/api/wallet";
-import { getProfile } from "@/lib/api/users";
-import { CopyButton } from "@/components/ui/copy-button";
+import { useState } from "react";
+import { useWallets } from "@/hooks/use-wallets";
+import { usePersistedFlag } from "@/hooks/use-persisted-flag";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWebSocket } from "@/hooks/use-websocket";
-import { useAuthStore } from "@/hooks/use-auth-store";
+import { CurrencyIcon } from "@/components/shared/currency-icon";
+import { formatMoney } from "@/lib/money";
+import { notify } from "@/lib/notify";
+import type { WalletBalance } from "@/lib/api/wallets";
 
-const truncateAddress = (addr: string) =>
-  `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+const HIDDEN_KEY = "nexafx.balances-hidden";
+const MASK = "••••••";
 
-// Constructing an Intl.NumberFormat is comparatively expensive, and
-// formatCurrency is called on every balance render — cache one formatter per
-// locale/currency pair and reuse it instead of rebuilding one per call.
-const numberFormatCache = new Map<string, Intl.NumberFormat>();
-
-function getNumberFormatter(
-  locale: string,
-  currency: string,
-): Intl.NumberFormat {
-  const key = `${locale}|${currency}`;
-  let formatter = numberFormatCache.get(key);
-  if (!formatter) {
-    formatter = new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency,
-    });
-    numberFormatCache.set(key, formatter);
-  }
-  return formatter;
+function BalanceRow({
+  wallet,
+  hidden,
+}: {
+  wallet: WalletBalance;
+  hidden: boolean;
+}) {
+  return (
+    <li className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
+      <span className="flex items-center gap-3">
+        <CurrencyIcon code={wallet.currency} />
+        <span className="text-sm font-medium text-gray-900">
+          {wallet.currency}
+        </span>
+      </span>
+      <span className="text-sm font-semibold text-gray-900 tabular-nums">
+        {hidden ? MASK : formatMoney(wallet.balance, wallet.currency)}
+      </span>
+    </li>
+  );
 }
 
-export function formatCurrency(
-  amount: string | number | undefined,
-  currency: string,
-) {
-  if (amount === undefined || amount === null || amount === "") return "";
-  const raw =
-    typeof amount === "string"
-      ? amount.replace(/[^0-9.-]+/g, "")
-      : String(amount);
-  const num = Number(raw);
-  if (!Number.isFinite(num)) return String(amount);
-  try {
-    const locale = currency === "NGN" ? "en-NG" : "en-US";
-    return getNumberFormatter(locale, currency).format(num);
-  } catch {
-    return String(amount);
-  }
+function LoadingState() {
+  return (
+    <div className="space-y-3" aria-hidden="true">
+      {[0, 1, 2].map((row) => (
+        <div
+          key={row}
+          className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3"
+        >
+          <Skeleton width={120} height={20} />
+          <Skeleton width={80} height={20} />
+        </div>
+      ))}
+    </div>
+  );
 }
 
-/**
- * Build a currency→balance lookup from the `getBalances()` response shape
- * ({ currency, balance }[]) and pull out the NGN and USD figures. Keys are
- * upper-cased so a lower/mixed-case `currency` (e.g. "ngn") still resolves —
- * the case-insensitive fallback the old `balanceMap["NGN"] ?? balanceMap["NGN"]`
- * no-op was meant to provide but never did.
- */
-export function resolveBalances(
-  balances:
-    { currency?: string; balance?: string | number }[] | null | undefined,
-): { ngn: string; usd: string } {
-  const balanceMap: Record<string, string> = {};
-  for (const b of balances ?? []) {
-    if (!b || !b.currency) continue;
-    balanceMap[String(b.currency).toUpperCase()] = String(b.balance ?? "");
-  }
-  return { ngn: balanceMap["NGN"] ?? "", usd: balanceMap["USD"] ?? "" };
-}
+export function AccountOverview() {
+  const { data, isPending, isError, refetch, isFetching } = useWallets();
+  const [hidden, setHidden] = usePersistedFlag(HIDDEN_KEY);
+  const [copied, setCopied] = useState(false);
 
-type AccountOverviewTypes = {
-  openDeposit: boolean;
-  onDepositClick?: () => void;
-  onWithdrawClick?: () => void;
-};
-
-export function AccountOverview({
-  openDeposit,
-  onDepositClick,
-  onWithdrawClick,
-}: AccountOverviewTypes) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [walletAddress, setWalletAddress] = useState("");
-  const [balance, setBalance] = useState("");
-  const [ngnBalance, setNgnBalance] = useState("");
-  const [usdBalance, setUsdBalance] = useState("");
-
-  const wsBalance = useWebSocket((s) => s.balance);
-  const accessToken = useAuthStore((s) => s.accessToken);
-  const subscribe = useWebSocket((s) => s.subscribe);
-
-  useEffect(() => {
-    if (accessToken) {
-      subscribe(accessToken);
+  const handleCopy = async () => {
+    const address = data?.depositAddress;
+    if (!address) return;
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      notify.success("Deposit address copied");
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      notify.error("Could not copy the address");
     }
-  }, [accessToken, subscribe]);
-
-  useEffect(() => {
-    if (wsBalance && wsBalance.length > 0) {
-      setError(null);
-
-      const ngnItem = wsBalance.find((b) => b.currency.toUpperCase() === "NGN");
-      const usdItem = wsBalance.find((b) => b.currency.toUpperCase() === "USD");
-      const firstItem = wsBalance[0];
-
-      if (ngnItem) {
-        setBalance(formatCurrency(ngnItem.balance, "NGN"));
-      } else if (usdItem) {
-        setBalance(formatCurrency(usdItem.balance, "USD"));
-      } else {
-        setBalance(formatCurrency(firstItem.balance, firstItem.currency));
-      }
-    }
-  }, [wsBalance]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    let cancelled = false;
-
-    const fetchAccount = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const [profile, balances] = await Promise.all([
-          getProfile(),
-          getBalances(),
-        ]);
-
-        if (cancelled) return;
-
-        const addr = profile?.walletAddress ?? "";
-        setWalletAddress(addr);
-
-        const { ngn, usd } = resolveBalances(balances);
-
-        const formattedNgn = ngn ? formatCurrency(ngn, "NGN") : "";
-        const formattedUsd = usd ? formatCurrency(usd, "USD") : "";
-
-        setNgnBalance(formattedNgn);
-        setUsdBalance(formattedUsd);
-
-        setBalance(formattedNgn || formattedUsd || "");
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        console.error("Failed to load account data", err);
-        setError("Failed to load account data");
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    fetchAccount();
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, []);
+  };
 
   return (
-    <section className="account-overview-bg rounded-b-xl md:rounded-b-none md:ml-4">
-      <div className="relative space-y-5 md:space-y-10 overflow-hidden p-3 md:p-4">
-        {openDeposit ? (
-          <></>
-        ) : (
-          <>
-            {/* Balance row */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              {isLoading ? (
-                <div className="space-y-2.5">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-9 w-44" />
-                </div>
-              ) : error ? (
-                <p className="text-sm text-red-500">{error}</p>
-              ) : (
-                <div className="space-y-2.5">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total balance
-                  </p>
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-black">
-                    {balance}
-                  </h2>
-                </div>
-              )}
-
-              {/* Wallet address pill — desktop only */}
-              {isLoading ? (
-                <Skeleton className="hidden md:block h-9 w-36" />
-              ) : !error ? (
-                <div className="hidden md:inline-flex md:items-center gap-2 bg-muted rounded-sm border border-border px-4 py-2">
-                  <p className="text-xs font-medium text-foreground">
-                    {truncateAddress(walletAddress)}
-                  </p>
-                  <CopyButton
-                    value={walletAddress}
-                    label="Copy wallet address"
-                    size="sm"
-                  />
-                </div>
-              ) : null}
-            </div>
-
-            {/* Action buttons — always visible */}
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
-              <button
-                onClick={onDepositClick}
-                className="flex cursor-pointer items-center justify-center gap-2 rounded-sm bg-primary px-6 sm:px-8 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all active:scale-95"
-              >
-                <Download className="size-5" />
-                Deposit
-              </button>
-              <button
-                onClick={onWithdrawClick}
-                className="flex cursor-pointer items-center justify-center gap-2 rounded-sm bg-muted px-6 sm:px-8 py-2.5 text-sm font-semibold text-foreground hover:bg-muted/80 transition-all active:scale-95 border border-border"
-              >
-                <Upload className="size-5" />
-                Withdraw
-              </button>
-            </div>
-
-            {/* Mini balance cards */}
-            {isLoading ? (
-              <div className="grid w-full grid-cols-1 md:grid-cols-2 gap-4">
-                <Skeleton className="h-20 rounded-sm" />
-                <Skeleton className="h-20 rounded-sm" />
-              </div>
-            ) : !error ? (
-              <div className="grid w-full grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="rounded-sm w-full bg-card p-2.5 md:p-4 md:border-[0.43px] border-[#79797966] shadow-[4px-4px-12px-0px-#0000001A] flex flex-col">
-                  <div className="flex items-center justify-between mb-2 grow">
-                    <p className="text-xl font-medium text-foreground">NGN</p>
-                  </div>
-                  <p className="text-base md:text-xl font-semibold">
-                    {ngnBalance}
-                  </p>
-                </div>
-
-                <div className="rounded-sm w-full bg-card p-2.5 md:p-4 md:border-[0.43px] border-[#79797966] shadow-[4px-4px-12px-0px-#0000001A]">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2 bg-muted p-2 rounded-md">
-                      <CircleDollarSign className="w-6 h-6 text-foreground" />
-                      <p className="text-xs font-medium text-muted-foreground">
-                        USD
-                      </p>
-                      <ChevronDown className="size-5 text-foreground" />
-                    </div>
-                  </div>
-                  <p className="text-base md:text-xl font-semibold">
-                    {usdBalance}
-                  </p>
-                </div>
-              </div>
-            ) : null}
-          </>
-        )}
+    <section aria-labelledby="account-overview-heading">
+      <div className="mb-4 flex items-center justify-between">
+        <h2
+          id="account-overview-heading"
+          className="text-lg font-semibold text-gray-900"
+        >
+          Account overview
+        </h2>
+        <button
+          type="button"
+          onClick={() => setHidden(!hidden)}
+          aria-pressed={hidden}
+          className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+        >
+          {hidden ? "Show balances" : "Hide balances"}
+        </button>
       </div>
+
+      {isPending ? (
+        <LoadingState />
+      ) : isError ? (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
+          <p>We couldn&apos;t load your balances.</p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="mt-3 rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
+          >
+            Try again
+          </button>
+        </div>
+      ) : data.balances.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
+          You don&apos;t have any balances yet.
+        </p>
+      ) : (
+        <>
+          <ul className="space-y-3">
+            {data.balances.map((wallet) => (
+              <BalanceRow
+                key={wallet.currency}
+                wallet={wallet}
+                hidden={hidden}
+              />
+            ))}
+          </ul>
+          {isFetching && (
+            <p className="mt-2 text-xs text-gray-400" aria-live="polite">
+              Refreshing…
+            </p>
+          )}
+        </>
+      )}
+
+      {data?.depositAddress && (
+        <div className="mt-6 rounded-lg border border-gray-200 p-4">
+          <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
+            Deposit address
+          </p>
+          <div className="mt-2 flex items-center gap-3">
+            <code className="truncate rounded bg-gray-100 px-2 py-1 text-xs text-gray-800">
+              {data.depositAddress}
+            </code>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="shrink-0 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            >
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

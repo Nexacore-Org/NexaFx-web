@@ -1,15 +1,23 @@
+"use client";
+
 import { useState, useEffect } from "react";
 
-export function useDebouncedValue<T>(value: T, delayMs: number): T {
-  const [debouncedValue, setDebouncedValue] = useState(value);
+/**
+ * Returns a debounced copy of `value` that only updates after `delay` ms of
+ * no new changes. Useful for deferring search / filter API calls until the
+ * user pauses typing.
+ *
+ * @example
+ * const debouncedQuery = useDebouncedValue(inputValue, 300);
+ * // debouncedQuery will lag behind inputValue by 300 ms of inactivity.
+ */
+export function useDebouncedValue<T>(value: T, delay = 300): T {
+  const [debounced, setDebounced] = useState<T>(value);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delayMs);
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
 
-    return () => clearTimeout(timer);
-  }, [value, delayMs]);
-
-  return debouncedValue;
+  return debounced;
 }

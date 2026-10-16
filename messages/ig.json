@@ -1,10 +1,18 @@
 {
-  "Navigation": {
-    "dashboard": "Nchịkọta",
-    "convert": "Gbanwee",
-    "deposit": "Nkwụnye ego",
-    "withdraw": "Wepụ ego",
-    "transactions": "Azụmahịa",
-    "settings": "Ntọala"
+  "appName": "NexaFx",
+  "metadata": {
+    "title": "NexaFx",
+    "description": "Mgba ego dị iche n'elu netwọọkị Stellar."
+  },
+  "home": {
+    "tagline": "Mgba ego dị iche n'elu netwọọkị Stellar.",
+    "rebuild": "Mgbalị v2 na-akpọmalite ebe a.",
+    "appName": "NexaFx"
+  },
+  "language": {
+    "heading": "Ọụọọ ma",
+    "description": "Họrọ ọụọọ a ga-eji na saịtị ahụ. Nke a ga-emetụta edemede na ọtụtụ nọmba na ụbọchị.",
+    "label": "Ọụọọ saịtị",
+    "saved": "Emelitela ọụọọ ahụ."
   }
 }

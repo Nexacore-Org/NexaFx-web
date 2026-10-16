@@ -1,241 +1,413 @@
 "use client";
 
-import { useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
-import { Copy, Check, Shield, ShieldOff, Key, Download } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { notify } from "../../lib/notify";
+import {
+  TWO_FACTOR_SUPPORTED,
+  beginTwoFactorSetup,
+  confirmTwoFactorSetup,
+  disableTwoFactor,
+  fetchTwoFactorStatus,
+  TwoFactorInvalidCodeError,
+} from "../../lib/api/two-factor";
+import { OTPInput } from "../auth/otp-input";
+import StepModal from "../ui/step-modal";
+import ConfirmDialog from "../ui/confirm-dialog";
+import { FormError } from "./settings-section";
 
-const MOCK_SECRET = "JBSWY3DPEHPK3PXP";
-const MOCK_QR_URL = `otpauth://totp/NexaFx:user@example.com?secret=${MOCK_SECRET}&issuer=NexaFx`;
-const MOCK_BACKUP_CODES = [
-  "ABCD-EFGH-IJKL",
-  "MNOP-QRST-UVWX",
-  "YZ12-3456-7890",
-  "ABCD-1234-EFGH",
-  "5678-IJKL-9012",
-  "MNOP-3456-QRST",
-];
+const QR_MODULES = {
+  qrcode: () => import("qrcode").then((m) => m.default),
+};
 
-export function TwoFactorAuth() {
-  const [isEnabled, setIsEnabled] = useState(false);
-  const [showSetup, setShowSetup] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
-  const [verified, setVerified] = useState(false);
-  const [copiedSecret, setCopiedSecret] = useState(false);
-  const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+function formatSecret(secret: string): string {
+  return secret.replace(/(.{4})/g, "$1 ").trim();
+}
+
+/**
+ * Two-factor authentication setup and removal.
+ *
+ * Sensitive values (the TOTP secret, the current 6-digit code, the backup
+ * codes) live only in component state. They are cleared when the dialog
+ * closes and are never written to storage. Backup codes are shown exactly
+ * once: closing the dialog discards them and the only way to see them again
+ * is to regenerate a fresh set.
+ */
+export default function TwoFactorSettings() {
+  const queryClient = useQueryClient();
+
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [secret, setSecret] = useState<string | null>(null);
+  const [otpauthUri, setOtpauthUri] = useState<string | null>(null);
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
+  const [codesSaved, setCodesSaved] = useState(false);
+  const [setupError, setSetupError] = useState<string | null>(null);
+  const [disableOpen, setDisableOpen] = useState(false);
+  const [disableCode, setDisableCode] = useState("");
+  const [disablePassword, setDisablePassword] = useState("");
 
-  const handleEnable = () => {
-    setShowSetup(true);
+  const status = useQuery({
+    queryKey: ["two-factor", "status"],
+    queryFn: fetchTwoFactorStatus,
+    enabled: TWO_FACTOR_SUPPORTED,
+  });
+
+  const beginSetup = useMutation({
+    mutationFn: beginTwoFactorSetup,
+    onSuccess: (data) => {
+      setSecret(data.secret);
+      setOtpauthUri(data.otpauthUri);
+      setSetupOpen(true);
+    },
+    onError: () => notify.error("Could not start two-factor setup."),
+  });
+
+  const confirmSetup = useMutation({
+    mutationFn: confirmTwoFactorSetup,
+    onSuccess: (data) => {
+      setBackupCodes(data.codes);
+      void queryClient.invalidateQueries({
+        queryKey: ["two-factor", "status"],
+      });
+    },
+    onError: (err: Error) => {
+      setSetupError(
+        err instanceof TwoFactorInvalidCodeError
+          ? "That code is not valid. Check your authenticator app and try again."
+          : "We could not confirm your code. Try again.",
+      );
+    },
+  });
+
+  const removeTwoFactor = useMutation({
+    mutationFn: disableTwoFactor,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["two-factor", "status"],
+      });
+      closeDisable();
+      notify.success("Two-factor authentication turned off.");
+    },
+    onError: (err: Error) => {
+      notify.error(
+        err instanceof TwoFactorInvalidCodeError
+          ? "That code is not valid."
+          : "We could not turn off two-factor authentication.",
+      );
+    },
+  });
+
+  // Drop every secret when the dialog closes.
+  const closeDisable = () => {
+    setDisableOpen(false);
+    setDisableCode("");
+    setDisablePassword("");
   };
 
-  const handleVerify = () => {
-    if (verificationCode.length === 6) {
-      setVerified(true);
-      setIsEnabled(true);
-      setBackupCodes(MOCK_BACKUP_CODES);
-    }
-  };
-
-  const handleDisable = () => {
-    setIsEnabled(false);
-    setShowSetup(false);
-    setVerified(false);
-    setVerificationCode("");
+  const closeSetup = () => {
+    setSetupOpen(false);
+    setSecret(null);
+    setOtpauthUri(null);
     setBackupCodes(null);
-    setShowDisableConfirm(false);
+    setCodesSaved(false);
+    setSetupError(null);
+    confirmSetup.reset();
   };
 
-  const handleCopySecret = async () => {
-    try {
-      await navigator.clipboard.writeText(MOCK_SECRET);
-      setCopiedSecret(true);
-      setTimeout(() => setCopiedSecret(false), 2000);
-    } catch {
-      // ignore
-    }
-  };
+  if (!TWO_FACTOR_SUPPORTED) {
+    return (
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        Two-factor authentication is not available on this deployment.
+      </p>
+    );
+  }
 
-  const handleDownloadCodes = () => {
-    const blob = new Blob([MOCK_BACKUP_CODES.join("\n")], {
-      type: "text/plain",
-    });
+  const enabled = status.data?.enabled === true;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="font-medium">
+            {enabled ? "Two-factor authentication is on" : "Off"}
+          </p>
+          <p className="mt-1 max-w-prose text-sm text-zinc-600 dark:text-zinc-400">
+            {enabled
+              ? "You will be asked for a code from your authenticator app when signing in."
+              : "Add a second step to sign-in using an authenticator app."}
+          </p>
+        </div>
+
+        {enabled ? (
+          <button
+            type="button"
+            onClick={() => setDisableOpen(true)}
+            className="shrink-0 rounded border border-red-300 px-4 py-2 text-sm text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40"
+          >
+            Turn off
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => beginSetup.mutate()}
+            disabled={beginSetup.isPending}
+            className="shrink-0 rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+          >
+            {beginSetup.isPending ? "Starting…" : "Set up"}
+          </button>
+        )}
+      </div>
+
+      <StepModal
+        open={setupOpen}
+        title="Set up two-factor authentication"
+        busy={confirmSetup.isPending}
+        onClose={closeSetup}
+        finishLabel="I've saved my backup codes"
+        onFinish={
+          backupCodes
+            ? () => (codesSaved ? closeSetup() : undefined)
+            : undefined
+        }
+        steps={[
+          {
+            id: "scan",
+            title: "Scan",
+            content: <ScanStep otpauthUri={otpauthUri} secret={secret} />,
+          },
+          {
+            id: "verify",
+            title: "Verify",
+            content: (
+              <div>
+                <p className="text-sm">
+                  Enter the 6-digit code from your authenticator app.
+                </p>
+                {setupError && (
+                  <div className="mt-3">
+                    <FormError message={setupError} />
+                  </div>
+                )}
+                <div className="mt-3">
+                  <OTPInput
+                    maxDigits={6}
+                    onSubmit={(code) => {
+                      setSetupError(null);
+                      confirmSetup.mutate(code);
+                    }}
+                  />
+                </div>
+              </div>
+            ),
+          },
+          {
+            id: "codes",
+            title: "Backup codes",
+            content: backupCodes ? (
+              <BackupCodesStep
+                codes={backupCodes}
+                saved={codesSaved}
+                onChange={setCodesSaved}
+              />
+            ) : null,
+          },
+        ]}
+      />
+
+      <ConfirmDialog
+        open={disableOpen}
+        title="Turn off two-factor authentication"
+        tone="danger"
+        confirmLabel="Turn off"
+        busy={removeTwoFactor.isPending}
+        onCancel={closeDisable}
+        onConfirm={() =>
+          removeTwoFactor.mutate({
+            code: disableCode || undefined,
+            password: disablePassword || undefined,
+          })
+        }
+        description="Enter a current code from your authenticator app, or your account password, to confirm."
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-sm" htmlFor="disable-code">
+              Authenticator code (optional)
+            </label>
+            <input
+              id="disable-code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={disableCode}
+              onChange={(e) =>
+                setDisableCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+              }
+              disabled={removeTwoFactor.isPending}
+              className="w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm" htmlFor="disable-password">
+              Account password (optional)
+            </label>
+            <input
+              id="disable-password"
+              type="password"
+              autoComplete="current-password"
+              value={disablePassword}
+              onChange={(e) => setDisablePassword(e.target.value)}
+              disabled={removeTwoFactor.isPending}
+              className="w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </div>
+        </div>
+      </ConfirmDialog>
+    </div>
+  );
+}
+
+/**
+ * QR rendering. `qrcode` is loaded on demand so the canvas dependency is
+ * only downloaded when a user actually starts 2FA setup. If the module
+ * cannot load, the manual secret below remains the way forward.
+ */
+function ScanStep({
+  otpauthUri,
+  secret,
+}: {
+  otpauthUri: string | null;
+  secret: string | null;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!otpauthUri || !canvasRef.current) return;
+    let cancelled = false;
+
+    QR_MODULES.qrcode()
+      .then((QRCode) => {
+        if (cancelled || !canvasRef.current) return;
+        QRCode.toCanvas(canvasRef.current, otpauthUri, {
+          width: 192,
+          margin: 1,
+          color: { dark: "#000000ff", light: "#ffffffff" },
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [otpauthUri]);
+
+  return (
+    <div>
+      <p className="text-sm">
+        Scan this code with your authenticator app, or enter the secret by hand.
+      </p>
+
+      <div className="mt-4 flex justify-center">
+        {failed ? (
+          <p className="max-w-xs text-center text-sm text-amber-700">
+            The QR image could not be loaded. Enter the secret manually below.
+          </p>
+        ) : (
+          <canvas
+            ref={canvasRef}
+            role="img"
+            aria-label="Authenticator setup QR code"
+            className="rounded bg-white p-2"
+          />
+        )}
+      </div>
+
+      <div className="mt-4">
+        <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+          Setup key
+        </p>
+        <p className="mt-1 rounded bg-zinc-100 px-3 py-2 font-mono text-sm break-all dark:bg-zinc-800">
+          {secret ? formatSecret(secret) : "—"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function BackupCodesStep({
+  codes,
+  saved,
+  onChange,
+}: {
+  codes: string[];
+  saved: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  const download = () => {
+    const blob = new Blob(
+      ["NexaFx two-factor backup codes\n\n" + codes.join("\n") + "\n"],
+      { type: "text/plain" },
+    );
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "nexafx-backup-codes.txt";
-    a.click();
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "nexafx-backup-codes.txt";
+    anchor.click();
     URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="rounded-2xl border-[#8C8C8C] border-[0.25px] bg-card">
-      <h3 className="text-muted-foreground mb-4.5 font-semibold text-base mx-5 pt-6.25 pb-4.5 dark:text-white dark:border-slate-300 border-[#00000026] border-b">
-        Two-Factor Authentication
-      </h3>
+    <div>
+      <p className="text-sm">
+        Save these codes somewhere safe. Each one can be used once if you lose
+        access to your authenticator app.{" "}
+        <strong className="font-semibold">
+          They are shown only once and cannot be viewed again.
+        </strong>
+      </p>
 
-      <div className="space-y-6 pb-5 px-5">
-        <div className="flex max-sm:flex-col max-sm:items-start justify-between items-center gap-6">
-          <div className="max-w-124.25">
-            <div className="flex items-center gap-2 mb-1">
-              {isEnabled ? (
-                <Shield className="size-5 text-green-500" />
-              ) : (
-                <ShieldOff className="size-5 text-muted-foreground" />
-              )}
-              <h4 className="text-foreground font-semibold text-[15px] sm:text-lg">
-                {isEnabled ? "2FA Enabled" : "2FA Not Configured"}
-              </h4>
-            </div>
-            <p className="text-[12px] text-muted-foreground font-normal">
-              {isEnabled
-                ? "Your account is protected with two-factor authentication."
-                : "Add an extra layer of security to your account."}
-            </p>
-          </div>
-          {isEnabled ? (
-            <button
-              onClick={() => setShowDisableConfirm(true)}
-              className="flex shrink-0 text-sm w-23.5 justify-center items-center gap-1.5 cursor-pointer border h-8 border-border hover:bg-muted text-foreground font-semibold transition-colors"
-            >
-              <ShieldOff className="size-4" /> Disable
-            </button>
-          ) : (
-            <button
-              onClick={handleEnable}
-              className="button-verify shrink-0 rounded-[19px] w-21.5 h-7 cursor-pointer text-[14px] font-semibold"
-            >
-              <span className="bg-background text-foreground rounded-[19px]">
-                Enable 2FA
-              </span>
-            </button>
-          )}
-        </div>
+      <ul className="mt-3 grid grid-cols-2 gap-2 rounded bg-zinc-100 p-3 font-mono text-sm dark:bg-zinc-800">
+        {codes.map((code) => (
+          <li key={code}>{code}</li>
+        ))}
+      </ul>
 
-        {showSetup && !verified && (
-          <div className="border border-border rounded-xl p-6 space-y-6">
-            <div className="flex flex-col items-center gap-4">
-              <div className="bg-white p-4 rounded-xl">
-                <QRCodeSVG value={MOCK_QR_URL} size={180} />
-              </div>
-              <p className="text-sm text-muted-foreground text-center max-w-sm">
-                Scan this QR code with your authenticator app (Google
-                Authenticator, Authy, etc.)
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-foreground">
-                Or enter this secret key manually:
-              </p>
-              <div className="flex items-center gap-2 bg-muted rounded-md px-4 py-2.5">
-                <Key className="size-4 text-muted-foreground shrink-0" />
-                <code className="text-sm font-mono text-foreground flex-1">
-                  {MOCK_SECRET}
-                </code>
-                <button
-                  onClick={handleCopySecret}
-                  className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-                  title="Copy secret key"
-                >
-                  {copiedSecret ? (
-                    <Check className="size-4 text-green-500" />
-                  ) : (
-                    <Copy className="size-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-foreground">
-                Verification Code
-              </p>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                value={verificationCode}
-                onChange={(e) =>
-                  setVerificationCode(e.target.value.replace(/\D/g, ""))
-                }
-                placeholder="000000"
-                className="w-full px-4 py-2.5 bg-muted border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-[#F39A00] transition-all text-sm text-foreground text-center tracking-[0.5em] font-mono"
-              />
-              <button
-                onClick={handleVerify}
-                disabled={verificationCode.length !== 6}
-                className="w-full cursor-pointer py-3 bg-[#F0BB16] hover:bg-yellow-500 rounded-sm text-black font-medium transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Verify & Enable
-              </button>
-            </div>
-          </div>
-        )}
-
-        {verified && backupCodes && (
-          <div className="border border-border rounded-xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-foreground font-semibold text-sm">
-                Backup Recovery Codes
-              </h4>
-              <button
-                onClick={handleDownloadCodes}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Download className="size-4" /> Download
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Save these backup codes in a secure place. You can use them to
-              access your account if you lose your authenticator device.
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {backupCodes.map((code, i) => (
-                <div
-                  key={i}
-                  className="bg-muted rounded-md px-3 py-2 font-mono text-xs text-foreground text-center"
-                >
-                  {code}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(codes.join("\n"));
+              notify.success("Backup codes copied.");
+            } catch {
+              notify.error("Could not copy to the clipboard.");
+            }
+          }}
+          className="rounded border border-zinc-300 px-3 py-1 text-sm dark:border-zinc-700"
+        >
+          Copy
+        </button>
+        <button
+          type="button"
+          onClick={download}
+          className="rounded border border-zinc-300 px-3 py-1 text-sm dark:border-zinc-700"
+        >
+          Download .txt
+        </button>
       </div>
 
-      {showDisableConfirm && (
-        <>
-          <div
-            className="fixed inset-0 z-50 bg-black/50"
-            onClick={() => setShowDisableConfirm(false)}
-          />
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-card rounded-xl shadow-xl p-6 w-full max-w-sm space-y-4">
-              <h3 className="text-base font-semibold text-center text-foreground">
-                Disable Two-Factor Authentication
-              </h3>
-              <p className="text-sm text-muted-foreground text-center">
-                Are you sure you want to disable 2FA? Your account will be less
-                secure.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowDisableConfirm(false)}
-                  className="flex-1 py-2.5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDisable}
-                  className="flex-1 py-2.5 rounded-lg bg-[#E90004] text-white text-sm font-semibold hover:bg-red-700 transition-colors"
-                >
-                  Disable
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      <label className="mt-4 flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={saved}
+          onChange={(e) => onChange(e.target.checked)}
+          className="mt-0.5"
+        />
+        I have saved these backup codes somewhere safe.
+      </label>
     </div>
   );
 }

@@ -1,26 +1,84 @@
-import React from "react";
-import { CircleDollarSign, BadgeDollarSign, Coins } from "lucide-react";
-
-export interface CurrencyOption {
-  id: string;
+export interface Currency {
+  code: string;
   name: string;
   symbol: string;
+  decimals: number;
+  type: "fiat" | "crypto";
+  icon: string;
 }
 
-export const CURRENCIES: CurrencyOption[] = [
-  { id: "NGN", name: "Nigerian Naira", symbol: "\u20A6" },
-  { id: "USD", name: "US Dollar", symbol: "$" },
-  { id: "EUR", name: "Euro", symbol: "\u20AC" },
-  { id: "GBP", name: "British Pound", symbol: "\u00A3" },
-  { id: "USDC", name: "USD Coin", symbol: "USDC" },
-  { id: "ETH", name: "Ethereum", symbol: "ETH" },
-  { id: "BNB", name: "BNB", symbol: "BNB" },
-];
+export const currencies: Record<string, Currency> = {
+  ngn: {
+    code: "NGN",
+    name: "Nigerian Naira",
+    symbol: "₦",
+    decimals: 2,
+    type: "fiat",
+    icon: "/currencies/ngn.svg",
+  },
+  usd: {
+    code: "USD",
+    name: "US Dollar",
+    symbol: "$",
+    decimals: 2,
+    type: "fiat",
+    icon: "/currencies/usd.svg",
+  },
+  eur: {
+    code: "EUR",
+    name: "Euro",
+    symbol: "€",
+    decimals: 2,
+    type: "fiat",
+    icon: "/currencies/eur.svg",
+  },
+  gbp: {
+    code: "GBP",
+    name: "British Pound",
+    symbol: "£",
+    decimals: 2,
+    type: "fiat",
+    icon: "/currencies/gbp.svg",
+  },
+  xlm: {
+    code: "XLM",
+    name: "Stellar",
+    symbol: "XLM",
+    decimals: 7,
+    type: "crypto",
+    icon: "/currencies/xlm.svg",
+  },
+  usdc: {
+    code: "USDC",
+    name: "USD Coin",
+    symbol: "USDC",
+    decimals: 6,
+    type: "crypto",
+    icon: "/currencies/usdc.svg",
+  },
+  btc: {
+    code: "BTC",
+    name: "Bitcoin",
+    symbol: "₿",
+    decimals: 8,
+    type: "crypto",
+    icon: "/currencies/btc.svg",
+  },
+  eth: {
+    code: "ETH",
+    name: "Ethereum",
+    symbol: "Ξ",
+    decimals: 18,
+    type: "crypto",
+    icon: "/currencies/eth.svg",
+  },
+};
 
-export const FALLBACK_CURRENCY_CODES = ["NGN", "USD", "EUR", "GBP", "USDC"];
+export function getCurrency(code: string): Currency | undefined {
+  return currencies[code.toLowerCase()];
+}
 
-export const WITHDRAWAL_SUCCESS_CURRENCIES = [
-  { id: "USDC", name: "USD Coin", icon: React.createElement(CircleDollarSign, { className: "w-8 h-8 text-blue-500" }) },
-  { id: "ETH", name: "Ethereum", icon: React.createElement(BadgeDollarSign, { className: "w-8 h-8 text-neutral-500" }) },
-  { id: "BNB", name: "BNB", icon: React.createElement(Coins, { className: "w-8 h-8 text-yellow-500" }) },
-];
+export function formatCode(code: string): string {
+  const currency = getCurrency(code);
+  return currency ? currency.symbol : code;
+}

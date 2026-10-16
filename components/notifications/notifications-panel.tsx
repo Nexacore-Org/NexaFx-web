@@ -1,204 +1,145 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { Settings } from "lucide-react";
 import Link from "next/link";
-import { useNotificationsStore } from "@/hooks/use-notifications-store";
-import { NotificationItem } from "./notification-item";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useEffect, useRef, useState } from "react";
+import { useNotifications } from "@/hooks/use-notifications";
+import { CategoryIcon } from "@/components/notifications/category-icon";
+import { Skeleton } from "@/components/ui/skeleton";
+import { relativeTime } from "@/lib/time";
+import { categoryLabel } from "@/lib/api/notifications";
 
-function PanelSkeleton() {
-  return (
-    <div className="divide-y divide-border">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="flex items-start gap-3 p-4 animate-pulse">
-          <div className="h-9 w-9 rounded-full bg-muted shrink-0" />
-          <div className="flex-1 space-y-2">
-            <div className="h-3.5 w-1/3 rounded bg-muted" />
-            <div className="h-3 w-2/3 rounded bg-muted" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+const MAX_VISIBLE = 5;
 
-export function NotificationsPanel() {
+export function NotificationsPanel({ onClose }: { onClose: () => void }) {
   const {
     notifications,
-    isOpen,
-    isLoading,
-    close,
-    markAsRead,
-    markAllAsRead,
-    fetchNotifications,
+    isPending,
+    isError,
+    refetch,
+    markRead,
+    markAllRead,
     unreadCount,
-    pendingDeletes,
-    pendingClearAll,
-    clearAllNotifications,
-    undoClearAll,
-  } = useNotificationsStore();
-
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const listRef = useRef<HTMLDivElement>(null);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      const container = listRef.current;
-      if (!container) return;
-
-      const items = Array.from(
-        container.querySelectorAll<HTMLElement>('[role="option"]')
-      );
-      if (items.length === 0) return;
-
-      const currentIndex = items.indexOf(document.activeElement as HTMLElement);
-
-      let nextIndex = -1;
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
-      }
-
-      if (nextIndex >= 0) {
-        items[nextIndex].focus();
-      }
-    },
-    []
-  );
+  } = useNotifications();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      fetchNotifications();
-    }
-  }, [isOpen, fetchNotifications]);
+    panelRef.current?.focus();
+  }, []);
 
-  if (!isOpen) return null;
+  const visible = notifications.slice(0, MAX_VISIBLE);
+  const unreadIds = notifications
+    .filter((item) => !item.read)
+    .map((item) => item.id);
 
-  const handleNotificationClick = (id: string) => {
-    markAsRead(id);
-  };
-
-  const handleMarkAllAsRead = () => {
-    markAllAsRead();
+  const handleSelect = (id: string) => {
+    setExpandedId((current) => (current === id ? null : id));
+    markRead(id);
   };
 
   return (
-    <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-40" onClick={close} />
-
-      {/* Panel */}
-      <div className="absolute top-full right-0 mt-2 w-100 bg-card rounded-xl shadow-lg border border-border z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h3 className="text-base font-semibold text-foreground">
-            Notifications
-          </h3>
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-              <Checkbox
-                checked={unreadCount === 0 && notifications.length > 0}
-                onCheckedChange={(checked) => {
-                  if (checked) handleMarkAllAsRead();
-                }}
-                disabled={unreadCount === 0}
-              />
-              <span>Mark all as read</span>
-            </label>
-            <button
-              onClick={() => setShowClearConfirm(true)}
-              disabled={notifications.length === 0 || !!pendingClearAll}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Clear all
-            </button>
-            <Link
-              href="/settings"
-              onClick={close}
-              className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-            >
-              <Settings className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-
-        {/* Notifications List */}
-        <div className="max-h-100 overflow-y-auto">
-          {isLoading ? (
-            <PanelSkeleton />
-          ) : showClearConfirm ? (
-            <div className="p-6 text-center">
-              <p className="text-sm text-foreground mb-4">
-                Clear all notifications?
-              </p>
-              <div className="flex items-center justify-center gap-3">
-                <button
-                  onClick={() => setShowClearConfirm(false)}
-                  className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    clearAllNotifications();
-                    setShowClearConfirm(false);
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
-          ) : pendingClearAll ? (
-            <div className="p-6 text-center">
-              <p className="text-sm text-muted-foreground mb-3">
-                All notifications cleared.
-              </p>
-              <button
-                onClick={undoClearAll}
-                className="text-sm font-medium hover:underline transition-colors"
-                style={{ color: "#F39A00" }}
-              >
-                Undo
-              </button>
-            </div>
-          ) : notifications.length === 0 && pendingDeletes.size === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              <p>No notifications yet</p>
-            </div>
-          ) : (
-            <div
-              ref={listRef}
-              role="listbox"
-              aria-label="Notifications"
-              tabIndex={0}
-              onKeyDown={handleKeyDown}
-              className="divide-y divide-border outline-none"
-            >
-              {notifications.map((notification) => (
-                <NotificationItem
-                  key={notification.id}
-                  notification={notification}
-                  onClick={() => handleNotificationClick(notification.id)}
-                />
-              ))}
-              {Array.from(pendingDeletes.entries()).map(
-                ([id, { notification }]) => (
-                  <NotificationItem
-                    key={`pending-${id}`}
-                    notification={notification}
-                    isPendingDelete
-                  />
-                )
-              )}
-            </div>
-          )}
-        </div>
+    <div
+      ref={panelRef}
+      role="dialog"
+      aria-label="Notifications"
+      tabIndex={-1}
+      className="absolute right-0 z-50 mt-2 w-80 rounded-lg border border-gray-200 bg-white shadow-xl outline-none"
+    >
+      <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+        <h2 className="text-sm font-semibold text-gray-900">Notifications</h2>
+        {unreadCount > 0 && (
+          <button
+            type="button"
+            onClick={() => markAllRead(unreadIds)}
+            className="text-xs font-medium text-blue-600 hover:text-blue-700"
+          >
+            Mark all read
+          </button>
+        )}
       </div>
-    </>
+
+      <div className="max-h-96 overflow-y-auto">
+        {isPending ? (
+          <div className="space-y-3 p-4">
+            {[0, 1, 2].map((row) => (
+              <div key={row} className="flex items-center gap-3">
+                <Skeleton width={36} height={36} />
+                <div className="flex-1 space-y-2">
+                  <Skeleton width="70%" height={14} />
+                  <Skeleton width="45%" height={12} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : isError ? (
+          <div role="alert" className="p-4 text-center text-sm text-red-600">
+            <p>Couldn&apos;t load notifications.</p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="mt-2 text-xs font-medium text-red-700 underline"
+            >
+              Retry
+            </button>
+          </div>
+        ) : visible.length === 0 ? (
+          <p className="p-6 text-center text-sm text-gray-500">
+            You&apos;re all caught up.
+          </p>
+        ) : (
+          <ul>
+            {visible.map((item) => {
+              const expanded = expandedId === item.id;
+              return (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleSelect(item.id)}
+                    aria-expanded={expanded}
+                    className={`flex w-full items-start gap-3 border-b border-gray-50 px-4 py-3 text-left hover:bg-gray-50 ${
+                      item.read ? "" : "bg-blue-50/40"
+                    }`}
+                  >
+                    <CategoryIcon category={item.category} />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2">
+                        <span className="truncate text-sm font-medium text-gray-900">
+                          {item.title}
+                        </span>
+                        {!item.read && (
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full bg-blue-600"
+                            aria-label="Unread"
+                          />
+                        )}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-gray-500">
+                        {categoryLabel(item.category)} ·{" "}
+                        {relativeTime(item.createdAt)}
+                      </span>
+                      {expanded && (
+                        <span className="mt-2 block text-xs text-gray-600">
+                          {item.body}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      <div className="border-t border-gray-100 px-4 py-2 text-center">
+        <Link
+          href="/notifications"
+          onClick={onClose}
+          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+        >
+          View all notifications
+        </Link>
+      </div>
+    </div>
   );
 }

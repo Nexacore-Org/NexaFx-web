@@ -1,189 +1,310 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Search, ListFilter } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
+import {
+  type TransactionFiltersState,
+  type DatePreset,
+  EMPTY_FILTERS,
+  applyDatePreset,
+  validateDateRange,
+  countActiveFilters,
+  isFiltersEmpty,
+} from "@/lib/transaction-filters";
 
-type Variant = "dashboard" | "admin";
+const TRANSACTION_TYPES = [
+  { value: "", label: "All types" },
+  { value: "convert", label: "Convert" },
+  { value: "deposit", label: "Deposit" },
+  { value: "withdraw", label: "Withdraw" },
+  { value: "transfer", label: "Transfer" },
+] as const;
+
+const TRANSACTION_STATUSES = [
+  { value: "", label: "All statuses" },
+  { value: "completed", label: "Completed" },
+  { value: "pending", label: "Pending" },
+  { value: "failed", label: "Failed" },
+] as const;
+
+const CURRENCIES = ["", "NGN", "USD", "EUR", "USDC", "XLM", "BTC", "ETH"];
+
+const DATE_PRESETS: { label: string; value: DatePreset }[] = [
+  { label: "Last 7 days", value: "7d" },
+  { label: "Last 30 days", value: "30d" },
+  { label: "Last 90 days", value: "90d" },
+];
 
 export interface TransactionFiltersProps {
-    searchQuery: string;
-    onSearchChange: (query: string) => void;
-    activeFilter: string;
-    onFilterChange: (filter: string) => void;
-    totalCount: number;
-    dateFrom?: string;
-    dateTo?: string;
-    onDateFromChange?: (date: string) => void;
-    onDateToChange?: (date: string) => void;
-    onClearDateRange?: () => void;
-    onExportCSV?: () => void;
-    variant?: Variant;
+  filters: TransactionFiltersState;
+  onChange: (filters: TransactionFiltersState) => void;
 }
 
-const filters = ["All", "Deposit", "Withdrawal", "Convert"];
-
-const variantStyles: Record<Variant, {
-    searchIcon: string;
-    searchInput: string;
-    filterContainer: string;
-    filterButton: (active: boolean) => string;
-    filterCount: (active: boolean) => string;
-    activePill: string;
-    dropdownTrigger: string;
-    dropdown: string;
-    dropdownItem: (active: boolean) => string;
-    dropdownCount: string;
-}> = {
-    dashboard: {
-        searchIcon: "text-muted-foreground",
-        searchInput: "flex h-10 w-full rounded-md border border-input bg-background px-3 pl-9 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-        filterContainer: "hidden md:flex items-center border border-border rounded-[10px] overflow-hidden bg-card shadow-sm",
-        filterButton: (active) => cn(
-            "relative px-6 py-3 text-sm font-medium transition-colors whitespace-nowrap min-w-25 text-center",
-            active
-                ? "bg-primary text-primary-foreground rounded-[10px]"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-        ),
-        filterCount: (active) => cn(
-            "ml-1 px-1.5 py-0.5 text-xs rounded",
-            active ? "text-primary-foreground" : "text-muted-foreground",
-        ),
-        activePill: "flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-[10px] text-sm font-medium shadow-sm whitespace-nowrap",
-        dropdownTrigger: "p-2 bg-muted text-foreground hover:bg-muted/80 transition-colors rounded-md",
-        dropdown: "absolute right-0 top-full mt-2 w-40 bg-card border border-border rounded-md shadow-lg z-50 overflow-hidden",
-        dropdownItem: (active) => cn(
-            "w-full text-left px-4 py-2 text-sm transition-colors hover:bg-muted",
-            active ? "bg-primary/10 text-primary font-medium" : "text-foreground",
-        ),
-        dropdownCount: "text-xs text-muted-foreground",
-    },
-    admin: {
-        searchIcon: "text-gray-400",
-        searchInput: "flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 pl-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-450",
-        filterContainer: "hidden md:flex items-center border border-gray-200 rounded-[10px] overflow-hidden bg-white shadow-sm",
-        filterButton: (active) => cn(
-            "relative px-6 py-3 text-sm font-medium transition-colors whitespace-nowrap min-w-25 text-center",
-            active
-                ? "bg-yellow-400 text-gray-950 rounded-[10px]"
-                : "text-gray-500 hover:bg-gray-50 hover:text-gray-950",
-        ),
-        filterCount: () => "ml-1 px-1.5 py-0.5 text-xs rounded",
-        activePill: "flex items-center gap-2 px-3 py-2 bg-yellow-400 text-gray-950 rounded-[10px] text-sm font-medium shadow-sm whitespace-nowrap",
-        dropdownTrigger: "p-2 bg-gray-100 text-gray-900 hover:bg-gray-200 transition-colors rounded-md",
-        dropdown: "absolute right-0 top-full mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50 overflow-hidden",
-        dropdownItem: (active) => cn(
-            "w-full text-left px-4 py-2 text-sm transition-colors hover:bg-gray-50",
-            active ? "bg-yellow-50 text-yellow-600 font-medium" : "text-gray-950",
-        ),
-        dropdownCount: "text-xs text-gray-500",
-    },
-};
-
 export function TransactionFilters({
-    searchQuery,
-    onSearchChange,
-    activeFilter,
-    onFilterChange,
-    totalCount,
-    variant = "dashboard",
+  filters,
+  onChange,
 }: TransactionFiltersProps) {
-    const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-    const styles = variantStyles[variant];
+  const [dateError, setDateError] = useState<string | null>(null);
 
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        }
+  function update(patch: Partial<TransactionFiltersState>) {
+    const next = { ...filters, ...patch };
 
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, []);
+    // Validate date range whenever either date changes
+    const error = validateDateRange(next.dateFrom, next.dateTo);
+    setDateError(error);
 
-    return (
-        <div className="flex flex-row items-center justify-between gap-2 md:gap-4 py-4">
-            {/* Search Input - Desktop w-80, mobile flex-1 */}
-            <div className="relative flex-1 md:w-80 md:flex-none">
-                <Search className={cn("absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4", styles.searchIcon)} />
-                <input
-                    type="text"
-                    placeholder="Search"
-                    value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                    className={styles.searchInput}
-                />
-            </div>
+    // Only call onChange when the date range is valid (or incomplete)
+    if (!error) onChange(next);
+  }
 
-            {/* Filters Section */}
-            <div className="flex items-center shrink-0 md:w-auto">
-                {/* Desktop: Bordered Tabs Container */}
-                <div className={styles.filterContainer}>
-                    {filters.map((filter) => {
-                        const isActive = activeFilter === filter || (filter === "All" && activeFilter === "All");
-                        return (
-                            <button
-                                key={filter}
-                                onClick={() => onFilterChange(filter)}
-                                className={styles.filterButton(isActive)}
-                            >
-                                {filter}
-                                {filter === "All" && (
-                                    <span className={styles.filterCount(isActive)}>
-                                        {totalCount}
-                                    </span>
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
+  function applyPreset(preset: DatePreset) {
+    const range = applyDatePreset(preset);
+    setDateError(null);
+    onChange({ ...filters, ...range });
+  }
 
-                {/* Mobile: Filter Display + Dropdown Trigger */}
-                <div className="md:hidden flex items-center gap-2">
-                    {/* Active Filter Pill */}
-                    <div className={styles.activePill}>
-                        <span>{activeFilter}</span>
-                        <span className="opacity-80 text-xs">{totalCount}</span>
-                    </div>
+  function removeFilter(key: keyof TransactionFiltersState) {
+    setDateError(null);
+    onChange({ ...filters, [key]: "" });
+  }
 
-                    {/* Filter Dropdown */}
-                    <div className="relative" ref={dropdownRef}>
-                        <button 
-                            onClick={() => setIsOpen(!isOpen)}
-                            className={styles.dropdownTrigger}
-                            aria-label="Filter options"
-                        >
-                           <ListFilter className="h-5 w-5" />
-                        </button>
+  function clearAll() {
+    setDateError(null);
+    onChange(EMPTY_FILTERS);
+  }
 
-                        {isOpen && (
-                            <div className={styles.dropdown}>
-                                <div className="py-1">
-                                    {filters.map((filter) => (
-                                        <button
-                                            key={filter}
-                                            onClick={() => {
-                                                onFilterChange(filter);
-                                                setIsOpen(false);
-                                            }}
-                                            className={styles.dropdownItem(activeFilter === filter)}
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <span>{filter}</span>
-                                                {filter === "All" && <span className={styles.dropdownCount}>{totalCount}</span>}
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
+  const activeCount = countActiveFilters(filters);
+
+  return (
+    <div className="space-y-3">
+      {/* Search + row of selects */}
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Free-text search */}
+        <div className="lg:col-span-2">
+          <label
+            htmlFor="tx-search"
+            className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+          >
+            Search
+          </label>
+          <input
+            id="tx-search"
+            type="search"
+            value={filters.search}
+            onChange={(e) => update({ search: e.target.value })}
+            placeholder="Description, counterparty, ID…"
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+          />
         </div>
-    );
+
+        {/* Type */}
+        <div>
+          <label
+            htmlFor="tx-type"
+            className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+          >
+            Type
+          </label>
+          <select
+            id="tx-type"
+            value={filters.type}
+            onChange={(e) =>
+              update({
+                type: e.target.value as TransactionFiltersState["type"],
+              })
+            }
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+          >
+            {TRANSACTION_TYPES.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Status */}
+        <div>
+          <label
+            htmlFor="tx-status"
+            className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+          >
+            Status
+          </label>
+          <select
+            id="tx-status"
+            value={filters.status}
+            onChange={(e) =>
+              update({
+                status: e.target.value as TransactionFiltersState["status"],
+              })
+            }
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+          >
+            {TRANSACTION_STATUSES.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Date row */}
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Currency */}
+        <div>
+          <label
+            htmlFor="tx-currency"
+            className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+          >
+            Currency
+          </label>
+          <select
+            id="tx-currency"
+            value={filters.currency}
+            onChange={(e) => update({ currency: e.target.value })}
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {c || "All currencies"}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Date from */}
+        <div>
+          <label
+            htmlFor="tx-date-from"
+            className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+          >
+            From
+          </label>
+          <input
+            id="tx-date-from"
+            type="date"
+            value={filters.dateFrom}
+            max={filters.dateTo || undefined}
+            onChange={(e) => update({ dateFrom: e.target.value })}
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+          />
+        </div>
+
+        {/* Date to */}
+        <div>
+          <label
+            htmlFor="tx-date-to"
+            className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+          >
+            To
+          </label>
+          <input
+            id="tx-date-to"
+            type="date"
+            value={filters.dateTo}
+            min={filters.dateFrom || undefined}
+            onChange={(e) => update({ dateTo: e.target.value })}
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+          />
+        </div>
+
+        {/* Quick presets */}
+        <div className="flex items-end gap-1">
+          {DATE_PRESETS.map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              onClick={() => applyPreset(p.value)}
+              className="flex-1 rounded-lg border border-zinc-300 px-2 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Date error */}
+      {dateError && (
+        <p
+          role="alert"
+          className="text-xs font-medium text-red-600 dark:text-red-400"
+        >
+          {dateError}
+        </p>
+      )}
+
+      {/* Active filter chips */}
+      {!isFiltersEmpty(filters) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {filters.search && (
+            <FilterChip
+              label={`Search: "${filters.search}"`}
+              onRemove={() => removeFilter("search")}
+            />
+          )}
+          {filters.type && (
+            <FilterChip
+              label={`Type: ${filters.type}`}
+              onRemove={() => removeFilter("type")}
+            />
+          )}
+          {filters.status && (
+            <FilterChip
+              label={`Status: ${filters.status}`}
+              onRemove={() => removeFilter("status")}
+            />
+          )}
+          {filters.currency && (
+            <FilterChip
+              label={`Currency: ${filters.currency}`}
+              onRemove={() => removeFilter("currency")}
+            />
+          )}
+          {filters.dateFrom && (
+            <FilterChip
+              label={`From: ${filters.dateFrom}`}
+              onRemove={() => removeFilter("dateFrom")}
+            />
+          )}
+          {filters.dateTo && (
+            <FilterChip
+              label={`To: ${filters.dateTo}`}
+              onRemove={() => removeFilter("dateTo")}
+            />
+          )}
+
+          <button
+            type="button"
+            onClick={clearAll}
+            className="text-xs font-medium text-red-600 hover:underline dark:text-red-400"
+          >
+            Clear all ({activeCount})
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FilterChip({
+  label,
+  onRemove,
+}: {
+  label: string;
+  onRemove: () => void;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+      {label}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove filter: ${label}`}
+        className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-300 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-600 dark:hover:text-zinc-100"
+      >
+        ×
+      </button>
+    </span>
+  );
 }

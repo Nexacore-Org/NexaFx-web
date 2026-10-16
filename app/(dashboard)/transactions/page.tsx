@@ -1,290 +1,227 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Transaction, getTransactions } from "@/lib/api/transactions";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useTransactions } from "@/hooks/use-transactions";
+import { TransactionTable } from "@/components/transactions/transaction-table";
 import { TransactionFilters } from "@/components/transactions/transaction-filters";
+import { ExportButton } from "@/components/transactions/export-button";
 import {
-  TransactionTable,
-  TransactionSortColumn,
-  TransactionSortDirection,
-} from "@/components/transactions/transaction-table";
-import { TransactionList } from "@/components/transactions/transaction-list";
-import { TransactionPagination } from "@/components/transactions/pagination";
-import { TransactionEmptyState } from "@/components/transactions/empty-state";
-import { TransactionDetails } from "@/components/transactions/transaction-details";
-import { exportTransactionsToCSV, generateCSVFilename } from "@/app/lib/utils/csv-export";
-import { getRequestErrorMessage, isOfflineError } from "@/lib/api-client";
-import { TransactionTableSkeleton } from "@/components/shared/page-skeletons";
+  type TransactionFiltersState,
+  parseFilters,
+  serializeFilters,
+} from "@/lib/transaction-filters";
+import {
+  type TransactionSortState,
+  parseSortParams,
+  serializeSortParams,
+  sortTransactions,
+} from "@/lib/transaction-sort";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
-const ITEMS_PER_PAGE = 10;
+const PAGE_SIZE = 10;
 
-function TransactionsContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
+// ---------------------------------------------------------------------------
+// Pagination control
+// ---------------------------------------------------------------------------
 
-  const searchQuery = searchParams.get("search") || "";
-  const activeFilter = searchParams.get("type") || "All";
-  const currentPage = Number(searchParams.get("page")) || 1;
-  const dateFrom = searchParams.get("from") || "";
-  const dateTo = searchParams.get("to") || "";
-  const sortByParam = searchParams.get("sort");
-  const sortBy: TransactionSortColumn | null =
-    sortByParam === "date" || sortByParam === "amount" || sortByParam === "status"
-      ? sortByParam
-      : null;
-  const sortDir: TransactionSortDirection = searchParams.get("dir") === "desc" ? "desc" : "asc";
+interface PaginationProps {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
 
-  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [offlineNotice, setOfflineNotice] = useState<string | null>(null);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cachedTransactionsRef = useRef<Transaction[]>([]);
-
-  const updateQueryParams = useCallback(
-    (updates: Record<string, string | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
-      for (const [key, value] of Object.entries(updates)) {
-        if (value === null || value === "") {
-          params.delete(key);
-        } else {
-          params.set(key, value);
-        }
-      }
-      router.push(`${pathname}?${params.toString()}`, { scroll: false });
-    },
-    [searchParams, router, pathname]
-  );
-
-  const handleSearchChange = (q: string) => {
-    updateQueryParams({ search: q, page: "1" });
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    searchTimeoutRef.current = setTimeout(() => {
-      setDebouncedSearch(q);
-    }, 400);
-  };
-
-  const handleFilterChange = (f: string) => {
-    updateQueryParams({ type: f === "All" ? null : f, page: "1" });
-  };
-
-  const handleDateFromChange = (date: string) => {
-    updateQueryParams({ from: date, page: "1" });
-  };
-
-  const handleDateToChange = (date: string) => {
-    updateQueryParams({ to: date, page: "1" });
-  };
-
-  const handleClearDateRange = () => {
-    updateQueryParams({ from: null, to: null, page: "1" });
-  };
-
-  // Sorting composes with search/filter/date-range via updateQueryParams,
-  // which merges into the existing query string rather than replacing it —
-  // and deliberately doesn't touch "page", so it doesn't reset pagination.
-  const handleSortChange = (column: TransactionSortColumn) => {
-    if (sortBy === column) {
-      updateQueryParams({ dir: sortDir === "asc" ? "desc" : "asc" });
-    } else {
-      updateQueryParams({ sort: column, dir: "asc" });
-    }
-  };
-
-  const sortedTransactions = useMemo(() => {
-    if (!sortBy) return transactions;
-
-    const getDateValue = (tx: Transaction) => {
-      const parsed = new Date(tx.rawDate || tx.date).getTime();
-      return Number.isNaN(parsed) ? 0 : parsed;
-    };
-
-    const sorted = [...transactions].sort((a, b) => {
-      let comparison = 0;
-      if (sortBy === "date") {
-        comparison = getDateValue(a) - getDateValue(b);
-      } else if (sortBy === "amount") {
-        comparison = a.amount - b.amount;
-      } else if (sortBy === "status") {
-        comparison = a.status.localeCompare(b.status);
-      }
-      return sortDir === "asc" ? comparison : -comparison;
-    });
-
-    return sorted;
-  }, [transactions, sortBy, sortDir]);
-
-  const handleExportCSV = () => {
-    if (sortedTransactions.length > 0) {
-      const filename = generateCSVFilename(dateFrom, dateTo);
-      exportTransactionsToCSV(sortedTransactions, filename);
-    }
-  };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchTransactions = async () => {
-      setIsLoading(true);
-      const typeParam =
-        activeFilter === "Withdrawal"
-          ? "Withdraw"
-          : activeFilter !== "All"
-          ? activeFilter
-          : undefined;
-
-      try {
-        const result = await getTransactions({
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: debouncedSearch || undefined,
-          type: typeParam,
-          from: dateFrom || undefined,
-          to: dateTo || undefined,
-        });
-        if (!cancelled) {
-          cachedTransactionsRef.current = result.data;
-          setTransactions(result.data);
-          setTotalItems(result.total);
-          setError(null);
-          setOfflineNotice(null);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          const hasCachedData = cachedTransactionsRef.current.length > 0;
-          if (isOfflineError(err)) {
-            setOfflineNotice(
-              "You are offline. Showing cached transaction data."
-            );
-            setTransactions(cachedTransactionsRef.current);
-            setError(null);
-          } else {
-            setError(
-              getRequestErrorMessage(err, {
-                fallback: "Failed to load transactions",
-              })
-            );
-            if (hasCachedData) {
-              setOfflineNotice(
-                "Failed to load latest data. Showing cached transactions."
-              );
-              setTransactions(cachedTransactionsRef.current);
-            }
-          }
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    fetchTransactions();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [currentPage, debouncedSearch, activeFilter, dateFrom, dateTo]);
-
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
-
-  const handleTransactionClick = (tx: Transaction) => {
-    setSelectedTransaction(tx);
-    setDetailsOpen(true);
-  };
+function Pagination({ page, totalPages, onPageChange }: PaginationProps) {
+  if (totalPages <= 1) return null;
 
   return (
-    <div className="flex flex-col h-full space-y-4 md:space-y-6 max-w-7xl mx-auto w-full p-4 md:p-6">
+    <nav
+      aria-label="Pagination"
+      className="flex items-center justify-between border-t border-zinc-200 pt-4 dark:border-zinc-800"
+    >
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Page {page + 1} of {totalPages}
+      </p>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => onPageChange(page - 1)}
+          disabled={page === 0}
+          aria-label="Previous page"
+          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+        >
+          ← Prev
+        </button>
+        <button
+          type="button"
+          onClick={() => onPageChange(page + 1)}
+          disabled={page >= totalPages - 1}
+          aria-label="Next page"
+          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+        >
+          Next →
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Inner page (reads search params)
+// ---------------------------------------------------------------------------
+
+function TransactionsInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Derive state from URL
+  const urlFilters = parseFilters(Object.fromEntries(searchParams.entries()));
+  const urlSort = parseSortParams(Object.fromEntries(searchParams.entries()));
+  const urlPage = Math.max(0, parseInt(searchParams.get("page") ?? "0", 10));
+
+  // Local controlled filter state (debounced for search text)
+  const [localFilters, setLocalFilters] =
+    useState<TransactionFiltersState>(urlFilters);
+  const debouncedSearch = useDebouncedValue(localFilters.search, 350);
+
+  // Effective filters: use debounced search + rest of localFilters
+  const effectiveFilters: TransactionFiltersState = {
+    ...localFilters,
+    search: debouncedSearch,
+  };
+
+  /** Push a new URL with updated params. page resets to 0 on filter changes. */
+  function pushParams(
+    filters: TransactionFiltersState,
+    sort: TransactionSortState,
+    page: number,
+  ) {
+    const params = new URLSearchParams();
+    const f = serializeFilters(filters);
+    const s = serializeSortParams(sort);
+    Object.entries({ ...f, ...s }).forEach(([k, v]) => params.set(k, v));
+    if (page > 0) params.set("page", String(page));
+    router.push(`?${params.toString()}`, { scroll: false });
+  }
+
+  function handleFiltersChange(next: TransactionFiltersState) {
+    setLocalFilters(next);
+    // Reset to page 1 when filters change
+    pushParams(next, urlSort, 0);
+  }
+
+  function handleSortChange(next: TransactionSortState) {
+    pushParams(effectiveFilters, next, urlPage);
+  }
+
+  function handlePageChange(next: number) {
+    pushParams(effectiveFilters, urlSort, next);
+  }
+
+  const { data, isLoading, isError, isFetching, refetch } = useTransactions({
+    limit: PAGE_SIZE,
+    page: urlPage,
+    type: effectiveFilters.type || undefined,
+    status: effectiveFilters.status || undefined,
+    currency: effectiveFilters.currency || undefined,
+    search: effectiveFilters.search || undefined,
+    dateFrom: effectiveFilters.dateFrom || undefined,
+    dateTo: effectiveFilters.dateTo || undefined,
+  });
+
+  // Client-side sort on the current page (server sorting used when available)
+  const sorted = data?.transactions
+    ? sortTransactions(data.transactions, urlSort)
+    : [];
+
+  const totalPages = data?.totalPages ?? 1;
+
+  return (
+    <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Transaction History</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-100">
+            Transactions
+          </h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            Complete transaction history and currency activity.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <ExportButton />
+          <Link
+            href="/dashboard"
+            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            Back to Dashboard
+          </Link>
+        </div>
       </div>
 
-      <div className="bg-card rounded-xl p-4 md:p-6 shadow-sm border border-border/50">
+      {/* Filters */}
+      <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
         <TransactionFilters
-          searchQuery={searchQuery}
-          onSearchChange={handleSearchChange}
-          activeFilter={activeFilter}
-          onFilterChange={handleFilterChange}
-          totalCount={totalItems}
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-          onDateFromChange={handleDateFromChange}
-          onDateToChange={handleDateToChange}
-          onClearDateRange={handleClearDateRange}
-          onExportCSV={handleExportCSV}
+          filters={localFilters}
+          onChange={handleFiltersChange}
+        />
+      </div>
+
+      {/* Table */}
+      <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+        {/* Loading overlay hint when re-fetching with previous data */}
+        {isFetching && !isLoading && (
+          <p
+            className="text-xs text-zinc-400 dark:text-zinc-500"
+            aria-live="polite"
+          >
+            Refreshing…
+          </p>
+        )}
+
+        <TransactionTable
+          transactions={sorted}
+          isLoading={isLoading}
+          isError={isError}
+          sort={urlSort}
+          onSort={handleSortChange}
+          onRetry={() => refetch()}
         />
 
-        {offlineNotice && (
-          <div className="mb-4 p-3 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
-            {offlineNotice}
-          </div>
-        )}
-
-        {isLoading ? (
-          <TransactionTableSkeleton rows={5} />
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <p className="text-sm text-muted-foreground">{error}</p>
-            <button
-              onClick={() => {
-                setError(null);
-                setDebouncedSearch(searchQuery);
-              }}
-              className="text-sm font-medium text-primary hover:underline px-4 py-2 border rounded-md"
-            >
-              Retry
-            </button>
-          </div>
-        ) : transactions.length > 0 ? (
-          <>
-            <TransactionTable
-              transactions={sortedTransactions}
-              onSelectTransaction={handleTransactionClick}
-              sortBy={sortBy}
-              sortDir={sortDir}
-              onSortChange={handleSortChange}
-            />
-            <TransactionList
-              transactions={sortedTransactions}
-              onSelectTransaction={handleTransactionClick}
-            />
-            <TransactionPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={(p) => updateQueryParams({ page: String(p) })}
-              totalItems={totalItems}
-              itemsPerPage={ITEMS_PER_PAGE}
-            />
-          </>
-        ) : (
-          <TransactionEmptyState />
+        {!isLoading && !isError && (
+          <Pagination
+            page={urlPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         )}
       </div>
-
-      <TransactionDetails
-        transaction={selectedTransaction}
-        open={detailsOpen}
-        onClose={() => setDetailsOpen(false)}
-      />
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Page export (Suspense wrapper required for useSearchParams in Next.js App Router)
+// ---------------------------------------------------------------------------
 
 export default function TransactionsPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex flex-col h-full space-y-6 max-w-7xl mx-auto w-full p-4 md:p-6 items-center justify-center">
-          <p className="text-muted-foreground">Loading...</p>
+        <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-100">
+              Transactions
+            </h1>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              Loading your transactions…
+            </p>
+          </div>
         </div>
       }
     >
-      <TransactionsContent />
+      <TransactionsInner />
     </Suspense>
   );
 }
