@@ -111,3 +111,51 @@ export async function deleteAccount(input: {
     throw err;
   }
 }
+
+export type ExportStatus = 'requested' | 'preparing' | 'ready' | 'expired';
+
+export interface DataExportRequest {
+  requestId: string;
+  status: ExportStatus;
+  downloadUrl?: string | null;
+  expiresAt?: string | null;
+  requestedAt?: string | null;
+  canRequestAgainAt?: string | null;
+}
+
+export async function requestDataExport(password: string): Promise<DataExportRequest> {
+  const data = await apiRequest<Partial<DataExportRequest>>(
+    toApiBase("/user/data-export/requests"),
+    { method: "POST", body: { password } },
+  );
+  return {
+    requestId: data.requestId ?? "",
+    status: (data.status as ExportStatus) ?? "requested",
+    downloadUrl: data.downloadUrl ?? null,
+    expiresAt: data.expiresAt ?? null,
+    requestedAt: data.requestedAt ?? null,
+    canRequestAgainAt: data.canRequestAgainAt ?? null,
+  };
+}
+
+export async function getDataExportStatus(requestId?: string): Promise<DataExportRequest | null> {
+  const path = requestId
+    ? `/user/data-export/requests/${requestId}`
+    : "/user/data-export/requests/latest";
+  try {
+    const data = await apiRequest<Partial<DataExportRequest>>(toApiBase(path));
+    return {
+      requestId: data.requestId ?? "",
+      status: (data.status as ExportStatus) ?? "requested",
+      downloadUrl: data.downloadUrl ?? null,
+      expiresAt: data.expiresAt ?? null,
+      requestedAt: data.requestedAt ?? null,
+      canRequestAgainAt: data.canRequestAgainAt ?? null,
+    };
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) {
+      return null;
+    }
+    throw err;
+  }
+}
