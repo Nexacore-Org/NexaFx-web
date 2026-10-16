@@ -1,11 +1,8 @@
-import { EmptyState } from '@/components/ui/empty-state'
+import { redirect } from "next/navigation";
+import { DEFAULT_SETTINGS_SECTION } from "@/components/settings/settings-nav";
 
-export default function SettingsPage() {
-  return (
-    <EmptyState
-      variant="empty"
-      title="Settings"
-      description="Account settings will appear here."
-    />
-  )
+// /settings has no content of its own; every section is a real route, so
+// send visitors to the default one instead of rendering an index page.
+export default function SettingsIndexPage() {
+  redirect(DEFAULT_SETTINGS_SECTION);
 }
