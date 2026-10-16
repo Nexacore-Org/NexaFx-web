@@ -1,109 +1,122 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 type OTPInputProps = {
   maxDigits?: number
   onSubmit: (code: string) => void
-  onChange?: (code: string | null) => void
+  onChange?: (code: string) => void
   resendCount?: number
   onResend?: () => void
+  disabled?: boolean
 }
 
-export const OTPInput = ({ maxDigits = 6, onSubmit, onChange, resendCount = 3, onResend }: OTPInputProps) => {
-  const [digits, setDigits] = useState<string[]>([])
-  const [resendDisabled, setResendDisabled] = useState(false)
-  const [resendCountdown, setResendCountdown] = useState(0)
+export function OTPInput({
+  maxDigits = 6,
+  onSubmit,
+  onChange,
+  resendCount = 3,
+  onResend,
+  disabled = false,
+}: OTPInputProps) {
+  const [digits, setDigits] = useState<string[]>(() => Array(maxDigits).fill(''))
+  const [secondsLeft, setSecondsLeft] = useState(0)
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([])
 
-  const handleKeyDown = useCallback((event: React.KeyboardEvent, index: number) => {
-    if (event.key === 'Backspace') {
-      if (index === 0 || (index > 0 && digits[index - 1] === '')) {
-        setDigits((prev) => {
-          const next = [...prev]
-          next[index] = ''
-          // Remove leading empty digits
-          const firstNonEmpty = next.findIndex((d) => d !== '')
-          if (firstNonEmpty === -1) return []
-          return next.slice(firstNonEmpty)
-        })
+  const isCountingDown = secondsLeft > 0
+  const code = useMemo(() => digits.join(''), [digits])
+
+  useEffect(() => {
+    if (!isCountingDown) return
+    const id = setInterval(() => {
+      setSecondsLeft((prev) => (prev <= 1 ? 0 : prev - 1))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [isCountingDown])
+
+  const commit = useCallback(
+    (next: string[]) => {
+      setDigits(next)
+      const value = next.join('')
+      onChange?.(value)
+      if (value.length === maxDigits && next.every((digit) => digit !== '')) {
+        onSubmit(value)
+      }
+    },
+    [maxDigits, onChange, onSubmit]
+  )
+
+  const handleChange = useCallback(
+    (index: number, raw: string) => {
+      const value = raw.replace(/\D/g, '').slice(-1)
+      const next = [...digits]
+      next[index] = value
+      commit(next)
+      if (value && index < maxDigits - 1) {
+        inputRefs.current[index + 1]?.focus()
+      }
+    },
+    [commit, digits, maxDigits]
+  )
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+      if (event.key === 'Backspace' && digits[index] === '' && index > 0) {
+        const next = [...digits]
+        next[index - 1] = ''
+        commit(next)
+        inputRefs.current[index - 1]?.focus()
         event.preventDefault()
       }
-    }
-  }, [])
-
-  const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>, index: number) => {
-    const value = event.target.value.replace(/\D/g, '')
-    setDigits((prev) => {
-      const next = [...prev]
-      next[index] = value.slice(0, 1)
-      if (index < maxDigits - 1) {
-        return next
+      if (event.key === 'ArrowLeft' && index > 0) {
+        inputRefs.current[index - 1]?.focus()
       }
-      // Last digit filled - submit
-      const code = digits.concat(value.slice(0, 1)).join('')
-      onSubmit(code)
-      return []
-    })
-  }, [maxDigits, onSubmit])
+      if (event.key === 'ArrowRight' && index < maxDigits - 1) {
+        inputRefs.current[index + 1]?.focus()
+      }
+    },
+    [commit, digits, maxDigits]
+  )
 
-  const handlePaste = useCallback((text: string) => {
-    const digits = text.replace(/\D/g, '').slice(0, maxDigits)
-    setDigits(digits.split('').map((d) => d))
-    if (digits.length === maxDigits) {
-      const code = digits.join('')
-      onSubmit(code)
-    }
-  }, [maxDigits, onSubmit])
-
-  // Resend countdown logic
-  useEffect(() => {
-    let timer: NodeJS.Timeout | null = null
-
-    if (resendDisabled) {
-      setResendCountdown(resendCount * 1000)
-      timer = setInterval(() => {
-        setResendCountdown((prev) => {
-          const next = prev - 1000
-          if (next <= 0) {
-            clearInterval(timer!)
-            setResendDisabled(false)
-            return 0
-          }
-          return next
-        })
-      }, 1000)
-    }
-
-    return () => {
-      if (timer) clearInterval(timer)
-    }
-  }, [resendDisabled, resendCount])
+  const handlePaste = useCallback(
+    (event: React.ClipboardEvent<HTMLInputElement>) => {
+      const pasted = event.clipboardData.getData('text').replace(/\D/g, '')
+      if (!pasted) return
+      event.preventDefault()
+      const next = Array(maxDigits).fill('')
+      for (let i = 0; i < Math.min(pasted.length, maxDigits); i += 1) {
+        next[i] = pasted[i]
+      }
+      commit(next)
+      const focusIndex = Math.min(pasted.length, maxDigits - 1)
+      inputRefs.current[focusIndex]?.focus()
+    },
+    [commit, maxDigits]
+  )
 
   const resend = useCallback(() => {
-    if (onResend) {
-      onResend()
-    }
-    resetResend()
-  }, [onResend])
-
-  const resetResend = useCallback(() => {
-    setResendDisabled(false)
-    setResendCountdown(0)
-  }, [])
+    onResend?.()
+    setSecondsLeft(resendCount)
+  }, [onResend, resendCount])
 
   return (
-    <div style={{ display: 'flex', gap: '4px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
       {Array.from({ length: maxDigits }, (_, i) => (
         <input
           key={i}
+          ref={(el) => {
+            inputRefs.current[i] = el
+          }}
           type="text"
-          maxLength="1"
+          maxLength={1}
           inputMode="numeric"
           autoComplete="one-time-code"
-          aria-label={`OTP digit ${i + 1}`}
-          value={digits[i] || ''}
-          onChange={(e) => handleInputChange(e, i)}
+          aria-label={`OTP digit ${i + 1} of ${maxDigits}`}
+          value={digits[i] ?? ''}
+          disabled={disabled}
+          onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, i)}
+          onPaste={handlePaste}
           style={{
             width: '40px',
             height: '40px',
@@ -116,25 +129,19 @@ export const OTPInput = ({ maxDigits = 6, onSubmit, onChange, resendCount = 3, o
         />
       ))}
 
-      {resendCount && !resendDisabled && (
-        <button
-          onClick={resend}
-          style={{ marginLeft: '8px', padding: '4px 8px', fontSize: '12px' }}
-          disabled={resendDisabled}
-        >
-          Resend ({(resendCount * 1000 - resendCountdown) / 1000}s)
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={resend}
+        disabled={isCountingDown || !onResend}
+        style={{ marginLeft: '8px', padding: '4px 8px', fontSize: '12px' }}
+      >
+        {isCountingDown ? `Resend in ${secondsLeft}s` : 'Resend code'}
+      </button>
 
-      {resendDisabled && (
-        <span style={{ marginLeft: '8px', fontSize: '12px', color: '#666' }}>
-          Resend available in {(resendCountdown / 1000 | 0)}s
-        </span>
-      )}
-
-      {digits.length === maxDigits && !onSubmit.called && (
-        <button onClick={() => onSubmit(digits.join(''))} style={{ display: 'none' }} />
-      )}
+      <span aria-live="polite" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden' }}>
+        {isCountingDown ? `You can resend the code in ${secondsLeft} seconds` : ''}
+        {code.length === maxDigits ? 'Code complete' : ''}
+      </span>
     </div>
   )
 }

@@ -11,15 +11,9 @@ export function isValidStellarAddress(value: string): { valid: boolean; reason?:
       return { valid: false, reason: 'Invalid character in address' }
     }
   }
-  // CRC16 checksum validation
-  const version = value.substring(1, 5)
-  const body = value.substring(5, value.length - 4)
-  const checksum = value.substring(value.length - 4)
-  // Simple checksum validation - in production use @stellar/stellar-sdk
-  const calculatedCrc = 0
-  for (let i = 0; i < body.length; i++) {
-    calculatedCrc = (calculatedCrc << 8) ^ 0xFFFF
-  }
+  // NOTE: the character/length checks below are a lightweight shape check.
+  // Full StrKey CRC16 validation requires @stellar/stellar-sdk; wire that up
+  // before trusting a user-supplied address for real transfers.
   return { valid: true }
 }
 

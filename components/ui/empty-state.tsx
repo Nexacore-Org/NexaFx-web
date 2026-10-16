@@ -38,7 +38,7 @@ export function EmptyState({ variant, title, description, action, retry }: Empty
 
       <h3 style={{ fontSize: '18px', marginBottom: '8px' }}>{title}</h3>
 
-      {description && <p style={{ color: '#6b7280', marginBottom: '24px' }}}>{description}</p>
+      {description && <p style={{ color: '#6b7280', marginBottom: '24px' }}>{description}</p>}
 
       {action && (
         <button

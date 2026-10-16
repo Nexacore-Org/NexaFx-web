@@ -1,11 +1,11 @@
 export interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
   query?: Record<string, string | number | boolean | string[]>
   headers?: Record<string, string>
 }
 
-export interface ApiError {
+export interface ApiErrorInit {
   status: number | null
   code: string | null
   message: string
@@ -19,19 +19,7 @@ export class ApiError extends Error {
   details: unknown | null
   isNetworkError: boolean
 
-  constructor({
-    status,
-    code,
-    message,
-    details,
-    isNetworkError,
-  }: {
-    status: number | null
-    code: string | null
-    message: string
-    details: unknown | null
-    isNetworkError: boolean
-  }) {
+  constructor({ status, code, message, details, isNetworkError }: ApiErrorInit) {
     super(message)
     this.name = 'ApiError'
     this.status = status
@@ -40,6 +28,72 @@ export class ApiError extends Error {
     this.details = details
     this.isNetworkError = isNetworkError
   }
+}
+
+/**
+ * A 401 handler registered by the auth layer. It returns `true` when the
+ * request was refreshed and should be retried once, or `false` when recovery
+ * is not possible (e.g. the refresh token itself expired).
+ */
+export type UnauthorizedHandler = (path: string) => Promise<boolean>
+
+let unauthorizedHandler: UnauthorizedHandler | null = null
+
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
+  unauthorizedHandler = handler
+}
+
+async function execute(
+  url: string,
+  { method, body, headers }: RequestOptions
+): Promise<Response> {
+  return fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...headers,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(10000),
+  })
+}
+
+async function parseResponse<T>(res: Response): Promise<T> {
+  const contentType = res.headers.get('content-type')
+
+  if (contentType && contentType.includes('application/json')) {
+    const data = await res.json()
+    if (!res.ok) {
+      throw new ApiError({
+        status: res.status,
+        code: data?.code ?? null,
+        message: data?.message ?? `Request failed with status ${res.status}`,
+        details: data ?? null,
+        isNetworkError: false,
+      })
+    }
+    return data as T
+  }
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new ApiError({
+      status: res.status,
+      code: null,
+      message: `Request failed with status ${res.status}`,
+      details: text.substring(0, 200),
+      isNetworkError: false,
+    })
+  }
+
+  const text = await res.text()
+  throw new ApiError({
+    status: res.status,
+    code: null,
+    message: 'Unexpected non-JSON response',
+    details: text.substring(0, 200),
+    isNetworkError: false,
+  })
 }
 
 export async function apiRequest<T>(
@@ -60,40 +114,23 @@ export async function apiRequest<T>(
     })
   }
 
-  const signal = AbortSignal.timeout(10000)
-
   try {
-    const res = await fetch(url.toString(), {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers,
-      },
-      body: body ? JSON.stringify(body) : undefined,
-      signal,
-    })
+    const options: RequestOptions = { method, body, headers }
+    let res = await execute(url.toString(), options)
 
-    // Parse response defensively
-    const contentType = res.headers.get('content-type')
-
-    if (contentType && contentType.includes('application/json')) {
-      const data = await res.json()
-      return data as T
+    // On 401, give the auth layer a chance to refresh and retry once.
+    if (res.status === 401 && unauthorizedHandler) {
+      const recovered = await unauthorizedHandler(path)
+      if (recovered) {
+        res = await execute(url.toString(), options)
+      }
     }
 
-    // Handle non-JSON responses (e.g., HTML error pages)
-    const text = await res.text()
-    throw new ApiError({
-      status: res.status,
-      code: null,
-      message: `Request failed with status ${res.status}`,
-      details: text.substring(0, 200),
-      isNetworkError: false,
-    })
-  } catch (err: any) {
+    return await parseResponse<T>(res)
+  } catch (err: unknown) {
     if (err instanceof ApiError) throw err
 
-    if (err.name === 'AbortError') {
+    if (err instanceof Error && err.name === 'AbortError') {
       throw new ApiError({
         status: 0,
         code: 'REQUEST_TIMEOUT',
@@ -108,7 +145,7 @@ export async function apiRequest<T>(
       status: 0,
       code: 'NETWORK_ERROR',
       message: 'Network error. Please check your connection.',
-      details: err.message,
+      details: err instanceof Error ? err.message : String(err),
       isNetworkError: true,
     })
   }
