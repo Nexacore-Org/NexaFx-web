@@ -4,4 +4,5 @@ export const queryKeys = {
   transactions: ['transactions'],
   rates: (base: string) => ['rates', base],
   notifications: ['notifications'],
+  profile: ['profile'],
 }
