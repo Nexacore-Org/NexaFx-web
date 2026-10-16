@@ -40,7 +40,10 @@ export function formatMoney(
   const sign = numericAmount < 0 ? '-' : ''
 
   if (options.compact) {
-    return `${sign}${formatted / Math.pow(10, decimals)}k`
+    return new Intl.NumberFormat(undefined, {
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(numericAmount)
   }
 
   return `${sign}${formatted}`

@@ -1,13 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'next/navigation'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function ResetPasswordPage() {
-  const navigate = useNavigate()
+function ResetPasswordForm() {
   const router = useRouter()
-  const [searchParams] = useSearchParams()
+  const searchParams = useSearchParams()
   const code = searchParams.get('code') || ''
 
   const [newPassword, setNewPassword] = useState('')
@@ -36,20 +34,17 @@ export default function ResetPasswordPage() {
 
       if (res.status === 401) {
         setError('Invalid or expired code')
-        setPending(false)
         return
       }
 
       if (!res.ok) {
         setError('Failed to reset password')
-        setPending(false)
         return
       }
 
-      navigate('/login', { state: { success: 'Password reset successful. Please sign in.' } })
-    } catch (err) {
+      router.push('/login?notice=password-reset')
+    } catch {
       setError('Network error. Please try again.')
-      setPending(false)
     } finally {
       setPending(false)
     }
@@ -75,7 +70,9 @@ export default function ResetPasswordPage() {
             className="shadow appearance-none rounded border border-gray-400 w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="enter new password"
           />
-          <p className="text-xs text-gray-500">Minimum 8 characters, at least one letter and one number</p>
+          <p className="text-xs text-gray-500">
+            Minimum 8 characters, at least one letter and one number
+          </p>
         </div>
 
         <div>
@@ -103,5 +100,20 @@ export default function ResetPasswordPage() {
         </button>
       </form>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-md p-6">
+          <h2>Reset Password</h2>
+          <p className="text-sm text-gray-500">Loading…</p>
+        </div>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
   )
 }

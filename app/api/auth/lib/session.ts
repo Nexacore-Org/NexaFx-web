@@ -1,26 +1,31 @@
-export async function getSessionCookie() {
-  const cookie = await import('next/headers').then((mod) => mod.cookies())
-  return cookie.get('session')?.value
+import { cookies } from 'next/headers'
+
+export async function getSessionCookie(): Promise<string | undefined> {
+  const cookieStore = await cookies()
+  return cookieStore.get('session')?.value
 }
 
-export async function setSessionCookie(value: string, options: {
-  maxAge?: number
-  httpOnly?: boolean
-  secure?: boolean
-  sameSite?: string
-  path?: string
-} = {}) {
-  const cookieStore = await import('next/headers').then((mod) => mod.cookieStore())
-  const params = new URLSearchParams()
-  if (options.httpOnly) params.append('HttpOnly', 'true')
-  if (options.secure) params.append('Secure', 'true')
-  if (options.sameSite) params.append('SameSite', options.sameSite)
-  if (options.path) params.append('Path', options.path)
-  if (options.maxAge) params.append('Max-Age', options.maxAge.toString())
-  cookieStore.set('session', value, { ...Object.fromEntries(params.entries()), path: '/' })
+export async function setSessionCookie(
+  value: string,
+  options: {
+    maxAge?: number
+    httpOnly?: boolean
+    secure?: boolean
+    sameSite?: 'lax' | 'strict' | 'none'
+    path?: string
+  } = {}
+): Promise<void> {
+  const cookieStore = await cookies()
+  cookieStore.set('session', value, {
+    httpOnly: options.httpOnly ?? true,
+    secure: options.secure ?? process.env.NODE_ENV === 'production',
+    sameSite: options.sameSite ?? 'lax',
+    path: options.path ?? '/',
+    maxAge: options.maxAge,
+  })
 }
 
-export async function deleteSessionCookie() {
-  const cookieStore = await import('next/headers').then((mod) => mod.cookieStore())
+export async function deleteSessionCookie(): Promise<void> {
+  const cookieStore = await cookies()
   cookieStore.delete('session')
 }

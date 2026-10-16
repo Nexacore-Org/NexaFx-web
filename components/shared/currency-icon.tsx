@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import { formatCode, getCurrency } from '../lib/currencies'
+import { formatCode, getCurrency } from '@/lib/currencies'
 
 export function CurrencyIcon({ code }: { code: string }) {
   const currency = getCurrency(code)

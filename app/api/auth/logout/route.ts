@@ -10,9 +10,9 @@ export async function GET(request: Request) {
       method: 'POST',
       credentials: 'include',
     })
-  } catch (err) {
+  } catch {
     // ignore revoke errors
   }
 
-  return Next.json({ success: true }, { status: 200 })
+  return NextResponse.json({ success: true }, { status: 200 })
 }
