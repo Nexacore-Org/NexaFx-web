@@ -1,30 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useEffect, useState, type FormEvent } from "react";
 
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog } from "@/components/ui/dialog";
 import { FormError } from "./settings-section";
 import {
   type DataExportRequest,
@@ -32,12 +10,6 @@ import {
   requestDataExport,
   getDataExportStatus,
 } from "@/lib/api/user";
-
-const formSchema = z.object({
-  password: z.string().min(1, "Password is required"),
-});
-
-type FormValues = z.infer<typeof formSchema>;
 
 function statusLabel(status: ExportStatus): string {
   switch (status) {
@@ -54,24 +26,25 @@ function statusLabel(status: ExportStatus): string {
   }
 }
 
-function canRequestAgain(exp?: string | null): boolean {
-  if (!exp) return false;
-  const expMs = new Date(exp).getTime();
-  if (Number.isNaN(expMs)) return false;
-  return Date.now() > expMs;
-}
-
+/**
+ * Self-service "download my data" request.
+ *
+ * The user re-enters their password to confirm the request; the password is
+ * never persisted. While the backend prepares the archive, the status is
+ * polled until it is ready to download or has expired.
+ */
 export default function DataExport() {
   const [open, setOpen] = useState(false);
   const [exportInfo, setExportInfo] = useState<DataExportRequest | null>(null);
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isPolling, setIsPolling] = useState(false);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { password: "" },
-  });
+  const close = () => {
+    setOpen(false);
+    setPassword("");
+    setError(null);
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -93,44 +66,42 @@ export default function DataExport() {
     };
   }, []);
 
+  const pollingRequestId =
+    exportInfo?.status === "preparing" ? exportInfo.requestId : null;
+
+  // Poll while an export is being prepared. State is only updated from the
+  // async callback, never synchronously inside the effect body.
   useEffect(() => {
-    if (!exportInfo) return;
-    if (exportInfo.status === "preparing") {
-      setIsPolling(true);
-      const id = setInterval(async () => {
-        try {
-          const updated = await getDataExportStatus(exportInfo.requestId);
-          if (updated) {
-            setExportInfo(updated);
-            if (updated.status !== "preparing") {
-              setIsPolling(false);
-            }
-          } else {
-            setIsPolling(false);
-          }
-        } catch {
-          // ignore polling errors; stop after a few attempts is not required
+    if (!pollingRequestId) return;
+    const id = setInterval(async () => {
+      try {
+        const updated = await getDataExportStatus(pollingRequestId);
+        if (updated) {
+          setExportInfo(updated);
         }
-      }, 5000);
-      return () => clearInterval(id);
-    }
-    setIsPolling(false);
-  }, [exportInfo]);
+      } catch {
+        // Ignore transient polling errors; the next tick retries.
+      }
+    }, 5000);
+    return () => clearInterval(id);
+  }, [pollingRequestId]);
 
-  const isPending = exportInfo && (exportInfo.status === "requested" || exportInfo.status === "preparing");
-  const canDownload = exportInfo && exportInfo.status === "ready" && exportInfo.downloadUrl;
-  const canRequestNew = !isPending && (exportInfo?.status === "expired" || canRequestAgain(exportInfo?.canRequestAgainAt));
+  const isPending =
+    exportInfo?.status === "requested" || exportInfo?.status === "preparing";
+  const isPolling = exportInfo?.status === "preparing";
+  const canDownload =
+    exportInfo?.status === "ready" && Boolean(exportInfo.downloadUrl);
 
-  async function onSubmit(values: FormValues) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      const res = await requestDataExport(values.password);
+      const res = await requestDataExport(password);
       setExportInfo(res);
-      form.reset();
-      setOpen(false);
-    } catch (e: any) {
-      setError(e?.message || "Failed to request export");
+      close();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to request export");
     } finally {
       setLoading(false);
     }
@@ -138,82 +109,97 @@ export default function DataExport() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h3 className="text-lg font-medium">Download my data</h3>
-          <p className="text-sm text-muted-foreground">
-            Request an export of your account data. We'll notify you when it's ready to download.
-          </p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button disabled={!!isPending}>Request export</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Request data export</DialogTitle>
-              <DialogDescription>
-                Re-enter your password to confirm this request.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" autoComplete="current-password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormError message={error} />
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? "Requesting..." : "Request export"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-prose text-sm text-zinc-600 dark:text-zinc-400">
+          Request an export of your account data. We&apos;ll notify you when
+          it&apos;s ready to download.
+        </p>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          disabled={isPending}
+          className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+        >
+          Request export
+        </button>
       </div>
 
+      <Dialog
+        open={open}
+        onClose={close}
+        title="Request data export"
+        description="Re-enter your password to confirm this request."
+      >
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div>
+            <label
+              className="mb-1 block text-sm font-medium"
+              htmlFor="data-export-password"
+            >
+              Password
+            </label>
+            <input
+              id="data-export-password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              disabled={loading}
+              className="w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </div>
+
+          <FormError message={error} />
+
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={close}
+              disabled={loading}
+              className="rounded border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || password.length === 0}
+              className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+            >
+              {loading ? "Requesting..." : "Request export"}
+            </button>
+          </div>
+        </form>
+      </Dialog>
+
       {exportInfo && (
-        <div className="rounded-lg border p-4 space-y-2">
+        <div className="space-y-2 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Export status</p>
-              <p className="text-sm text-muted-foreground">Status: {statusLabel(exportInfo.status)}</p>
-            </div>
-            {isPolling && <p className="text-sm text-muted-foreground">Checking...</p>}
+            <p className="text-sm">
+              <span className="font-medium">Export status:</span>{" "}
+              {statusLabel(exportInfo.status)}
+            </p>
+            {isPolling && (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Checking...
+              </p>
+            )}
           </div>
           {canDownload && exportInfo.downloadUrl && (
             <a
               href={exportInfo.downloadUrl}
               download
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2"
+              className="inline-flex items-center justify-center rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
             >
               Download
             </a>
           )}
           {exportInfo.status === "expired" && (
-            <Alert>
-              <AlertDescription>
-                Your export has expired. You can request a new export.
-              </AlertDescription>
-            </Alert>
+            <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm dark:border-amber-800 dark:bg-amber-950/40">
+              Your export has expired. You can request a new export.
+            </p>
           )}
         </div>
       )}
-      {error && !exportInfo && <FormError message={error} />}
     </div>
   );
 }
