@@ -33,6 +33,11 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     label: "Preferences",
     description: "Language, currency and display options.",
   },
+  {
+    href: "/settings/account",
+    label: "Account",
+    description: "Close your NexaFx account.",
+  },
 ];
 
 export const DEFAULT_SETTINGS_SECTION = "/settings/profile";

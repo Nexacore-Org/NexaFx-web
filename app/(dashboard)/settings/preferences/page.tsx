@@ -3,24 +3,20 @@ import {
   SettingsCard,
   SettingsSection,
 } from "../../../../components/settings/settings-section";
+import LanguageSelect from "../../../../components/settings/language-select";
+import { resolveLocale } from "../../../../i18n/locale";
+import { getTranslations } from "next-intl/server";
 
 export const metadata: Metadata = { title: "Preferences · Settings" };
 
-/**
- * This section is owned by a separate in-flight change (language and display
- * preferences). Until it lands, the tab points here so the shell stays
- * navigable rather than 404ing.
- */
-export default function SettingsPreferencesPage() {
+export default async function SettingsPreferencesPage() {
+  const locale = await resolveLocale();
+  const t = await getTranslations({ locale, namespace: "language" });
+
   return (
-    <SettingsSection
-      title="Preferences"
-      description="Language, currency and display options."
-    >
-      <SettingsCard title="Display preferences">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          This section is being built.
-        </p>
+    <SettingsSection title={t("heading")} description={t("description")}>
+      <SettingsCard title={t("heading")}>
+        <LanguageSelect current={locale} />
       </SettingsCard>
     </SettingsSection>
   );

@@ -1,0 +1,18 @@
+{
+  "appName": "NexaFx",
+  "metadata": {
+    "title": "NexaFx",
+    "description": "Canza kuɗi da kowane irin shari a cikin Stellar."
+  },
+  "home": {
+    "tagline": "Canza kuɗi da kowane irin shari a cikin Stellar.",
+    "rebuild": "Sabunta v2 yana nan.",
+    "appName": "NexaFx"
+  },
+  "language": {
+    "heading": "Harshe",
+    "description": "Zaɓi harshen da ake amfani da shi a ko'ina. Wannan yana shafi rubutun da kuma tsarin adireshin lambobi da kwanaki.",
+    "label": "Harshen gidan",
+    "saved": "An sabunta harshen."
+  }
+}

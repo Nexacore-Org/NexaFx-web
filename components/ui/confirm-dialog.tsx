@@ -10,6 +10,8 @@ export interface ConfirmDialogProps {
   cancelLabel?: string;
   tone?: "default" | "danger";
   busy?: boolean;
+  /** Keeps the confirm button disabled, e.g. until typed confirmation matches. */
+  confirmDisabled?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
   /** Renders inside the dialog above the buttons, e.g. blocker lists. */
@@ -29,6 +31,7 @@ export default function ConfirmDialog({
   cancelLabel = "Cancel",
   tone = "default",
   busy = false,
+  confirmDisabled = false,
   onConfirm,
   onCancel,
   children,
@@ -139,7 +142,7 @@ export default function ConfirmDialog({
           <button
             type="button"
             onClick={onConfirm}
-            disabled={busy}
+            disabled={busy || confirmDisabled}
             className={`rounded px-4 py-2 text-sm font-medium disabled:opacity-50 ${confirmClass}`}
           >
             {busy ? "Working…" : confirmLabel}

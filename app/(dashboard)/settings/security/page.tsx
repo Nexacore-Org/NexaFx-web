@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   SettingsCard,
   SettingsSection,
@@ -36,6 +37,18 @@ export default function SettingsSecurityPage() {
         description="Devices currently signed in to your account. If you do not recognise one, sign it out and change your password."
       >
         <ActiveSessions />
+      </SettingsCard>
+
+      <SettingsCard
+        title="Account activity"
+        description="A log of sign-ins, password changes and other security events on your account."
+      >
+        <Link
+          href="/settings/security/activity"
+          className="text-sm font-medium underline"
+        >
+          View account activity
+        </Link>
       </SettingsCard>
     </>
   );

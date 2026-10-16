@@ -1,0 +1,18 @@
+{
+  "appName": "NexaFx",
+  "metadata": {
+    "title": "NexaFx",
+    "description": "Échange multi-devises sur le réseau Stellar."
+  },
+  "home": {
+    "tagline": "Échange multi-devises sur le réseau Stellar.",
+    "rebuild": "La refonte v2 commence ici.",
+    "appName": "NexaFx"
+  },
+  "language": {
+    "heading": "Langue",
+    "description": "Choisissez la langue utilisée sur le site. Cela modifie les textes affichés ainsi que le format des nombres et des dates.",
+    "label": "Langue du site",
+    "saved": "Langue mise à jour."
+  }
+}
