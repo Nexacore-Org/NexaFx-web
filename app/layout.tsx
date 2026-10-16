@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { Toaster } from "@/app/(client)/toaster";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -10,7 +12,7 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-};
+});
 
 export const metadata: Metadata = {
   title: "NexaFx",
@@ -28,9 +30,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        {children}
-        <app/(client)/toaster />
+        <AuthProvider>
+          {children}
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
-  )
+  );
 }
