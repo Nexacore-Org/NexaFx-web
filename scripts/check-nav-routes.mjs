@@ -10,7 +10,7 @@ const navigationSource = readFileSync(
   "utf8",
 );
 
-const hrefs = [...navigationSource.matchAll(/href:\s*'([^']+)'/g)].map(
+const hrefs = [...navigationSource.matchAll(/href:\s*['"]([^'"]+)['"]/g)].map(
   (match) => match[1],
 );
 
