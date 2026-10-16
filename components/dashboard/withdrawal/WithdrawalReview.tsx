@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import { useWithdrawalLimits } from "@/hooks/use-withdrawal-limits";
+import { useSubmitOnce } from "@/hooks/use-submit-once";
 import { ChevronLeft, Coins, CircleDollarSign, BadgeDollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createWithdrawal } from "@/lib/api/transactions";
@@ -12,6 +12,7 @@ import {
   formatWithdrawalFee,
   type WithdrawalNetwork,
 } from "@/lib/utils/withdrawal-fee";
+import { useState } from "react";
 
 const currencies = [
     { id: 'USDC', name: 'USD Coin', icon: <CircleDollarSign className="w-8 h-8 text-blue-500" /> },
@@ -22,7 +23,6 @@ const currencies = [
 export function WithdrawalReview() {
     const { currency, amount, walletAddress, step, setStep, setTransactionResult, close, reset } = useWithdrawalStore();
     const [showConfirmation, setShowConfirmation] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
     const { remainingDaily, remainingMonthly, isLoading: limitsLoading } = useWithdrawalLimits(currency);
 
     const isProcessingStep = step === 'processing';
@@ -41,19 +41,14 @@ export function WithdrawalReview() {
         setShowConfirmation(true);
     };
 
-    const handleConfirmedWithdrawal = async () => {
-        if (isProcessingStep) return;
-
-        setIsProcessing(true);
+    const submitWithdrawal = async () => {
         setStep('processing');
-
         try {
             const response = await createWithdrawal({
                 currency,
-                amount,
-                walletAddress,
+                amount: parseFloat(amount),
+                destinationAddress: walletAddress,
             });
-
             setTransactionResult(response.transactionId, 'success');
             setStep('success');
         } catch (error) {
@@ -63,10 +58,11 @@ export function WithdrawalReview() {
             setTransactionResult(null, 'failed', errorMessage);
             setStep('error');
         } finally {
-            setIsProcessing(false);
             setShowConfirmation(false);
         }
     };
+
+    const { handleSubmit: handleConfirmedWithdrawal, isSubmitting: isProcessing } = useSubmitOnce(submitWithdrawal);
 
     const handleCancel = () => {
         if (isProcessingStep) return;

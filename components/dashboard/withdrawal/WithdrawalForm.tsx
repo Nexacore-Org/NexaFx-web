@@ -18,6 +18,8 @@ import { Input } from "@/components/ui/Input";
 import { requiresMemo } from "@/lib/utils/stellar-validation";
 import { parseBalanceAmount } from "@/lib/utils/balance";
 import { MAX_AMOUNT_INPUT_LENGTH } from "@/lib/constants/limits";
+import { BeneficiarySelector } from "@/components/beneficiaries/BeneficiarySelector";
+import type { Beneficiary } from "@/lib/api/beneficiaries";
 
 interface CurrencyOption {
   id: string;
@@ -151,6 +153,14 @@ export function WithdrawalForm() {
     setStep("review");
   };
 
+  const handleBeneficiarySelect = (b: Beneficiary) => {
+    setValue("walletAddress", b.address, { shouldValidate: true });
+    if (b.memo) {
+      // Memo field not yet in WithdrawalFormValues — store it for review use
+      // when the schema gains a memo field.
+    }
+  };
+
   const handleMaxClick = () => {
     if (!selectedCurrency) return;
     setValue("amount", selectedCurrency.balance.replace(/,/g, ""), {
@@ -246,6 +256,12 @@ export function WithdrawalForm() {
 
       {!isLoadingCurrencies && !currencyError && !isEmptyBalance && (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Beneficiary quick-fill */}
+          <BeneficiarySelector
+            currency={currency}
+            onSelect={handleBeneficiarySelect}
+          />
+
           {/* Wallet Address */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">

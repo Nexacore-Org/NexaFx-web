@@ -1,4 +1,5 @@
 import { apiClient } from "../api-client";
+import { generateIdempotencyKey, idempotencyHeader } from "../idempotency";
 
 export type TransactionStatus = "Success" | "Pending" | "Failed";
 export type TransactionType = "Deposit" | "Withdraw" | "Convert";
@@ -249,10 +250,18 @@ export interface WithdrawalResponse {
 
 export async function createWithdrawal(
   data: CreateWithdrawalDto,
+  idempotencyKey?: string,
 ): Promise<WithdrawalResponse> {
+  const key = idempotencyKey ?? generateIdempotencyKey();
+
+  // NOTE: The `Idempotency-Key` header is sent so that a future backend
+  // update requires no frontend changes. Until the backend confirms it
+  // honours this header for deduplication, the client-side `useSubmitOnce`
+  // guard prevents duplicate in-flight requests.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json = await apiClient<any>("/transactions/withdraw", {
     method: "POST",
+    headers: idempotencyHeader(key),
     body: JSON.stringify(data),
   });
 
@@ -271,35 +280,6 @@ export async function createWithdrawal(
     status,
     message: json.message as string | undefined,
   };
-  const idempotencyKey = crypto.randomUUID();
-
-  // TODO: Coordinate backend support for accepting and deduplicating this header.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const json = await apiClient<any>('/transactions/withdraw', {
-        method: 'POST',
-    headers: {
-      'Idempotency-Key': idempotencyKey,
-    },
-        body: JSON.stringify(data),
-    });
-
-    // Normalize response - backend may use different field names
-    const transactionId = (json.transactionId ??
-        json.transaction_id ??
-        json.id ??
-        json.data?.id ??
-        json.data?.transactionId) as string;
-
-    const status = (json.status ?? json.data?.status ?? 'pending') as
-        | 'pending'
-        | 'success'
-        | 'failed';
-
-    return {
-        transactionId,
-        status,
-        message: json.message as string | undefined,
-    };
 }
 
 // ==================== Deposit ====================
@@ -334,9 +314,12 @@ export async function createDeposit({
   const body: Record<string, string> = { amount, currency };
   if (sourceAddress) body.sourceAddress = sourceAddress;
 
+  const key = generateIdempotencyKey();
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json = await apiClient<any>("/transactions/deposit", {
     method: "POST",
+    headers: idempotencyHeader(key),
     body: JSON.stringify(body),
   });
 
@@ -370,9 +353,12 @@ export interface CreateSwapDto {
 }
 
 export async function createSwap(data: CreateSwapDto): Promise<Transaction> {
+  const key = generateIdempotencyKey();
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json = await apiClient<any>("/transactions/swap", {
     method: "POST",
+    headers: idempotencyHeader(key),
     body: JSON.stringify(data),
   });
 
