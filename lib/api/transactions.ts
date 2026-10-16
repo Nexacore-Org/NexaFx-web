@@ -26,15 +26,25 @@ export interface Transaction {
 
 export interface TransactionsQuery {
   limit?: number;
+  /** Zero-based page index for page-based pagination. */
+  page?: number;
   cursor?: string;
   type?: TransactionType;
   status?: TransactionStatus;
+  currency?: string;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 export interface TransactionsResponse {
   transactions: Transaction[];
   nextCursor?: string | null;
   total?: number;
+  /** Total number of pages when using page-based pagination. */
+  totalPages?: number;
+  /** Current page (0-based). */
+  page?: number;
 }
 
 function num(val: unknown, fallback = 0): number {
@@ -112,6 +122,11 @@ export async function fetchTransactions(
     if (query.cursor) queryParams.cursor = query.cursor;
     if (query.type) queryParams.type = query.type;
     if (query.status) queryParams.status = query.status;
+    if (query.currency) queryParams.currency = query.currency;
+    if (query.search) queryParams.search = query.search;
+    if (query.dateFrom) queryParams.dateFrom = query.dateFrom;
+    if (query.dateTo) queryParams.dateTo = query.dateTo;
+    if (query.page !== undefined) queryParams.page = query.page;
 
     const data = await apiRequest<unknown>("/api/transactions", {
       query: queryParams,
@@ -128,21 +143,32 @@ export async function fetchTransactions(
         ? data
         : [];
 
+    const total = typeof res.total === "number" ? res.total : rawList.length;
+    const limit = query.limit ?? 10;
+
     return {
       transactions: rawList.map(normaliseTransaction),
       nextCursor: typeof res.nextCursor === "string" ? res.nextCursor : null,
-      total: typeof res.total === "number" ? res.total : rawList.length,
+      total,
+      totalPages:
+        typeof res.totalPages === "number"
+          ? res.totalPages
+          : Math.ceil(total / limit),
+      page: query.page ?? 0,
     };
   } catch (err) {
     // If backend is unreachable, gracefully return mock recent transactions for development if empty
     if (process.env.NODE_ENV !== "production") {
-      return getFallbackTransactions(query.limit ?? 5);
+      return getFallbackTransactions(query.limit ?? 5, query.page ?? 0);
     }
     throw err;
   }
 }
 
-function getFallbackTransactions(limit: number): TransactionsResponse {
+function getFallbackTransactions(
+  limit: number,
+  page = 0,
+): TransactionsResponse {
   const fallbackList: Transaction[] = [
     {
       id: "tx-1",
@@ -197,8 +223,13 @@ function getFallbackTransactions(limit: number): TransactionsResponse {
     },
   ];
 
+  const start = page * limit;
+  const paged = fallbackList.slice(start, start + limit);
+
   return {
-    transactions: fallbackList.slice(0, limit),
+    transactions: paged,
     total: fallbackList.length,
+    totalPages: Math.ceil(fallbackList.length / limit),
+    page,
   };
 }
