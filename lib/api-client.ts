@@ -70,21 +70,44 @@ export async function apiRequest<T>(
 
     // Parse response defensively
     const contentType = res.headers.get("content-type");
+    const isJson = contentType?.includes("application/json") ?? false;
 
-    if (contentType && contentType.includes("application/json")) {
+    if (!res.ok) {
+      // Surface the server's own error code/message when it sent JSON, so
+      // callers can branch on the status and map the code to specific copy.
+      let payload: Record<string, unknown> = {};
+      if (isJson) {
+        try {
+          const parsed: unknown = await res.json();
+          if (parsed && typeof parsed === "object") {
+            payload = parsed as Record<string, unknown>;
+          }
+        } catch {
+          payload = {};
+        }
+      } else {
+        payload = { details: (await res.text()).substring(0, 200) };
+      }
+
+      throw new ApiError({
+        status: res.status,
+        code: typeof payload.code === "string" ? payload.code : null,
+        message:
+          typeof payload.message === "string"
+            ? payload.message
+            : `Request failed with status ${res.status}`,
+        details: payload.details ?? payload.errors ?? payload,
+        isNetworkError: false,
+      });
+    }
+
+    if (isJson) {
       const data = await res.json();
       return data as T;
     }
 
-    // Handle non-JSON responses (e.g., HTML error pages)
-    const text = await res.text();
-    throw new ApiError({
-      status: res.status,
-      code: null,
-      message: `Request failed with status ${res.status}`,
-      details: text.substring(0, 200),
-      isNetworkError: false,
-    });
+    // A successful response with no usable body (e.g. 204).
+    return undefined as T;
   } catch (err) {
     if (err instanceof ApiError) throw err;
 
