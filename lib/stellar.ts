@@ -1,45 +1,46 @@
-export function isValidStellarAddress(value: string): { valid: boolean; reason?: string } {
+export function isValidStellarAddress(value: string): {
+  valid: boolean;
+  reason?: string;
+} {
   if (value.length !== 56) {
-    return { valid: false, reason: 'Address must be 56 characters' }
+    return { valid: false, reason: "Address must be 56 characters" };
   }
-  if (value[0] !== 'G') {
-    return { valid: false, reason: 'Address must start with G prefix' }
+  if (value[0] !== "G") {
+    return { valid: false, reason: "Address must start with G prefix" };
   }
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  const alphabet =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   for (let i = 1; i < value.length; i++) {
     if (alphabet.indexOf(value[i]) === -1) {
-      return { valid: false, reason: 'Invalid character in address' }
+      return { valid: false, reason: "Invalid character in address" };
     }
   }
-  // CRC16 checksum validation
-  const version = value.substring(1, 5)
-  const body = value.substring(5, value.length - 4)
-  const checksum = value.substring(value.length - 4)
-  // Simple checksum validation - in production use @stellar/stellar-sdk
-  const calculatedCrc = 0
-  for (let i = 0; i < body.length; i++) {
-    calculatedCrc = (calculatedCrc << 8) ^ 0xFFFF
-  }
-  return { valid: true }
+  // Checksum validation is intentionally not implemented here; use
+  // @stellar/stellar-sdk (StrKey.isValidEd25519PublicKey) where a verified
+  // address is required.
+  return { valid: true };
 }
 
-export function isValidMemo(type: number | string, value: string): { valid: boolean; reason?: string } {
-  const typeNum = typeof type === 'number' ? type : parseInt(type, 10)
+export function isValidMemo(
+  type: number | string,
+  value: string,
+): { valid: boolean; reason?: string } {
+  const typeNum = typeof type === "number" ? type : parseInt(type, 10);
   switch (typeNum) {
     case 0: // null memo
-      return { valid: value === '' }
+      return { valid: value === "" };
     case 1: // text memo, max 28 bytes
-      return { valid: value.length <= 28 }
+      return { valid: value.length <= 28 };
     case 2: // id memo, exactly 64 hex chars
-      return { valid: /^[0-9a-fA-F]{64}$/.test(value) }
+      return { valid: /^[0-9a-fA-F]{64}$/.test(value) };
     case 3: // hash memo, exactly 64 hex chars
-      return { valid: /^[0-9a-fA-F]{64}$/.test(value) }
+      return { valid: /^[0-9a-fA-F]{64}$/.test(value) };
     default:
-      return { valid: false, reason: 'Unknown memo type' }
+      return { valid: false, reason: "Unknown memo type" };
   }
 }
 
 export function truncateAddress(address: string, head = 6, tail = 6): string {
-  if (address.length <= head + tail) return address
-  return `${address.slice(0, head)}...${address.slice(-tail)}`
+  if (address.length <= head + tail) return address;
+  return `${address.slice(0, head)}...${address.slice(-tail)}`;
 }

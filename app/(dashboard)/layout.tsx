@@ -10,5 +10,5 @@ export default function DashboardLayout({
       </div>
       <div className="content">{children}</div>
     </div>
-  )
+  );
 }
