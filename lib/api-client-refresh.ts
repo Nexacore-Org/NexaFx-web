@@ -1,6 +1,6 @@
-import { setUnauthorizedHandler } from './api-client'
+import { setUnauthorizedHandler } from "./api-client";
 
-let inFlightRefresh: Promise<void> | null = null
+let inFlightRefresh: Promise<void> | null = null;
 
 /**
  * Wires the API client's 401 handling to the auth layer.
@@ -14,33 +14,36 @@ export function configureApiClient({
   refreshToken,
   onAuthFailure,
 }: {
-  refreshToken: () => Promise<void>
-  onAuthFailure: () => void
+  refreshToken: () => Promise<void>;
+  onAuthFailure: () => void;
 }) {
   async function handle401(requestPath: string): Promise<boolean> {
     // Don't attempt to refresh the refresh/login endpoints themselves.
-    if (requestPath.includes('/auth/refresh') || requestPath.includes('/auth/login')) {
-      onAuthFailure()
-      return false
+    if (
+      requestPath.includes("/auth/refresh") ||
+      requestPath.includes("/auth/login")
+    ) {
+      onAuthFailure();
+      return false;
     }
 
     // Single-flight: only one refresh at a time, others await the same promise.
     if (!inFlightRefresh) {
       inFlightRefresh = refreshToken().finally(() => {
-        inFlightRefresh = null
-      })
+        inFlightRefresh = null;
+      });
     }
 
     try {
-      await inFlightRefresh
-      return true
+      await inFlightRefresh;
+      return true;
     } catch {
-      onAuthFailure()
-      return false
+      onAuthFailure();
+      return false;
     }
   }
 
-  setUnauthorizedHandler(handle401)
+  setUnauthorizedHandler(handle401);
 
-  return { handle401 }
+  return { handle401 };
 }

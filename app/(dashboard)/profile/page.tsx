@@ -1,16 +1,16 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { useAuth } from '@/components/providers/auth-provider'
-import { ProfileForm } from '@/components/profile/profile-form'
-import { Avatar } from '@/components/ui/avatar'
-import { Skeleton } from '@/components/ui/skeleton'
-import { displayName } from '@/types/user'
+import Link from "next/link";
+import { useAuth } from "@/components/providers/auth-provider";
+import { ProfileForm } from "@/components/profile/profile-form";
+import { Avatar } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { displayName } from "@/types/user";
 
 export default function ProfilePage() {
-  const { user, status } = useAuth()
+  const { user, status } = useAuth();
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="space-y-6" role="status" aria-busy="true">
         <span className="sr-only">Loading profile…</span>
@@ -23,13 +23,15 @@ export default function ProfilePage() {
         </div>
         <Skeleton width="100%" height={200} />
       </div>
-    )
+    );
   }
 
   if (!user) {
     return (
       <div className="text-center">
-        <h1 className="text-lg font-semibold text-gray-900">You&apos;re not signed in</h1>
+        <h1 className="text-lg font-semibold text-gray-900">
+          You&apos;re not signed in
+        </h1>
         <p className="mt-2 text-sm text-gray-600">
           Please sign in to view and edit your profile.
         </p>
@@ -40,10 +42,10 @@ export default function ProfilePage() {
           Sign in
         </Link>
       </div>
-    )
+    );
   }
 
-  const name = displayName(user)
+  const name = displayName(user);
 
   return (
     <div className="max-w-2xl">
@@ -59,5 +61,5 @@ export default function ProfilePage() {
 
       <ProfileForm user={user} />
     </div>
-  )
+  );
 }

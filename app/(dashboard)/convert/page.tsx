@@ -1,4 +1,4 @@
-import { EmptyState } from '@/components/ui/empty-state'
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function ConvertPage() {
   return (
@@ -7,5 +7,5 @@ export default function ConvertPage() {
       title="Convert"
       description="Currency conversion is coming soon."
     />
-  )
+  );
 }

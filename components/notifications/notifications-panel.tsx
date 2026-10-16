@@ -1,32 +1,41 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
-import { useNotifications } from '@/hooks/use-notifications'
-import { CategoryIcon } from '@/components/notifications/category-icon'
-import { Skeleton } from '@/components/ui/skeleton'
-import { relativeTime } from '@/lib/time'
-import { categoryLabel } from '@/lib/api/notifications'
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { useNotifications } from "@/hooks/use-notifications";
+import { CategoryIcon } from "@/components/notifications/category-icon";
+import { Skeleton } from "@/components/ui/skeleton";
+import { relativeTime } from "@/lib/time";
+import { categoryLabel } from "@/lib/api/notifications";
 
-const MAX_VISIBLE = 5
+const MAX_VISIBLE = 5;
 
 export function NotificationsPanel({ onClose }: { onClose: () => void }) {
-  const { notifications, isPending, isError, refetch, markRead, markAllRead, unreadCount } =
-    useNotifications()
-  const [expandedId, setExpandedId] = useState<string | null>(null)
-  const panelRef = useRef<HTMLDivElement>(null)
+  const {
+    notifications,
+    isPending,
+    isError,
+    refetch,
+    markRead,
+    markAllRead,
+    unreadCount,
+  } = useNotifications();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    panelRef.current?.focus()
-  }, [])
+    panelRef.current?.focus();
+  }, []);
 
-  const visible = notifications.slice(0, MAX_VISIBLE)
-  const unreadIds = notifications.filter((item) => !item.read).map((item) => item.id)
+  const visible = notifications.slice(0, MAX_VISIBLE);
+  const unreadIds = notifications
+    .filter((item) => !item.read)
+    .map((item) => item.id);
 
   const handleSelect = (id: string) => {
-    setExpandedId((current) => (current === id ? null : id))
-    markRead(id)
-  }
+    setExpandedId((current) => (current === id ? null : id));
+    markRead(id);
+  };
 
   return (
     <div
@@ -74,11 +83,13 @@ export function NotificationsPanel({ onClose }: { onClose: () => void }) {
             </button>
           </div>
         ) : visible.length === 0 ? (
-          <p className="p-6 text-center text-sm text-gray-500">You&apos;re all caught up.</p>
+          <p className="p-6 text-center text-sm text-gray-500">
+            You&apos;re all caught up.
+          </p>
         ) : (
           <ul>
             {visible.map((item) => {
-              const expanded = expandedId === item.id
+              const expanded = expandedId === item.id;
               return (
                 <li key={item.id}>
                   <button
@@ -86,7 +97,7 @@ export function NotificationsPanel({ onClose }: { onClose: () => void }) {
                     onClick={() => handleSelect(item.id)}
                     aria-expanded={expanded}
                     className={`flex w-full items-start gap-3 border-b border-gray-50 px-4 py-3 text-left hover:bg-gray-50 ${
-                      item.read ? '' : 'bg-blue-50/40'
+                      item.read ? "" : "bg-blue-50/40"
                     }`}
                   >
                     <CategoryIcon category={item.category} />
@@ -103,15 +114,18 @@ export function NotificationsPanel({ onClose }: { onClose: () => void }) {
                         )}
                       </span>
                       <span className="mt-0.5 block text-xs text-gray-500">
-                        {categoryLabel(item.category)} · {relativeTime(item.createdAt)}
+                        {categoryLabel(item.category)} ·{" "}
+                        {relativeTime(item.createdAt)}
                       </span>
                       {expanded && (
-                        <span className="mt-2 block text-xs text-gray-600">{item.body}</span>
+                        <span className="mt-2 block text-xs text-gray-600">
+                          {item.body}
+                        </span>
                       )}
                     </span>
                   </button>
                 </li>
-              )
+              );
             })}
           </ul>
         )}
@@ -127,5 +141,5 @@ export function NotificationsPanel({ onClose }: { onClose: () => void }) {
         </Link>
       </div>
     </div>
-  )
+  );
 }

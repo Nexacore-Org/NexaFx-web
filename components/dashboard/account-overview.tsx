@@ -1,66 +1,80 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useWallets } from '@/hooks/use-wallets'
-import { usePersistedFlag } from '@/hooks/use-persisted-flag'
-import { Skeleton } from '@/components/ui/skeleton'
-import { CurrencyIcon } from '@/components/shared/currency-icon'
-import { formatMoney } from '@/lib/money'
-import { notify } from '@/lib/notify'
-import type { WalletBalance } from '@/lib/api/wallets'
+import { useState } from "react";
+import { useWallets } from "@/hooks/use-wallets";
+import { usePersistedFlag } from "@/hooks/use-persisted-flag";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CurrencyIcon } from "@/components/shared/currency-icon";
+import { formatMoney } from "@/lib/money";
+import { notify } from "@/lib/notify";
+import type { WalletBalance } from "@/lib/api/wallets";
 
-const HIDDEN_KEY = 'nexafx.balances-hidden'
-const MASK = '••••••'
+const HIDDEN_KEY = "nexafx.balances-hidden";
+const MASK = "••••••";
 
-function BalanceRow({ wallet, hidden }: { wallet: WalletBalance; hidden: boolean }) {
+function BalanceRow({
+  wallet,
+  hidden,
+}: {
+  wallet: WalletBalance;
+  hidden: boolean;
+}) {
   return (
     <li className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
       <span className="flex items-center gap-3">
         <CurrencyIcon code={wallet.currency} />
-        <span className="text-sm font-medium text-gray-900">{wallet.currency}</span>
+        <span className="text-sm font-medium text-gray-900">
+          {wallet.currency}
+        </span>
       </span>
-      <span className="text-sm font-semibold tabular-nums text-gray-900">
+      <span className="text-sm font-semibold text-gray-900 tabular-nums">
         {hidden ? MASK : formatMoney(wallet.balance, wallet.currency)}
       </span>
     </li>
-  )
+  );
 }
 
 function LoadingState() {
   return (
     <div className="space-y-3" aria-hidden="true">
       {[0, 1, 2].map((row) => (
-        <div key={row} className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
+        <div
+          key={row}
+          className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3"
+        >
           <Skeleton width={120} height={20} />
           <Skeleton width={80} height={20} />
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 export function AccountOverview() {
-  const { data, isPending, isError, refetch, isFetching } = useWallets()
-  const [hidden, setHidden] = usePersistedFlag(HIDDEN_KEY)
-  const [copied, setCopied] = useState(false)
+  const { data, isPending, isError, refetch, isFetching } = useWallets();
+  const [hidden, setHidden] = usePersistedFlag(HIDDEN_KEY);
+  const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    const address = data?.depositAddress
-    if (!address) return
+    const address = data?.depositAddress;
+    if (!address) return;
     try {
-      await navigator.clipboard.writeText(address)
-      setCopied(true)
-      notify.success('Deposit address copied')
-      window.setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      notify.success("Deposit address copied");
+      window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      notify.error('Could not copy the address')
+      notify.error("Could not copy the address");
     }
-  }
+  };
 
   return (
     <section aria-labelledby="account-overview-heading">
       <div className="mb-4 flex items-center justify-between">
-        <h2 id="account-overview-heading" className="text-lg font-semibold text-gray-900">
+        <h2
+          id="account-overview-heading"
+          className="text-lg font-semibold text-gray-900"
+        >
           Account overview
         </h2>
         <button
@@ -69,14 +83,17 @@ export function AccountOverview() {
           aria-pressed={hidden}
           className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
         >
-          {hidden ? 'Show balances' : 'Hide balances'}
+          {hidden ? "Show balances" : "Hide balances"}
         </button>
       </div>
 
       {isPending ? (
         <LoadingState />
       ) : isError ? (
-        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
           <p>We couldn&apos;t load your balances.</p>
           <button
             type="button"
@@ -94,7 +111,11 @@ export function AccountOverview() {
         <>
           <ul className="space-y-3">
             {data.balances.map((wallet) => (
-              <BalanceRow key={wallet.currency} wallet={wallet} hidden={hidden} />
+              <BalanceRow
+                key={wallet.currency}
+                wallet={wallet}
+                hidden={hidden}
+              />
             ))}
           </ul>
           {isFetching && (
@@ -107,7 +128,9 @@ export function AccountOverview() {
 
       {data?.depositAddress && (
         <div className="mt-6 rounded-lg border border-gray-200 p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Deposit address</p>
+          <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
+            Deposit address
+          </p>
           <div className="mt-2 flex items-center gap-3">
             <code className="truncate rounded bg-gray-100 px-2 py-1 text-xs text-gray-800">
               {data.depositAddress}
@@ -117,11 +140,11 @@ export function AccountOverview() {
               onClick={handleCopy}
               className="shrink-0 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
             >
-              {copied ? 'Copied' : 'Copy'}
+              {copied ? "Copied" : "Copy"}
             </button>
           </div>
         </div>
       )}
     </section>
-  )
+  );
 }

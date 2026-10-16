@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useTransactions } from "@/hooks/use-transactions";
 import { TransactionRow } from "@/components/transactions/transaction-row";
+import { ExportButton } from "@/components/transactions/export-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -21,12 +22,15 @@ export default function TransactionsPage() {
           </p>
         </div>
 
-        <Link
-          href="/dashboard"
-          className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-        >
-          Back to Dashboard
-        </Link>
+        <div className="flex items-center gap-3">
+          <ExportButton />
+          <Link
+            href="/dashboard"
+            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            Back to Dashboard
+          </Link>
+        </div>
       </div>
 
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">

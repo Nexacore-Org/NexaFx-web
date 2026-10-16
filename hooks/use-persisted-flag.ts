@@ -1,33 +1,33 @@
-'use client'
+"use client";
 
-import { useSyncExternalStore } from 'react'
+import { useSyncExternalStore } from "react";
 
-const listenersByKey = new Map<string, Set<() => void>>()
-const values = new Map<string, boolean>()
-const hydratedKeys = new Set<string>()
+const listenersByKey = new Map<string, Set<() => void>>();
+const values = new Map<string, boolean>();
+const hydratedKeys = new Set<string>();
 
 function getListeners(key: string): Set<() => void> {
-  let listeners = listenersByKey.get(key)
+  let listeners = listenersByKey.get(key);
   if (!listeners) {
-    listeners = new Set()
-    listenersByKey.set(key, listeners)
+    listeners = new Set();
+    listenersByKey.set(key, listeners);
   }
-  return listeners
+  return listeners;
 }
 
 function readStored(key: string, fallback: boolean): boolean {
-  if (typeof window === 'undefined') return fallback
+  if (typeof window === "undefined") return fallback;
   try {
-    const raw = window.localStorage.getItem(key)
-    if (raw === null) return fallback
-    return raw === 'true'
+    const raw = window.localStorage.getItem(key);
+    if (raw === null) return fallback;
+    return raw === "true";
   } catch {
-    return fallback
+    return fallback;
   }
 }
 
 function emit(key: string): void {
-  listenersByKey.get(key)?.forEach((listener) => listener())
+  listenersByKey.get(key)?.forEach((listener) => listener());
 }
 
 /**
@@ -37,38 +37,38 @@ function emit(key: string): void {
  */
 export function usePersistedFlag(
   key: string,
-  defaultValue = false
+  defaultValue = false,
 ): [boolean, (value: boolean) => void] {
   const value = useSyncExternalStore(
     (listener) => {
-      const listeners = getListeners(key)
-      listeners.add(listener)
+      const listeners = getListeners(key);
+      listeners.add(listener);
       return () => {
-        listeners.delete(listener)
-      }
+        listeners.delete(listener);
+      };
     },
     () => {
       if (!hydratedKeys.has(key)) {
-        values.set(key, readStored(key, defaultValue))
-        hydratedKeys.add(key)
+        values.set(key, readStored(key, defaultValue));
+        hydratedKeys.add(key);
       }
-      return values.get(key) ?? defaultValue
+      return values.get(key) ?? defaultValue;
     },
-    () => defaultValue
-  )
+    () => defaultValue,
+  );
 
   const set = (next: boolean) => {
-    values.set(key, next)
-    hydratedKeys.add(key)
-    if (typeof window !== 'undefined') {
+    values.set(key, next);
+    hydratedKeys.add(key);
+    if (typeof window !== "undefined") {
       try {
-        window.localStorage.setItem(key, String(next))
+        window.localStorage.setItem(key, String(next));
       } catch {
         // Ignore storage failures (private mode, quota, etc.)
       }
     }
-    emit(key)
-  }
+    emit(key);
+  };
 
-  return [value, set]
+  return [value, set];
 }

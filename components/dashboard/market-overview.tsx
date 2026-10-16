@@ -1,18 +1,18 @@
-'use client'
+"use client";
 
-import { useRates } from '@/hooks/use-rates'
-import { Skeleton } from '@/components/ui/skeleton'
-import { CurrencyIcon } from '@/components/shared/currency-icon'
-import { formatMoney } from '@/lib/money'
-import type { RateQuote } from '@/lib/api/exchange-rates'
+import { useRates } from "@/hooks/use-rates";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CurrencyIcon } from "@/components/shared/currency-icon";
+import { formatMoney } from "@/lib/money";
+import type { RateQuote } from "@/lib/api/exchange-rates";
 
 function ChangeIndicator({ change }: { change: number }) {
-  const up = change >= 0
-  const sign = up ? '+' : '-'
+  const up = change >= 0;
+  const sign = up ? "+" : "-";
   return (
     <span
       className={`inline-flex items-center gap-1 text-xs font-medium ${
-        up ? 'text-green-600' : 'text-red-600'
+        up ? "text-green-600" : "text-red-600"
       }`}
     >
       <svg
@@ -31,7 +31,7 @@ function ChangeIndicator({ change }: { change: number }) {
       {sign}
       {Math.abs(change).toFixed(2)}%
     </span>
-  )
+  );
 }
 
 function RateCard({ quote }: { quote: RateQuote }) {
@@ -44,16 +44,19 @@ function RateCard({ quote }: { quote: RateQuote }) {
         </span>
         <ChangeIndicator change={quote.change24h} />
       </div>
-      <p className="text-xl font-semibold tabular-nums text-gray-900">
+      <p className="text-xl font-semibold text-gray-900 tabular-nums">
         {formatMoney(quote.rate, quote.currency)}
       </p>
     </div>
-  )
+  );
 }
 
 function LoadingGrid() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
+    <div
+      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      aria-hidden="true"
+    >
       {[0, 1, 2].map((card) => (
         <div
           key={card}
@@ -64,29 +67,43 @@ function LoadingGrid() {
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 function formatUpdatedAt(iso: string): string {
-  const date = new Date(iso)
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleTimeString()
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleTimeString();
 }
 
 export function MarketOverview() {
-  const { data, isPending, isError, failureCount, isFetching, refetch, dataUpdatedAt } = useRates()
-  const hasData = Boolean(data)
-  const isStale = hasData && (isError || failureCount > 0)
+  const {
+    data,
+    isPending,
+    isError,
+    failureCount,
+    isFetching,
+    refetch,
+    dataUpdatedAt,
+  } = useRates();
+  const hasData = Boolean(data);
+  const isStale = hasData && (isError || failureCount > 0);
 
   return (
     <section aria-labelledby="market-overview-heading" className="mt-8">
-      <h2 id="market-overview-heading" className="mb-4 text-lg font-semibold text-gray-900">
+      <h2
+        id="market-overview-heading"
+        className="mb-4 text-lg font-semibold text-gray-900"
+      >
         Market overview
       </h2>
 
       {isPending ? (
         <LoadingGrid />
       ) : isError && !hasData ? (
-        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
           <p>We couldn&apos;t load live rates.</p>
           <button
             type="button"
@@ -104,10 +121,8 @@ export function MarketOverview() {
               className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
             >
               <span>
-                Rates may be out of date. Last updated {formatUpdatedAt(
-                  new Date(dataUpdatedAt).toISOString()
-                )}
-                .
+                Rates may be out of date. Last updated{" "}
+                {formatUpdatedAt(new Date(dataUpdatedAt).toISOString())}.
               </span>
               <button
                 type="button"
@@ -115,7 +130,7 @@ export function MarketOverview() {
                 disabled={isFetching}
                 className="rounded-md border border-amber-300 px-2 py-1 font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-60"
               >
-                {isFetching ? 'Refreshing…' : 'Retry'}
+                {isFetching ? "Refreshing…" : "Retry"}
               </button>
             </div>
           )}
@@ -128,5 +143,5 @@ export function MarketOverview() {
         </>
       )}
     </section>
-  )
+  );
 }

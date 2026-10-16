@@ -1,62 +1,65 @@
-'use client'
+"use client";
 
-import { Suspense, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 function ResetPasswordForm() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const code = searchParams.get('code') || ''
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const code = searchParams.get("code") || "";
 
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [pending, setPending] = useState(false)
-  const [error, setError] = useState('')
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setPending(true)
+    e.preventDefault();
+    setError("");
+    setPending(true);
 
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match')
-      setPending(false)
-      return
+      setError("Passwords do not match");
+      setPending(false);
+      return;
     }
 
     try {
-      const res = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, newPassword }),
-        credentials: 'include',
-      })
+        credentials: "include",
+      });
 
       if (res.status === 401) {
-        setError('Invalid or expired code')
-        return
+        setError("Invalid or expired code");
+        return;
       }
 
       if (!res.ok) {
-        setError('Failed to reset password')
-        return
+        setError("Failed to reset password");
+        return;
       }
 
-      router.push('/login?notice=password-reset')
+      router.push("/login?notice=password-reset");
     } catch {
-      setError('Network error. Please try again.')
+      setError("Network error. Please try again.");
     } finally {
-      setPending(false)
+      setPending(false);
     }
-  }
+  };
 
   return (
     <div className="max-w-md p-6">
       <h2>Reset Password</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-2" htmlFor="new-password">
+          <label
+            className="mb-2 block text-sm font-medium"
+            htmlFor="new-password"
+          >
             New Password
           </label>
           <input
@@ -67,7 +70,7 @@ function ResetPasswordForm() {
             disabled={pending}
             required
             minLength={8}
-            className="shadow appearance-none rounded border border-gray-400 w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full appearance-none rounded border border-gray-400 px-3 py-2 leading-tight text-gray-700 shadow focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
             placeholder="enter new password"
           />
           <p className="text-xs text-gray-500">
@@ -76,7 +79,10 @@ function ResetPasswordForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2" htmlFor="confirm-password">
+          <label
+            className="mb-2 block text-sm font-medium"
+            htmlFor="confirm-password"
+          >
             Confirm Password
           </label>
           <input
@@ -86,7 +92,7 @@ function ResetPasswordForm() {
             onChange={(e) => setConfirmPassword(e.target.value)}
             disabled={pending}
             required
-            className="shadow appearance-none rounded border border-gray-400 w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full appearance-none rounded border border-gray-400 px-3 py-2 leading-tight text-gray-700 shadow focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
             placeholder="confirm password"
           />
         </div>
@@ -96,11 +102,11 @@ function ResetPasswordForm() {
           disabled={pending}
           className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
         >
-          {pending ? 'Setting...' : 'Reset Password'}
+          {pending ? "Setting..." : "Reset Password"}
         </button>
       </form>
     </div>
-  )
+  );
 }
 
 export default function ResetPasswordPage() {
@@ -115,5 +121,5 @@ export default function ResetPasswordPage() {
     >
       <ResetPasswordForm />
     </Suspense>
-  )
+  );
 }

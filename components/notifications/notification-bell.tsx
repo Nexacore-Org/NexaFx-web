@@ -1,39 +1,39 @@
-'use client'
+"use client";
 
-import { useEffect, useId, useRef, useState } from 'react'
-import { useNotifications } from '@/hooks/use-notifications'
-import { NotificationsPanel } from '@/components/notifications/notifications-panel'
+import { useEffect, useId, useRef, useState } from "react";
+import { useNotifications } from "@/hooks/use-notifications";
+import { NotificationsPanel } from "@/components/notifications/notifications-panel";
 
 export function NotificationBell() {
-  const { unreadCount } = useNotifications()
-  const [open, setOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const panelId = useId()
+  const { unreadCount } = useNotifications();
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const panelId = useId();
 
   useEffect(() => {
-    if (!open) return
+    if (!open) return;
 
     const handlePointerDown = (event: MouseEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) {
-        setOpen(false)
+        setOpen(false);
       }
-    }
+    };
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
+      if (event.key === "Escape") setOpen(false);
+    };
 
-    document.addEventListener('mousedown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener('mousedown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [open])
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
 
   const label =
     unreadCount > 0
       ? `Notifications, ${unreadCount} unread`
-      : 'Notifications, no unread notifications'
+      : "Notifications, no unread notifications";
 
   return (
     <div ref={containerRef} className="relative">
@@ -62,10 +62,10 @@ export function NotificationBell() {
         </svg>
         {unreadCount > 0 && (
           <span
-            className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold text-white"
+            className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold text-white"
             aria-hidden="true"
           >
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
@@ -76,5 +76,5 @@ export function NotificationBell() {
         </div>
       )}
     </div>
-  )
+  );
 }
