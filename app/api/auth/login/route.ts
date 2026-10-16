@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { setSessionCookie, deleteSessionCookie } from '@/app/api/auth/lib/session'
+import { setSessionCookie } from '@/app/api/auth/lib/session'
 
 export async function POST(request: Request) {
   const { email, password } = await request.json()
@@ -23,8 +23,8 @@ export async function POST(request: Request) {
       maxAge: data.expiresIn,
     })
     // Return user profile only, not the token
-    return Next.json({ user: data.user }, { status: 200 })
+    return NextResponse.json({ user: data.user }, { status: 200 })
   }
 
-  return Next.json({ error: 'Invalid credentials' }, { status: 401 })
+  return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
 }

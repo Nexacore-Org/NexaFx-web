@@ -1,11 +1,11 @@
 export interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
   query?: Record<string, string | number | boolean | string[]>
   headers?: Record<string, string>
 }
 
-export interface ApiError {
+export interface ApiErrorInit {
   status: number | null
   code: string | null
   message: string
@@ -19,19 +19,7 @@ export class ApiError extends Error {
   details: unknown | null
   isNetworkError: boolean
 
-  constructor({
-    status,
-    code,
-    message,
-    details,
-    isNetworkError,
-  }: {
-    status: number | null
-    code: string | null
-    message: string
-    details: unknown | null
-    isNetworkError: boolean
-  }) {
+  constructor({ status, code, message, details, isNetworkError }: ApiErrorInit) {
     super(message)
     this.name = 'ApiError'
     this.status = status
@@ -90,10 +78,10 @@ export async function apiRequest<T>(
       details: text.substring(0, 200),
       isNetworkError: false,
     })
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err instanceof ApiError) throw err
 
-    if (err.name === 'AbortError') {
+    if (err instanceof Error && err.name === 'AbortError') {
       throw new ApiError({
         status: 0,
         code: 'REQUEST_TIMEOUT',
@@ -108,7 +96,7 @@ export async function apiRequest<T>(
       status: 0,
       code: 'NETWORK_ERROR',
       message: 'Network error. Please check your connection.',
-      details: err.message,
+      details: err instanceof Error ? err.message : String(err),
       isNetworkError: true,
     })
   }

@@ -20,10 +20,10 @@ export async function POST(request: Request) {
       path: '/',
       maxAge: data.expiresIn,
     })
-    return Next.json({ user: data.user }, { status: 200 })
+    return NextResponse.json({ user: data.user }, { status: 200 })
   }
 
   // If refresh fails, sign out
   await deleteSessionCookie()
-  return Next.json({ error: 'Refresh failed' }, { status: 401 })
+  return NextResponse.json({ error: 'Refresh failed' }, { status: 401 })
 }

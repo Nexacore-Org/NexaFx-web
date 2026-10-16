@@ -1,19 +1,25 @@
-import { QueryClient, QueryProvider } from '@tanstack/react-query'
+'use client'
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30 * 1000,
-      retry: false,
-      refetchOnWindowFocus: true,
-      retryOnMount: false,
-    },
-    mutations: {
-      retry: false,
-    },
-  },
-})
+import { useState } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-export const QueryProvider = ({ children }: { children: React.ReactNode }) => {
-  return <QueryClient client={queryClient}>{children}</QueryClient>
+export function QueryProvider({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 30 * 1000,
+            retry: false,
+            refetchOnWindowFocus: true,
+            retryOnMount: false,
+          },
+          mutations: {
+            retry: false,
+          },
+        },
+      })
+  )
+
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 export default function SignupPage() {
   const [firstName, setFirstName] = useState('')
@@ -13,7 +13,7 @@ export default function SignupPage() {
   const [terms, setTerms] = useState(false)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
-  const navigate = useNavigate()
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,13 +73,9 @@ export default function SignupPage() {
       }
 
       // On success, navigate to OTP verification carrying the email
-      navigate('/(auth)/verify', {
-        state: { email },
-        replace: true,
-      })
-    } catch (err) {
+      router.replace(`/verify?email=${encodeURIComponent(email)}`)
+    } catch {
       setError('Network error. Please try again.')
-      setPending(false)
     } finally {
       setPending(false)
     }

@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [pending, setPending] = useState(false)
-  const navigate = useNavigate()
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -19,8 +19,8 @@ export default function ForgotPasswordPage() {
         credentials: 'include',
       })
       // Always show the same success message regardless of whether the account exists
-      navigate('/login', { state: { success: 'If an account with that email exists, a password reset link has been sent.' } })
-    } catch (err) {
+      router.push('/login?notice=reset-email-sent')
+    } catch {
       // Handle error silently - show generic message
     } finally {
       setPending(false)

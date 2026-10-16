@@ -1,8 +1,19 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, children } from 'react'
-import { User, SessionStatus, isAdmin, displayName } from '../types/user'
-import { useSession as useTansactQuerySession } from '@tanstack/react-query'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
+import {
+  User,
+  SessionStatus,
+  isAdmin as checkIsAdmin,
+  displayName,
+} from '@/types/user'
 
 type AuthContextValue = {
   user: User | null
@@ -14,7 +25,7 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
-export function useAuth = (): AuthContextValue => {
+export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext)
   if (!ctx) {
     throw new Error('useAuth must be used within an AuthProvider')
@@ -32,41 +43,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
+    let cancelled = false
+
     async function fetchSession() {
       try {
         const res = await fetch('/api/auth/profile', {
           credentials: 'include',
         })
-        if (res.status === 401) {
-          setStatus('unauthenticated')
-          setUser(null)
-        } else if (res.ok) {
+        if (cancelled) return
+        if (res.ok) {
           const data = await res.json()
-          setUser(data.user)
-          setStatus(data.user ? 'authenticated' : 'unauthenticated')
+          setUser(data?.user ?? null)
+          setStatus(data?.user ? 'authenticated' : 'unauthenticated')
         } else {
-          setStatus('unauthenticated')
           setUser(null)
+          setStatus('unauthenticated')
         }
-      } catch (err) {
-        setStatus('unauthenticated')
-        setUser(null)
-      } finally {
-        setStatus('authenticated')
+      } catch {
+        if (!cancelled) {
+          setUser(null)
+          setStatus('unauthenticated')
+        }
       }
     }
+
     fetchSession()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
-  return (
-    <AuthContext.Provider value={{
+  const value = useMemo<AuthContextValue>(
+    () => ({
       user,
       status,
       logout,
-      isAdmin,
+      isAdmin: checkIsAdmin,
       displayName,
-    }}>
-      {children}
-    </AuthContext.Provider>
+    }),
+    [user, status, logout]
   )
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
