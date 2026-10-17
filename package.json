@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/check-production-env.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -12,6 +13,11 @@
     "format:check": "prettier --check .",
     "prepare": "husky",
     "check:nav": "node scripts/check-nav-routes.mjs",
+    "check:prod-env": "node scripts/check-production-env.mjs",
+    "check:audit-exceptions": "node scripts/check-audit-exceptions.mjs",
+    "audit:prod": "npm audit --omit=dev --audit-level=high",
+    "test": "node --test __tests__/**/*.test.mjs",
+    "lighthouse": "lhci autorun",
     "verify": "npm run lint && npm run type-check && npm run check:nav && npm run build"
   },
   "lint-staged": {
@@ -32,6 +38,7 @@
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.14.0",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^26",
     "@types/qrcode": "^1.5.6",
