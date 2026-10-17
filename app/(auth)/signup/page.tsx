@@ -150,6 +150,40 @@ export default function SignupPage() {
         </div>
 
         <div>
+          <label className="mb-2 block text-sm font-medium" htmlFor="password">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+            autoComplete="new-password"
+            className="w-full appearance-none rounded border border-gray-400 px-3 py-2 leading-tight text-gray-700 shadow focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            placeholder="at least 8 characters"
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium" htmlFor="confirm-password">
+            Confirm Password
+          </label>
+          <input
+            id="confirm-password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            minLength={8}
+            autoComplete="new-password"
+            className="w-full appearance-none rounded border border-gray-400 px-3 py-2 leading-tight text-gray-700 shadow focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            placeholder="re-enter password"
+          />
+        </div>
+
+        <div>
           <label className="mb-2 block text-sm font-medium">
             <input
               type="checkbox"

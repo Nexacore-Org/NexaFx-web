@@ -1,0 +1,12 @@
+{
+  "$schema": "./scripts/bundle-budget.schema.json",
+  "defaultFirstLoadJsKb": 350,
+  "routes": {
+    "/": 300,
+    "/login": 280,
+    "/signup": 300,
+    "/dashboard": 400,
+    "/convert": 380,
+    "/withdraw": 420
+  }
+}
