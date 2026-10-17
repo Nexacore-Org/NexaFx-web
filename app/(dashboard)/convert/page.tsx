@@ -1,11 +1,15 @@
-import { EmptyState } from "@/components/ui/empty-state";
+import type { Metadata } from "next";
+import { ConvertForm } from "@/components/convert/convert-form";
+
+export const metadata: Metadata = {
+  title: "Convert | NexaFx",
+};
 
 export default function ConvertPage() {
   return (
-    <EmptyState
-      variant="empty"
-      title="Convert"
-      description="Currency conversion is coming soon."
-    />
+    <main className="mx-auto flex w-full max-w-xl flex-col gap-6 p-6">
+      <h1 className="text-2xl font-semibold">Convert</h1>
+      <ConvertForm />
+    </main>
   );
 }
