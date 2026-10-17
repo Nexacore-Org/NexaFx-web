@@ -66,6 +66,10 @@ vi.mock("@/lib/notify", () => ({
   notify: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 
+vi.mock("@/components/convert/rate-history-chart", () => ({
+  RateHistoryChart: () => null,
+}));
+
 const fromSelect = () => screen.getByLabelText("Currency to convert from");
 const toSelect = () => screen.getByLabelText("Currency to convert to");
 

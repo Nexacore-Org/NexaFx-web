@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { RateHistoryChart } from "@/components/convert/rate-history-chart";
 import { useConvertQuote, type ConvertQuote } from "@/hooks/use-convert-quote";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useWallets } from "@/hooks/use-wallets";
@@ -276,146 +277,151 @@ export function ConvertForm({
   });
 
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
-      <section className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <label htmlFor={amountId} className="text-sm font-medium">
-            You pay
-          </label>
-          <span className="text-muted-foreground text-sm">
-            {balancesLoading
-              ? "Loading balance"
-              : balance !== undefined
-                ? `Balance: ${formatAmount(balance, from)} ${from}`
-                : "Balance unavailable"}
-          </span>
-        </div>
-        <div className="flex gap-2">
-          <input
-            id={amountId}
-            type="text"
-            inputMode="decimal"
-            autoComplete="off"
-            placeholder="0.00"
-            aria-invalid={errors.amount ? true : undefined}
-            aria-describedby={errors.amount ? `${amountId}-error` : undefined}
-            className="min-w-0 flex-1 rounded-md border px-3 py-2"
-            {...register("amount")}
-          />
+    <>
+      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
+        <section className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <label htmlFor={amountId} className="text-sm font-medium">
+              You pay
+            </label>
+            <span className="text-muted-foreground text-sm">
+              {balancesLoading
+                ? "Loading balance"
+                : balance !== undefined
+                  ? `Balance: ${formatAmount(balance, from)} ${from}`
+                  : "Balance unavailable"}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <input
+              id={amountId}
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              placeholder="0.00"
+              aria-invalid={errors.amount ? true : undefined}
+              aria-describedby={errors.amount ? `${amountId}-error` : undefined}
+              className="min-w-0 flex-1 rounded-md border px-3 py-2"
+              {...register("amount")}
+            />
+            <button
+              type="button"
+              onClick={handleMax}
+              disabled={balance === undefined}
+              aria-label={`Use maximum ${from} balance`}
+              className="rounded-md border px-3 py-2 text-sm"
+            >
+              Max
+            </button>
+            <CurrencySelect
+              id={fromId}
+              label="Currency to convert from"
+              value={from}
+              onChange={handleFromChange}
+              disabledCode={to}
+            />
+          </div>
+          {errors.amount && (
+            <p
+              id={`${amountId}-error`}
+              role="alert"
+              className="text-sm text-red-600"
+            >
+              {errors.amount.message}
+            </p>
+          )}
+        </section>
+
+        <div className="flex justify-center">
           <button
             type="button"
-            onClick={handleMax}
-            disabled={balance === undefined}
-            aria-label={`Use maximum ${from} balance`}
-            className="rounded-md border px-3 py-2 text-sm"
+            onClick={handleSwap}
+            aria-label="Swap from and to currencies"
+            className="rounded-full border px-3 py-2"
           >
-            Max
+            <span aria-hidden="true">&#8645;</span>
           </button>
-          <CurrencySelect
-            id={fromId}
-            label="Currency to convert from"
-            value={from}
-            onChange={handleFromChange}
-            disabledCode={to}
-          />
         </div>
-        {errors.amount && (
-          <p
-            id={`${amountId}-error`}
-            role="alert"
-            className="text-sm text-red-600"
-          >
-            {errors.amount.message}
-          </p>
-        )}
-      </section>
 
-      <div className="flex justify-center">
-        <button
-          type="button"
-          onClick={handleSwap}
-          aria-label="Swap from and to currencies"
-          className="rounded-full border px-3 py-2"
-        >
-          <span aria-hidden="true">&#8645;</span>
-        </button>
-      </div>
+        <section className="flex flex-col gap-2">
+          <span className="text-sm font-medium">You receive</span>
+          <div className="flex gap-2">
+            <output
+              htmlFor={amountId}
+              aria-live="polite"
+              aria-busy={isPending}
+              className="flex min-h-10 min-w-0 flex-1 items-center rounded-md border px-3 py-2"
+            >
+              {isPending ? (
+                <>
+                  <span
+                    aria-hidden="true"
+                    className="h-4 w-24 animate-pulse rounded bg-gray-200"
+                  />
+                  <span className="sr-only">Fetching quote</span>
+                </>
+              ) : activeQuote ? (
+                formatAmount(activeQuote.toAmount, to)
+              ) : (
+                "0"
+              )}
+            </output>
+            <CurrencySelect
+              id={toId}
+              label="Currency to convert to"
+              value={to}
+              onChange={handleToChange}
+              disabledCode={from}
+            />
+          </div>
+          {errors.to && (
+            <p role="alert" className="text-sm text-red-600">
+              {errors.to.message}
+            </p>
+          )}
+        </section>
 
-      <section className="flex flex-col gap-2">
-        <span className="text-sm font-medium">You receive</span>
-        <div className="flex gap-2">
-          <output
-            htmlFor={amountId}
-            aria-live="polite"
-            aria-busy={isPending}
-            className="flex min-h-10 min-w-0 flex-1 items-center rounded-md border px-3 py-2"
-          >
-            {isPending ? (
-              <>
-                <span
-                  aria-hidden="true"
-                  className="h-4 w-24 animate-pulse rounded bg-gray-200"
-                />
-                <span className="sr-only">Fetching quote</span>
-              </>
-            ) : activeQuote ? (
-              formatAmount(activeQuote.toAmount, to)
-            ) : (
-              "0"
-            )}
-          </output>
-          <CurrencySelect
-            id={toId}
-            label="Currency to convert to"
-            value={to}
-            onChange={handleToChange}
-            disabledCode={from}
-          />
-        </div>
-        {errors.to && (
+        {requestable && quoteError && !isPending && (
           <p role="alert" className="text-sm text-red-600">
-            {errors.to.message}
+            We could not get a quote right now. Please try again.
           </p>
         )}
-      </section>
 
-      {requestable && quoteError && !isPending && (
-        <p role="alert" className="text-sm text-red-600">
-          We could not get a quote right now. Please try again.
-        </p>
-      )}
+        {activeQuote && !isPending && (
+          <dl className="grid grid-cols-2 gap-y-1 text-sm">
+            <dt>Rate</dt>
+            <dd className="text-right">
+              {formatRate(activeQuote.rate, from, to)}
+            </dd>
+            <dt>Fee</dt>
+            <dd className="text-right">
+              {activeQuote.fee === null
+                ? "Shown on your receipt"
+                : `${formatAmount(activeQuote.fee, activeQuote.feeCurrency)} ${activeQuote.feeCurrency}`}
+            </dd>
+          </dl>
+        )}
 
-      {activeQuote && !isPending && (
-        <dl className="grid grid-cols-2 gap-y-1 text-sm">
-          <dt>Rate</dt>
-          <dd className="text-right">
-            {formatRate(activeQuote.rate, from, to)}
-          </dd>
-          <dt>Fee</dt>
-          <dd className="text-right">
-            {activeQuote.fee === null
-              ? "Shown on your receipt"
-              : `${formatAmount(activeQuote.fee, activeQuote.feeCurrency)} ${activeQuote.feeCurrency}`}
-          </dd>
-        </dl>
-      )}
-
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={handleCopyLink}
-          className="rounded-md border px-4 py-2"
-        >
-          Copy link
-        </button>
-        <button
-          type="submit"
-          disabled={!canContinue}
-          className="flex-1 rounded-md bg-black px-4 py-2 text-white disabled:opacity-50"
-        >
-          Review conversion
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className="rounded-md border px-4 py-2"
+          >
+            Copy link
+          </button>
+          <button
+            type="submit"
+            disabled={!canContinue}
+            className="flex-1 rounded-md bg-black px-4 py-2 text-white disabled:opacity-50"
+          >
+            Review conversion
+          </button>
+        </div>
+      </form>
+      <div className="mt-8">
+        <RateHistoryChart from={from} to={to} />
       </div>
-    </form>
+    </>
   );
 }
