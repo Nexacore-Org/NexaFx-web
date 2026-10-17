@@ -8,6 +8,14 @@ import { useConvertQuote, type ConvertQuote } from "@/hooks/use-convert-quote";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useWallets } from "@/hooks/use-wallets";
 import { currencies, getCurrency } from "@/lib/currencies";
+import { notify } from "@/lib/notify";
+import {
+  DEFAULT_VALUES,
+  buildConvertQuery,
+  loadDraft,
+  saveDraft,
+  type ConvertValues,
+} from "@/lib/convert-params";
 import {
   countDecimals,
   formatAmount,
@@ -17,19 +25,16 @@ import {
   truncateToDecimals,
 } from "@/lib/convert-amount";
 
-export interface ConvertValues {
-  from: string;
-  to: string;
-  amount: string;
-}
+export type { ConvertValues };
 
 export interface ConvertFormProps {
   defaultValues?: Partial<ConvertValues>;
+  /** True when the URL carried convert params, so a stored draft is ignored. */
+  hasUrlParams?: boolean;
   onContinue?: (values: ConvertValues, quote: ConvertQuote) => void;
 }
 
 const DEBOUNCE_MS = 400;
-const FALLBACK_VALUES: ConvertValues = { from: "USD", to: "NGN", amount: "" };
 const currencyOptions = Object.values(currencies);
 
 const codeSchema = z
@@ -136,7 +141,11 @@ function CurrencySelect({
   );
 }
 
-export function ConvertForm({ defaultValues, onContinue }: ConvertFormProps) {
+export function ConvertForm({
+  defaultValues,
+  hasUrlParams = false,
+  onContinue,
+}: ConvertFormProps) {
   const amountId = useId();
   const fromId = useId();
   const toId = useId();
@@ -156,6 +165,7 @@ export function ConvertForm({ defaultValues, onContinue }: ConvertFormProps) {
     register,
     control,
     setValue,
+    reset,
     clearErrors,
     trigger,
     handleSubmit,
@@ -163,7 +173,7 @@ export function ConvertForm({ defaultValues, onContinue }: ConvertFormProps) {
   } = useForm<ConvertValues>({
     resolver: zodResolver(schema),
     mode: "onChange",
-    defaultValues: { ...FALLBACK_VALUES, ...defaultValues },
+    defaultValues: { ...DEFAULT_VALUES, ...defaultValues },
   });
 
   const [from, to, amount] = useWatch({
@@ -174,6 +184,38 @@ export function ConvertForm({ defaultValues, onContinue }: ConvertFormProps) {
   const fromCurrency = getCurrency(from);
   const toCurrency = getCurrency(to);
   const balance = balances ? (balances[from] ?? "0") : undefined;
+
+  // Restore the in-progress draft after mount (never during render, so the
+  // server and first client render agree). URL params always take precedence.
+  useEffect(() => {
+    if (hasUrlParams) return;
+    const draft = loadDraft();
+    if (draft) reset({ ...DEFAULT_VALUES, ...draft });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keep the draft and the address bar in step with the form (shallow, no
+  // navigation and no new history entry).
+  useEffect(() => {
+    saveDraft({ from, to, amount });
+    const query = buildConvertQuery({ from, to, amount });
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${window.location.pathname}?${query}`,
+    );
+  }, [from, to, amount]);
+
+  async function handleCopyLink() {
+    const query = buildConvertQuery({ from, to, amount });
+    const url = `${window.location.origin}${window.location.pathname}?${query}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      notify.success("Link copied");
+    } catch {
+      notify.error("Could not copy the link");
+    }
+  }
 
   // Re-validate once the balance arrives or the "from" currency changes.
   useEffect(() => {
@@ -358,13 +400,22 @@ export function ConvertForm({ defaultValues, onContinue }: ConvertFormProps) {
         </dl>
       )}
 
-      <button
-        type="submit"
-        disabled={!canContinue}
-        className="rounded-md bg-black px-4 py-2 text-white disabled:opacity-50"
-      >
-        Review conversion
-      </button>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={handleCopyLink}
+          className="rounded-md border px-4 py-2"
+        >
+          Copy link
+        </button>
+        <button
+          type="submit"
+          disabled={!canContinue}
+          className="flex-1 rounded-md bg-black px-4 py-2 text-white disabled:opacity-50"
+        >
+          Review conversion
+        </button>
+      </div>
     </form>
   );
 }

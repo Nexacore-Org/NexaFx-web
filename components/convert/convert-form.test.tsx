@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { notify } from "@/lib/notify";
 import {
   ConvertForm,
   buildConvertSchema,
@@ -61,6 +62,10 @@ vi.mock("@/hooks/use-convert-quote", () => ({
   },
 }));
 
+vi.mock("@/lib/notify", () => ({
+  notify: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+}));
+
 const fromSelect = () => screen.getByLabelText("Currency to convert from");
 const toSelect = () => screen.getByLabelText("Currency to convert to");
 
@@ -76,7 +81,11 @@ beforeEach(() => {
   };
   walletsState.isLoading = false;
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  window.sessionStorage.clear();
+  window.history.replaceState(null, "", "/");
+});
 
 describe("buildConvertSchema", () => {
   const schema = buildConvertSchema({ USD: "100.50", ETH: "2" });
@@ -242,5 +251,56 @@ describe("ConvertForm", () => {
       amount: "10",
     });
     expect(onContinue.mock.calls[0][1]).toMatchObject({ quoteId: "q1" });
+  });
+
+  it("restores a stored draft when there are no URL params", async () => {
+    window.sessionStorage.setItem(
+      "nexafx:convert-draft",
+      JSON.stringify({ from: "NGN", to: "USD", amount: "2500" }),
+    );
+    render(<ConvertForm />);
+    await waitFor(() =>
+      expect(screen.getByLabelText("You pay")).toHaveValue("2500"),
+    );
+    expect(fromSelect()).toHaveValue("NGN");
+  });
+
+  it("prefers URL params over a stored draft", () => {
+    window.sessionStorage.setItem(
+      "nexafx:convert-draft",
+      JSON.stringify({ from: "NGN", to: "USD", amount: "2500" }),
+    );
+    render(
+      <ConvertForm
+        hasUrlParams
+        defaultValues={{ from: "EUR", to: "GBP", amount: "7" }}
+      />,
+    );
+    expect(screen.getByLabelText("You pay")).toHaveValue("7");
+    expect(fromSelect()).toHaveValue("EUR");
+  });
+
+  it("keeps the address bar in step with the form", async () => {
+    const user = userEvent.setup();
+    render(<ConvertForm />);
+    await user.type(screen.getByLabelText("You pay"), "12");
+    await waitFor(() =>
+      expect(window.location.search).toBe("?from=USD&to=NGN&amount=12"),
+    );
+  });
+
+  it("copies a link and confirms it", async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    render(<ConvertForm />);
+    await user.type(screen.getByLabelText("You pay"), "12");
+    await user.click(screen.getByRole("button", { name: "Copy link" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    expect(writeText.mock.calls[0][0]).toContain("/?from=USD&to=NGN&amount=12");
+    expect(notify.success).toHaveBeenCalledWith("Link copied");
   });
 });

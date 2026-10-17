@@ -27,16 +27,21 @@ type Step =
  */
 export function ConvertFlow({
   defaultValues,
-}: Pick<ConvertFormProps, "defaultValues">) {
+  hasUrlParams,
+}: Pick<ConvertFormProps, "defaultValues" | "hasUrlParams">) {
   const [step, setStep] = useState<Step>({ name: "form" });
   const [formKey, setFormKey] = useState(0);
+  // After "Convert again" the form starts on the same pair with no amount and
+  // must not pull an old draft back in.
+  const [seed, setSeed] = useState({ defaultValues, hasUrlParams });
 
   return (
     <>
       <div hidden={step.name !== "form"}>
         <ConvertForm
           key={formKey}
-          defaultValues={defaultValues}
+          defaultValues={seed.defaultValues}
+          hasUrlParams={seed.hasUrlParams}
           onContinue={(values, quote) =>
             setStep({ name: "review", values, quote })
           }
@@ -64,6 +69,10 @@ export function ConvertFlow({
           quote={step.quote}
           transaction={step.transaction}
           onReset={() => {
+            setSeed({
+              defaultValues: { from: step.values.from, to: step.values.to },
+              hasUrlParams: true,
+            });
             setFormKey((key) => key + 1);
             setStep({ name: "form" });
           }}
