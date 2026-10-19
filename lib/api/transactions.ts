@@ -445,14 +445,21 @@ export interface CreateSwapDto {
   lockId?: string;
 }
 
-export async function createSwap(data: CreateSwapDto): Promise<Transaction> {
-  const key = generateIdempotencyKey();
+/**
+ * Pass `idempotencyKey` to reuse one key across retries of the same intent.
+ * `apiRequest` stringifies the body itself, so it must not be stringified here.
+ */
+export async function createSwap(
+  data: CreateSwapDto,
+  idempotencyKey?: string,
+): Promise<Transaction> {
+  const key = idempotencyKey ?? generateIdempotencyKey();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json = await apiRequest<any>("/transactions/swap", {
     method: "POST",
     headers: idempotencyHeader(key),
-    body: JSON.stringify(data),
+    body: data,
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

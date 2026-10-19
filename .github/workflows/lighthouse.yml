@@ -1,0 +1,49 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches: [main, v2]
+  workflow_dispatch:
+
+# Non-required check initially — can be marked required later once baselines stabilize.
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    name: Public pages performance & a11y
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          HUSKY: "0"
+
+      - name: Production build
+        run: npm run build
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_API_URL: https://nexafx-backend.onrender.com/v1
+
+      - name: Run Lighthouse CI
+        run: npx --yes @lhci/cli@0.14.0 autorun
+        env:
+          LHCI_BUILD_CONTEXT__CURRENT_HASH: ${{ github.sha }}
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci
+          retention-days: 14
