@@ -1,19 +1,31 @@
+import { DEVELOPER_ENABLED } from "@/lib/api/api-keys";
+
 export type NavIconKey =
-  "dashboard" | "convert" | "transactions" | "notifications" | "settings";
+  | "dashboard"
+  | "convert"
+  | "transactions"
+  | "notifications"
+  | "settings"
+  | "developer";
 
 export interface NavItem {
   key: NavIconKey;
   href: string;
   label: string;
   title: string;
+  /** When set, the entry is only rendered while this resolves truthy. */
+  enabled?: boolean;
 }
 
 /**
  * Single source of truth for the dashboard sidebar, the mobile bottom bar and
  * the topbar title. Every `href` must resolve to a real route; this is enforced
  * by `scripts/check-nav-routes.mjs`.
+ *
+ * Entries with `enabled === false` are filtered out of `navItems`, so a
+ * feature-gated route (e.g. `/developer`) stays hidden until its flag is on.
  */
-export const navItems: NavItem[] = [
+const allNavItems: NavItem[] = [
   {
     key: "dashboard",
     href: "/dashboard",
@@ -33,8 +45,19 @@ export const navItems: NavItem[] = [
     label: "Notifications",
     title: "Notifications",
   },
+  {
+    key: "developer",
+    href: "/developer",
+    label: "Developer",
+    title: "Developer",
+    enabled: DEVELOPER_ENABLED,
+  },
   { key: "settings", href: "/settings", label: "Settings", title: "Settings" },
 ];
+
+export const navItems: NavItem[] = allNavItems.filter(
+  (item) => item.enabled !== false,
+);
 
 /**
  * Returns true when `href` is the active route for `pathname`. Nested routes
