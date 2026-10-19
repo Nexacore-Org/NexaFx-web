@@ -1,0 +1,40 @@
+name: Dependency Audit
+
+on:
+  push:
+    branches: [main, v2]
+  pull_request:
+    branches: [main, v2]
+  schedule:
+    # Weekly — catch new advisories on unchanged lockfiles
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: npm audit (production, high+)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          HUSKY: "0"
+
+      - name: Check audit exception expiry
+        run: node scripts/check-audit-exceptions.mjs
+
+      - name: Production dependency audit (high/critical)
+        run: npm audit --omit=dev --audit-level=high
