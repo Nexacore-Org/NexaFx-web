@@ -6,4 +6,5 @@ export const queryKeys = {
   rates: (base: string) => ["rates", base],
   notifications: ["notifications"],
   profile: ["profile"],
+  schedules: ["schedules"],
 };
