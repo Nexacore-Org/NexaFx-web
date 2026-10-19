@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useRates } from "@/hooks/use-rates";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CurrencyIcon } from "@/components/shared/currency-icon";
+import { convertHref } from "@/lib/convert-params";
 import { formatMoney } from "@/lib/money";
 import type { RateQuote } from "@/lib/api/exchange-rates";
 
@@ -35,7 +37,8 @@ function ChangeIndicator({ change }: { change: number }) {
 }
 
 function RateCard({ quote }: { quote: RateQuote }) {
-  return (
+  const [base, counter] = quote.pair.split("/");
+  const card = (
     <div className="flex min-h-[104px] flex-col justify-between rounded-xl border border-gray-200 bg-white p-4">
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-2 text-sm font-medium text-gray-900">
@@ -48,6 +51,17 @@ function RateCard({ quote }: { quote: RateQuote }) {
         {formatMoney(quote.rate, quote.currency)}
       </p>
     </div>
+  );
+
+  if (!base || !counter) return card;
+  return (
+    <Link
+      href={convertHref(base, counter)}
+      aria-label={`Convert ${base} to ${counter}`}
+      className="block rounded-xl focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:outline-none"
+    >
+      {card}
+    </Link>
   );
 }
 
