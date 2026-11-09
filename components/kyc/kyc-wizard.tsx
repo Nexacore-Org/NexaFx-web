@@ -98,14 +98,32 @@ export function KycWizard({
       // 4. Submit all documents for review
       setUploadProgress(95);
       await submitKycDocuments({
-        documentIds: [idRes.id, selfieRes.id, addressRes.id].filter(Boolean),
+        documentIds: [idRes.id, selfieRes.id, addressRes.id],
       });
 
       setUploadProgress(100);
       resetState();
       onComplete();
     } catch (err) {
-      if (controller.signal.aborted) {
+      const isTimeout =
+        (err instanceof Error &&
+          ("code" in err && (err as { code: string }).code === "UPLOAD_TIMEOUT")) ||
+        (err instanceof DOMException && err.name === "TimeoutError") ||
+        (err instanceof Error &&
+          (err.name === "TimeoutError" ||
+            err.message.toLowerCase().includes("timed out") ||
+            err.message.toLowerCase().includes("timeout")));
+
+      const isAbort =
+        controller.signal.aborted ||
+        (err instanceof DOMException && err.name === "AbortError") ||
+        (err instanceof Error && err.name === "AbortError");
+
+      if (isTimeout) {
+        setUploadError(
+          "Upload timed out. Please check your connection and try again.",
+        );
+      } else if (isAbort) {
         setUploadError("Upload was cancelled.");
       } else {
         setUploadError(
