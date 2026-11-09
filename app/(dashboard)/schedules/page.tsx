@@ -15,12 +15,14 @@ import {
   type Schedule,
 } from "@/lib/api/schedules";
 import { queryKeys } from "@/lib/query-keys";
+import { notify } from "@/lib/notify";
 
 export default function SchedulesPage() {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [pendingCancel, setPendingCancel] = useState<Schedule | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   const { data, isPending, isError, refetch } = useQuery({
     queryKey: queryKeys.schedules,
@@ -30,6 +32,18 @@ export default function SchedulesPage() {
 
   const schedules = data ?? [];
 
+  const markBusy = (id: string) => {
+    setBusyIds((prev) => new Set(prev).add(id));
+  };
+
+  const unmarkBusy = (id: string) => {
+    setBusyIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
   const replace = (updated: Schedule) => {
     queryClient.setQueryData<Schedule[]>(queryKeys.schedules, (prev) =>
       (prev ?? []).map((s) => (s.id === updated.id ? updated : s)),
@@ -38,20 +52,37 @@ export default function SchedulesPage() {
 
   const pause = useMutation({
     mutationFn: pauseSchedule,
-    onMutate: (id) => setBusyId(id),
-    onSettled: () => setBusyId(null),
-    onSuccess: replace,
+    onMutate: (id) => markBusy(id),
+    onSettled: (_data, _err, id) => unmarkBusy(id),
+    onSuccess: (updated) => {
+      replace(updated);
+      notify.success("Schedule paused.");
+    },
+    onError: (err: any) => {
+      notify.error(err?.message || "Failed to pause schedule. Please try again.");
+    },
   });
 
   const resume = useMutation({
     mutationFn: resumeSchedule,
-    onMutate: (id) => setBusyId(id),
-    onSettled: () => setBusyId(null),
-    onSuccess: replace,
+    onMutate: (id) => markBusy(id),
+    onSettled: (_data, _err, id) => unmarkBusy(id),
+    onSuccess: (updated) => {
+      replace(updated);
+      notify.success("Schedule resumed.");
+    },
+    onError: (err: any) => {
+      notify.error(err?.message || "Failed to resume schedule. Please try again.");
+    },
   });
 
   const cancel = useMutation({
     mutationFn: cancelSchedule,
+    onMutate: (id) => {
+      setCancelError(null);
+      markBusy(id);
+    },
+    onSettled: (_data, _err, id) => unmarkBusy(id),
     onSuccess: (_void, id) => {
       queryClient.setQueryData<Schedule[]>(queryKeys.schedules, (prev) =>
         (prev ?? []).map((s) =>
@@ -59,6 +90,13 @@ export default function SchedulesPage() {
         ),
       );
       setPendingCancel(null);
+      setCancelError(null);
+      notify.success("Schedule cancelled.");
+    },
+    onError: (err: any) => {
+      const message = err?.message || "Failed to cancel schedule. Please try again.";
+      setCancelError(message);
+      notify.error(message);
     },
   });
 
@@ -132,8 +170,12 @@ export default function SchedulesPage() {
           schedules={schedules}
           onPause={(id) => pause.mutate(id)}
           onResume={(id) => resume.mutate(id)}
-          onRequestCancel={setPendingCancel}
-          busyId={busyId}
+          onRequestCancel={(schedule) => {
+            setCancelError(null);
+            setPendingCancel(schedule);
+          }}
+          busyIds={busyIds}
+          busyId={busyIds.size > 0 ? Array.from(busyIds)[0] : null}
         />
       )}
 
@@ -159,8 +201,17 @@ export default function SchedulesPage() {
         onConfirm={() => {
           if (pendingCancel) cancel.mutate(pendingCancel.id);
         }}
-        onCancel={() => setPendingCancel(null)}
-      />
+        onCancel={() => {
+          setPendingCancel(null);
+          setCancelError(null);
+        }}
+      >
+        {cancelError && (
+          <p className="mt-2 text-sm text-red-600 dark:text-red-400 font-medium">
+            {cancelError}
+          </p>
+        )}
+      </ConfirmDialog>
     </div>
   );
 }
