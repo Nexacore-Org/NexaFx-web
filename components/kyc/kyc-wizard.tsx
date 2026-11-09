@@ -40,6 +40,7 @@ export function KycWizard({
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const resetState = () => {
+    setSelectedMethod(defaultMethod ?? "bvn");
     setIdFile(null);
     setSelfieFile(null);
     setAddressFile(null);
@@ -403,31 +404,57 @@ function MethodSelector({
     },
   ];
 
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLDivElement>,
+    currentIndex: number,
+  ) => {
+    let nextIndex = currentIndex;
+
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+      e.preventDefault();
+      nextIndex = (currentIndex + 1) % options.length;
+    } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+      e.preventDefault();
+      nextIndex = (currentIndex - 1 + options.length) % options.length;
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onSelect(options[currentIndex].id);
+      return;
+    } else {
+      return;
+    }
+
+    const nextOption = options[nextIndex];
+    onSelect(nextOption.id);
+    const radiogroup = e.currentTarget.parentElement;
+    if (radiogroup) {
+      const radios = radiogroup.querySelectorAll<HTMLElement>('[role="radio"]');
+      radios[nextIndex]?.focus();
+    }
+  };
+
   return (
     <div
       className="space-y-3"
       role="radiogroup"
       aria-label="Verification Method"
     >
-      {options.map((opt) => (
-        <div
-          key={opt.id}
-          onClick={() => onSelect(opt.id)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              onSelect(opt.id);
-            }
-          }}
-          tabIndex={0}
-          role="radio"
-          aria-checked={selected === opt.id}
-          className={`flex cursor-pointer items-start justify-between rounded-lg border p-4 transition ${
-            selected === opt.id
-              ? "border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-800"
-              : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700"
-          }`}
-        >
+      {options.map((opt, idx) => {
+        const isSelected = selected === opt.id;
+        return (
+          <div
+            key={opt.id}
+            onClick={() => onSelect(opt.id)}
+            onKeyDown={(e) => handleKeyDown(e, idx)}
+            tabIndex={isSelected ? 0 : -1}
+            role="radio"
+            aria-checked={isSelected}
+            className={`flex cursor-pointer items-start justify-between rounded-lg border p-4 transition ${
+              isSelected
+                ? "border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-800"
+                : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700"
+            }`}
+          >
           <div>
             <div className="flex items-center gap-2">
               <span className="font-medium text-zinc-900 dark:text-zinc-100">
@@ -455,7 +482,8 @@ function MethodSelector({
             )}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
