@@ -3,8 +3,7 @@
 import { useState, useRef } from "react";
 import StepModal, { StepModalStep } from "@/components/ui/step-modal";
 import { FileDropzone } from "@/components/kyc/file-dropzone";
-import { BvnStep } from "@/components/kyc/bvn-step";
-import { NinStep } from "@/components/kyc/nin-step";
+import { IdentityNumberStep } from "@/components/kyc/identity-number-step";
 import { uploadKycDocument, submitKycDocuments } from "@/lib/api/kyc";
 
 export interface KycWizardProps {
@@ -148,7 +147,8 @@ export function KycWizard({
         id: "bvn",
         title: "BVN Verification",
         content: (
-          <BvnStep
+          <IdentityNumberStep
+            kind="bvn"
             onSuccess={() => {
               resetState();
               onComplete();
@@ -180,7 +180,8 @@ export function KycWizard({
         id: "nin",
         title: "NIN Verification",
         content: (
-          <NinStep
+          <IdentityNumberStep
+            kind="nin"
             onSuccess={() => {
               resetState();
               onComplete();
