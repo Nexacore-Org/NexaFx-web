@@ -67,7 +67,7 @@
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "@playwright/test": "^1.49.0"
+    "@playwright/test": "^1.49.0",
     "vitest": "^3.2.7"
   },
   "engines": {
