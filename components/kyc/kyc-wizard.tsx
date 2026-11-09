@@ -59,9 +59,23 @@ export function KycWizard({
     onClose();
   };
 
+  const isDocumentReadyToSubmit = Boolean(
+    idFile && selfieFile && addressFile && consentGiven && !isUploading,
+  );
+
   const handleDocumentSubmit = async () => {
-    if (!idFile || !selfieFile || !addressFile || !consentGiven || isUploading)
+    if (
+      !idFile ||
+      !selfieFile ||
+      !addressFile ||
+      !consentGiven ||
+      isUploading
+    ) {
+      setUploadError(
+        "Please provide all required documents and accept the consent terms before submitting.",
+      );
       return;
+    }
 
     setIsUploading(true);
     setUploadError(null);
@@ -134,6 +148,7 @@ export function KycWizard({
       {
         id: "method",
         title: "Choose Method",
+        canNext: true,
         content: (
           <MethodSelector
             selected={selectedMethod}
@@ -166,6 +181,7 @@ export function KycWizard({
       {
         id: "method",
         title: "Choose Method",
+        canNext: true,
         content: (
           <MethodSelector
             selected={selectedMethod}
@@ -199,6 +215,7 @@ export function KycWizard({
       {
         id: "method",
         title: "Choose Method",
+        canNext: true,
         content: (
           <MethodSelector
             selected={selectedMethod}
@@ -212,6 +229,7 @@ export function KycWizard({
       {
         id: "id_doc",
         title: "ID Document",
+        canNext: Boolean(idFile),
         content: (
           <div className="space-y-4">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -224,12 +242,21 @@ export function KycWizard({
               onChange={setIdFile}
               disabled={isUploading}
             />
+            {!idFile && (
+              <p
+                role="status"
+                className="text-xs text-amber-600 dark:text-amber-400"
+              >
+                Please upload your government ID document before proceeding.
+              </p>
+            )}
           </div>
         ),
       },
       {
         id: "selfie",
         title: "Selfie",
+        canNext: Boolean(selfieFile),
         content: (
           <div className="space-y-4">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -243,12 +270,21 @@ export function KycWizard({
               onChange={setSelfieFile}
               disabled={isUploading}
             />
+            {!selfieFile && (
+              <p
+                role="status"
+                className="text-xs text-amber-600 dark:text-amber-400"
+              >
+                Please upload your selfie photo before proceeding.
+              </p>
+            )}
           </div>
         ),
       },
       {
         id: "proof_address",
         title: "Proof of Address",
+        canNext: Boolean(addressFile),
         content: (
           <div className="space-y-4">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -261,12 +297,21 @@ export function KycWizard({
               onChange={setAddressFile}
               disabled={isUploading}
             />
+            {!addressFile && (
+              <p
+                role="status"
+                className="text-xs text-amber-600 dark:text-amber-400"
+              >
+                Please upload your proof of address document before proceeding.
+              </p>
+            )}
           </div>
         ),
       },
       {
         id: "review",
         title: "Review & Submit",
+        canNext: isDocumentReadyToSubmit,
         content: (
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
@@ -312,6 +357,23 @@ export function KycWizard({
                 belong to me. I agree to the verification terms.
               </span>
             </label>
+
+            {!isDocumentReadyToSubmit && !isUploading && (
+              <p
+                role="status"
+                className="text-xs text-amber-600 dark:text-amber-400"
+              >
+                {!idFile
+                  ? "Government ID is required. Please go back and upload it."
+                  : !selfieFile
+                    ? "Selfie photo is required. Please go back and upload it."
+                    : !addressFile
+                      ? "Proof of address is required. Please go back and upload it."
+                      : !consentGiven
+                        ? "Please agree to the verification terms to submit."
+                        : ""}
+              </p>
+            )}
 
             {isUploading && (
               <div className="space-y-2">
@@ -362,6 +424,10 @@ export function KycWizard({
       onStepChange={setStepIndex}
       onClose={handleClose}
       finishLabel="Submit for Review"
+      canFinish={selectedMethod === "document" ? isDocumentReadyToSubmit : true}
+      finishDisabled={
+        selectedMethod === "document" ? !isDocumentReadyToSubmit : false
+      }
       onFinish={
         selectedMethod === "document" ? handleDocumentSubmit : undefined
       }
@@ -398,64 +464,58 @@ function MethodSelector({
     {
       id: "document",
       title: "Document Upload",
-      subtitle:
-        "Upload Government ID, Selfie & Proof of Address (manual review)",
+      subtitle: "International Passport, Driver’s License, or National ID",
     },
   ];
 
   return (
-    <div
-      className="space-y-3"
-      role="radiogroup"
-      aria-label="Verification Method"
-    >
-      {options.map((opt) => (
-        <div
-          key={opt.id}
-          onClick={() => onSelect(opt.id)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              onSelect(opt.id);
-            }
-          }}
-          tabIndex={0}
-          role="radio"
-          aria-checked={selected === opt.id}
-          className={`flex cursor-pointer items-start justify-between rounded-lg border p-4 transition ${
-            selected === opt.id
-              ? "border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-800"
-              : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700"
-          }`}
-        >
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                {opt.title}
-              </span>
-              {opt.tag && (
-                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                  {opt.tag}
-                </span>
-              )}
-            </div>
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-              {opt.subtitle}
-            </p>
-          </div>
-          <div
-            className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-              selected === opt.id
-                ? "border-zinc-900 bg-zinc-900 dark:border-zinc-100 dark:bg-zinc-100"
-                : "border-zinc-300 dark:border-zinc-700"
-            }`}
-          >
-            {selected === opt.id && (
-              <div className="h-1.5 w-1.5 rounded-full bg-white dark:bg-zinc-900" />
-            )}
-          </div>
-        </div>
-      ))}
+    <div className="space-y-3">
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        Choose how you would like to verify your identity. Instant options
+        require only your identification number.
+      </p>
+
+      <div className="space-y-2">
+        {options.map((opt) => {
+          const isSelected = selected === opt.id;
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => onSelect(opt.id)}
+              className={`flex w-full items-start justify-between rounded-lg border p-4 text-left transition ${
+                isSelected
+                  ? "border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-800/50"
+                  : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700"
+              }`}
+            >
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                    {opt.title}
+                  </span>
+                  {opt.tag && (
+                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                      {opt.tag}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {opt.subtitle}
+                </p>
+              </div>
+
+              <div
+                className={`mt-0.5 h-4 w-4 rounded-full border transition ${
+                  isSelected
+                    ? "border-4 border-zinc-900 bg-white dark:border-zinc-100 dark:bg-zinc-900"
+                    : "border-zinc-300 dark:border-zinc-600"
+                }`}
+              />
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

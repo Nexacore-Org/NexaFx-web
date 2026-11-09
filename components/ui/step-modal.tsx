@@ -13,6 +13,8 @@ export interface StepModalStep {
   id: string;
   title: string;
   content: ReactNode;
+  canNext?: boolean;
+  disableNext?: boolean;
 }
 
 export interface StepModalProps {
@@ -28,6 +30,9 @@ export interface StepModalProps {
   busy?: boolean;
   hideSteps?: boolean;
   hideFooter?: boolean;
+  canFinish?: boolean;
+  finishDisabled?: boolean;
+  nextDisabled?: boolean;
 }
 
 /**
@@ -50,6 +55,9 @@ export default function StepModal({
   busy = false,
   hideSteps = false,
   hideFooter = false,
+  canFinish,
+  finishDisabled = false,
+  nextDisabled = false,
 }: StepModalProps) {
   const [internalIndex, setInternalIndex] = useState(initialStep);
   const [wasOpen, setWasOpen] = useState(open);
@@ -72,6 +80,16 @@ export default function StepModal({
   const titleId = useId();
 
   const isLast = activeIndex === steps.length - 1;
+  const step = steps[activeIndex];
+
+  const isNextDisabled =
+    busy ||
+    nextDisabled ||
+    (step?.canNext !== undefined && !step.canNext) ||
+    Boolean(step?.disableNext);
+
+  const isFinishDisabled =
+    busy || finishDisabled || (canFinish !== undefined && !canFinish);
 
   const focusables = useCallback(() => {
     const root = dialogRef.current;
@@ -104,10 +122,10 @@ export default function StepModal({
 
       if (event.shiftKey && active === first) {
         event.preventDefault();
-        last.focus();
+        last?.focus();
       } else if (!event.shiftKey && active === last) {
         event.preventDefault();
-        first.focus();
+        first?.focus();
       }
     };
 
@@ -142,8 +160,6 @@ export default function StepModal({
   }, [open]);
 
   if (!open) return null;
-
-  const step = steps[activeIndex];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -218,7 +234,7 @@ export default function StepModal({
               <button
                 type="button"
                 onClick={onFinish}
-                disabled={busy}
+                disabled={isFinishDisabled}
                 className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
               >
                 {finishLabel}
@@ -229,7 +245,7 @@ export default function StepModal({
                 onClick={() =>
                   setIndex((i) => Math.min(steps.length - 1, i + 1))
                 }
-                disabled={busy}
+                disabled={isNextDisabled}
                 className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
               >
                 Next
