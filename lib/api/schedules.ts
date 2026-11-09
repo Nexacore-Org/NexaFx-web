@@ -18,6 +18,8 @@
  */
 
 import { apiRequest } from "@/lib/api-client";
+import { isAmountInput, toUnits } from "@/lib/convert-amount";
+import { getCurrency } from "@/lib/currencies";
 
 // ---------------------------------------------------------------------------
 // Feature flag
@@ -154,29 +156,42 @@ export function validateSchedule(
   input: Pick<
     CreateScheduleInput,
     "fromCurrency" | "toCurrency" | "amount" | "startDate" | "endDate"
-  >,
+  > & { frequency?: ScheduleFrequency },
   now: Date = new Date(),
 ): Partial<Record<"amount" | "startDate" | "endDate" | "pair", string>> {
   const errors: Partial<
     Record<"amount" | "startDate" | "endDate" | "pair", string>
   > = {};
 
-  if (!input.fromCurrency || !input.toCurrency) {
+  const from = getCurrency(input.fromCurrency);
+  const to = getCurrency(input.toCurrency);
+
+  if (!input.fromCurrency || !input.toCurrency || !from || !to) {
     errors.pair = "Choose both currencies";
-  } else if (input.fromCurrency === input.toCurrency) {
+  } else if (
+    input.fromCurrency.toUpperCase() === input.toCurrency.toUpperCase()
+  ) {
     errors.pair = "Choose two different currencies";
   }
 
-  const amount = Number.parseFloat(input.amount);
-  if (!input.amount || !Number.isFinite(amount) || amount <= 0) {
+  const rawAmount = input.amount?.trim() ?? "";
+  if (!rawAmount || !isAmountInput(rawAmount)) {
     errors.amount = "Enter an amount greater than zero";
+  } else {
+    const decimals = from ? from.decimals : 2;
+    const units = toUnits(rawAmount, decimals);
+    if (units === null || units <= BigInt(0)) {
+      errors.amount = "Enter an amount greater than zero";
+    }
   }
 
   const startError = validateStartDate(input.startDate, now);
   if (startError) errors.startDate = startError;
 
-  const endError = validateEndDate(input.startDate, input.endDate, now);
-  if (endError) errors.endDate = endError;
+  if (input.frequency !== "once") {
+    const endError = validateEndDate(input.startDate, input.endDate, now);
+    if (endError) errors.endDate = endError;
+  }
 
   return errors;
 }
