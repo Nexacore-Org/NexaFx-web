@@ -31,6 +31,8 @@ export interface KycTier {
   label: string;
   /** Null when the API does not publish limits for this tier. */
   limits: KycTierLimits | null;
+  /** True when this tier is the user's active/current tier. */
+  isCurrent?: boolean;
 }
 
 export interface KycStatusResponse {
@@ -42,6 +44,10 @@ export interface KycStatusResponse {
   tiers: KycTier[];
   /** Null unless a verification method is currently required. */
   requiredMethod: "bvn" | "nin" | "document" | null;
+  /** ISO 4217 currency code for all limit values (defaults to USD). */
+  currency: string;
+  /** Current active tier ID if published by the API. */
+  currentTierId: string | null;
 }
 
 export interface KycDocumentUpload {
@@ -70,6 +76,8 @@ export function normaliseKycStatus(raw: unknown): KycStatusResponse {
     limitsAvailable: false,
     tiers: [],
     requiredMethod: null,
+    currency: "USD",
+    currentTierId: null,
   };
 
   if (!raw || typeof raw !== "object") return empty;
@@ -78,6 +86,19 @@ export function normaliseKycStatus(raw: unknown): KycStatusResponse {
   const status = KYC_STATUSES.includes(data.status as KycStatus)
     ? (data.status as KycStatus)
     : "not_started";
+
+  const currency = (
+    str(data.currency) ??
+    str(data.baseCurrency) ??
+    str(data.accountCurrency) ??
+    "USD"
+  ).toUpperCase();
+
+  const currentTierId =
+    str(data.currentTierId) ??
+    str(data.currentTier) ??
+    str(data.tier) ??
+    null;
 
   const rawTiers = Array.isArray(data.tiers) ? data.tiers : [];
   const tiers: KycTier[] = rawTiers.flatMap((entry) => {
@@ -95,11 +116,18 @@ export function normaliseKycStatus(raw: unknown): KycStatusResponse {
       (v) => v !== undefined,
     );
 
+    const isCurrent =
+      tier.isCurrent === true ||
+      tier.current === true ||
+      (currentTierId !== null &&
+        id.toLowerCase() === currentTierId.toLowerCase());
+
     return [
       {
         id,
         label: str(tier.label) ?? id,
         limits: hasAny ? { perTransaction, perDay, perMonth } : null,
+        isCurrent,
       },
     ];
   });
@@ -116,6 +144,8 @@ export function normaliseKycStatus(raw: unknown): KycStatusResponse {
     limitsAvailable: data.limitsAvailable === true,
     tiers,
     requiredMethod,
+    currency,
+    currentTierId,
   };
 }
 

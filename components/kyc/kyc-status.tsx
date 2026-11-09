@@ -11,6 +11,22 @@ import { KycWizard } from "@/components/kyc/kyc-wizard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 
+export function formatLimitCurrency(
+  amount: number,
+  currency: string = "USD",
+  locale?: string,
+): string {
+  try {
+    return new Intl.NumberFormat(locale ?? undefined, {
+      style: "currency",
+      currency: currency.toUpperCase(),
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    return `${currency.toUpperCase()} ${amount.toLocaleString(locale ?? undefined)}`;
+  }
+}
+
 export function KycStatusView() {
   const queryClient = useQueryClient();
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -30,6 +46,7 @@ export function KycStatusView() {
 
   const status: KycStatus = data?.status ?? "not_started";
   const requiredMethod = data?.requiredMethod;
+  const currency = data?.currency ?? "USD";
 
   const handleWizardSuccess = () => {
     setWizardOpen(false);
@@ -212,22 +229,48 @@ export function KycStatusView() {
                     {data.tiers.map((tier) => (
                       <tr
                         key={tier.id}
-                        className="text-zinc-800 dark:text-zinc-200"
+                        aria-current={tier.isCurrent ? "true" : undefined}
+                        className={
+                          tier.isCurrent
+                            ? "bg-emerald-50/50 font-medium text-zinc-900 dark:bg-emerald-950/20 dark:text-zinc-100"
+                            : "text-zinc-800 dark:text-zinc-200"
+                        }
                       >
-                        <td className="py-3 pr-4 font-medium">{tier.label}</td>
+                        <td className="py-3 pr-4 font-medium">
+                          <div className="flex items-center gap-2">
+                            <span>{tier.label}</span>
+                            {tier.isCurrent && (
+                              <span
+                                data-testid="current-tier-badge"
+                                className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                              >
+                                Current
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className="py-3 pr-4 text-zinc-600 dark:text-zinc-400">
-                          {tier.limits?.perTransaction
-                            ? `$${tier.limits.perTransaction.toLocaleString()}`
+                          {tier.limits?.perTransaction !== undefined &&
+                          tier.limits.perTransaction !== null
+                            ? formatLimitCurrency(
+                                tier.limits.perTransaction,
+                                currency,
+                              )
                             : "—"}
                         </td>
                         <td className="py-3 pr-4 text-zinc-600 dark:text-zinc-400">
-                          {tier.limits?.perDay
-                            ? `$${tier.limits.perDay.toLocaleString()}`
+                          {tier.limits?.perDay !== undefined &&
+                          tier.limits.perDay !== null
+                            ? formatLimitCurrency(tier.limits.perDay, currency)
                             : "—"}
                         </td>
                         <td className="py-3 text-zinc-600 dark:text-zinc-400">
-                          {tier.limits?.perMonth
-                            ? `$${tier.limits.perMonth.toLocaleString()}`
+                          {tier.limits?.perMonth !== undefined &&
+                          tier.limits.perMonth !== null
+                            ? formatLimitCurrency(
+                                tier.limits.perMonth,
+                                currency,
+                              )
                             : "—"}
                         </td>
                       </tr>
