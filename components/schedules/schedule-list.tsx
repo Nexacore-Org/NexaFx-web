@@ -9,7 +9,8 @@ interface ScheduleListProps {
   onPause: (id: string) => void;
   onResume: (id: string) => void;
   onRequestCancel: (schedule: Schedule) => void;
-  busyId: string | null;
+  busyId?: string | null;
+  busyIds?: Set<string> | string[];
 }
 
 function formatDate(iso: string | null): string {
@@ -28,11 +29,18 @@ export default function ScheduleList({
   onResume,
   onRequestCancel,
   busyId,
+  busyIds,
 }: ScheduleListProps) {
+  const isRowBusy = (id: string): boolean => {
+    if (busyIds instanceof Set) return busyIds.has(id);
+    if (Array.isArray(busyIds)) return busyIds.includes(id);
+    return busyId === id;
+  };
+
   return (
     <ul className="space-y-3">
       {schedules.map((schedule) => {
-        const busy = busyId === schedule.id;
+        const busy = isRowBusy(schedule.id);
         const isCancelled = schedule.status === "cancelled";
         const isPaused = schedule.status === "paused";
         return (
@@ -58,66 +66,48 @@ export default function ScheduleList({
             <dl className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
               <div>
                 <dt className="text-zinc-500 dark:text-zinc-400">Next run</dt>
-                <dd className="text-zinc-900 dark:text-zinc-100">
+                <dd className="mt-0.5 font-medium">
                   {formatDate(schedule.nextRunAt)}
                 </dd>
               </div>
               <div>
-                <dt className="text-zinc-500 dark:text-zinc-400">
-                  Last result
-                </dt>
-                <dd className="text-zinc-900 dark:text-zinc-100">
-                  {schedule.lastRun ? schedule.lastRun.status : "Not run yet"}
+                <dt className="text-zinc-500 dark:text-zinc-400">Last run</dt>
+                <dd className="mt-0.5 font-medium">
+                  {formatDate(schedule.lastRunAt)}
                 </dd>
+              </div>
+              <div>
+                <dt className="text-zinc-500 dark:text-zinc-400">Total runs</dt>
+                <dd className="mt-0.5 font-medium">{schedule.totalRuns}</dd>
               </div>
             </dl>
 
-            {schedule.lastRun?.status === "failed" && (
-              <p className="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
-                Last run failed
-                {schedule.lastRun.reason ? `: ${schedule.lastRun.reason}` : ""}.
-                {schedule.lastRun.transactionHash && (
-                  <>
-                    {" "}
-                    <a
-                      href={`https://stellar.expert/explorer/public/tx/${schedule.lastRun.transactionHash}`}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="font-medium underline"
-                    >
-                      View transaction
-                    </a>
-                  </>
-                )}
-              </p>
-            )}
-
             {!isCancelled && (
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
                 {isPaused ? (
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => onResume(schedule.id)}
-                    className="rounded border border-zinc-300 px-3 py-1.5 text-xs font-medium hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                    className="rounded border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                   >
-                    Resume
+                    {busy ? "Resuming…" : "Resume"}
                   </button>
                 ) : (
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => onPause(schedule.id)}
-                    className="rounded border border-zinc-300 px-3 py-1.5 text-xs font-medium hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                    className="rounded border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                   >
-                    Pause
+                    {busy ? "Pausing…" : "Pause"}
                   </button>
                 )}
                 <button
                   type="button"
                   disabled={busy}
                   onClick={() => onRequestCancel(schedule)}
-                  className="rounded border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40"
+                  className="rounded border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/30"
                 >
                   Cancel
                 </button>
