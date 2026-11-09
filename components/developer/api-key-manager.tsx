@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Dialog } from "@/components/ui/dialog";
 import {
   createApiKey,
+  listApiKeys,
   revokeApiKey,
   type ApiKey,
   type CreatedApiKey,
@@ -19,7 +21,19 @@ import {
  * key can be copied once and never shown again.
  */
 export default function ApiKeyManager() {
-  const [keys, setKeys] = useState<ApiKey[]>([]);
+  const queryClient = useQueryClient();
+  const queryKey = ["api-keys"] as const;
+
+  const {
+    data: keys = [],
+    isLoading,
+    isError: isLoadError,
+    error: loadError,
+  } = useQuery({
+    queryKey,
+    queryFn: listApiKeys,
+  });
+
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
@@ -27,6 +41,20 @@ export default function ApiKeyManager() {
   const [copied, setCopied] = useState(false);
   const [revoking, setRevoking] = useState<ApiKey | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const revokeMutation = useMutation({
+    mutationFn: (id: string) => revokeApiKey(id),
+    onSuccess: (_, revokedId) => {
+      queryClient.setQueryData<ApiKey[]>(queryKey, (prev) =>
+        (prev ?? []).filter((k) => k.id !== revokedId),
+      );
+      setRevoking(null);
+      setError(null);
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : "Failed to revoke key");
+    },
+  });
 
   const closeReveal = () => {
     setRevealed(null);
@@ -45,8 +73,19 @@ export default function ApiKeyManager() {
     setError(null);
     try {
       const created = await createApiKey({ name: name.trim() });
-      // Show the secret once, then keep only the metadata in the list.
-      setKeys((prev) => [...prev, created]);
+      // Show the secret once in reveal dialog; store only metadata in list cache.
+      const metadata: ApiKey = {
+        id: created.id,
+        name: created.name,
+        prefix: created.prefix,
+        createdAt: created.createdAt,
+        lastUsedAt: created.lastUsedAt,
+        scopes: created.scopes,
+      };
+      queryClient.setQueryData<ApiKey[]>(queryKey, (prev) => [
+        ...(prev ?? []),
+        metadata,
+      ]);
       setRevealed(created);
       closeCreate();
     } catch (err) {
@@ -56,16 +95,10 @@ export default function ApiKeyManager() {
     }
   }
 
-  async function onConfirmRevoke() {
+  function onConfirmRevoke() {
     if (!revoking) return;
-    const target = revoking;
-    setRevoking(null);
-    try {
-      await revokeApiKey(target.id);
-      setKeys((prev) => prev.filter((key) => key.id !== target.id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to revoke key");
-    }
+    setError(null);
+    revokeMutation.mutate(revoking.id);
   }
 
   async function copySecret(secret: string) {
@@ -76,6 +109,14 @@ export default function ApiKeyManager() {
       setCopied(false);
     }
   }
+
+  const displayError =
+    error ??
+    (isLoadError
+      ? loadError instanceof Error
+        ? loadError.message
+        : "Failed to load API keys"
+      : null);
 
   return (
     <div className="space-y-4">
@@ -93,16 +134,20 @@ export default function ApiKeyManager() {
         </button>
       </div>
 
-      {error && (
+      {displayError && !revoking && (
         <p
           role="alert"
           className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
         >
-          {error}
+          {displayError}
         </p>
       )}
 
-      {keys.length === 0 ? (
+      {isLoading ? (
+        <p className="rounded-lg border border-dashed border-zinc-300 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+          Loading API keys…
+        </p>
+      ) : keys.length === 0 ? (
         <p className="rounded-lg border border-dashed border-zinc-300 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
           No API keys yet.
         </p>
@@ -113,18 +158,41 @@ export default function ApiKeyManager() {
               key={key.id}
               className="flex flex-wrap items-center justify-between gap-3 p-4"
             >
-              <div className="min-w-0">
+              <div className="min-w-0 space-y-1">
                 <p className="truncate text-sm font-medium">{key.name}</p>
                 <p className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
                   {key.prefix}…
                 </p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {key.lastUsedAt
+                    ? `Last used: ${new Date(key.lastUsedAt).toLocaleDateString()}`
+                    : "Never used"}
+                </p>
+                {key.scopes && key.scopes.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-0.5">
+                    {key.scopes.map((scope) => (
+                      <span
+                        key={scope}
+                        className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                      >
+                        {scope}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               <button
                 type="button"
-                onClick={() => setRevoking(key)}
-                className="rounded border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40"
+                onClick={() => {
+                  setError(null);
+                  setRevoking(key);
+                }}
+                disabled={revokeMutation.isPending && revoking?.id === key.id}
+                className="rounded border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40"
               >
-                Revoke
+                {revokeMutation.isPending && revoking?.id === key.id
+                  ? "Revoking…"
+                  : "Revoke"}
               </button>
             </li>
           ))}
@@ -220,7 +288,12 @@ export default function ApiKeyManager() {
       {/* Revoke confirmation */}
       <Dialog
         open={revoking !== null}
-        onClose={() => setRevoking(null)}
+        onClose={() => {
+          if (!revokeMutation.isPending) {
+            setRevoking(null);
+            setError(null);
+          }
+        }}
         title="Revoke this key?"
         description="Anything using this key will stop working immediately. This cannot be undone."
       >
@@ -229,20 +302,35 @@ export default function ApiKeyManager() {
             <span className="font-medium">{revoking?.name}</span> (
             {revoking?.prefix}…)
           </p>
+
+          {error && (
+            <p
+              role="alert"
+              className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
+            >
+              {error}
+            </p>
+          )}
+
           <div className="flex justify-end gap-2">
             <button
               type="button"
-              onClick={() => setRevoking(null)}
-              className="rounded border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              onClick={() => {
+                setRevoking(null);
+                setError(null);
+              }}
+              disabled={revokeMutation.isPending}
+              className="rounded border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={onConfirmRevoke}
-              className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              disabled={revokeMutation.isPending}
+              className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Revoke
+              {revokeMutation.isPending ? "Revoking…" : "Revoke"}
             </button>
           </div>
         </div>
