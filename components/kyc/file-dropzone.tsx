@@ -5,6 +5,8 @@ import {
   useRef,
   useEffect,
   useCallback,
+  useMemo,
+  useId,
   type DragEvent,
   type ChangeEvent,
 } from "react";
@@ -25,37 +27,105 @@ export interface FileDropzoneProps {
  * PNG: 89 50 4E 47
  * PDF: 25 50 44 46 (%PDF)
  */
-async function validateFileSignature(file: File): Promise<boolean> {
+export async function detectFileSignature(file: File): Promise<string | null> {
   try {
     const slice = file.slice(0, 4);
     const buffer = await slice.arrayBuffer();
     const bytes = new Uint8Array(buffer);
 
     // JPEG
-    if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff)
-      return true;
+    if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+      return "image/jpeg";
+    }
     // PNG
     if (
       bytes[0] === 0x89 &&
       bytes[1] === 0x50 &&
       bytes[2] === 0x4e &&
       bytes[3] === 0x47
-    )
-      return true;
+    ) {
+      return "image/png";
+    }
     // PDF (%PDF)
     if (
       bytes[0] === 0x25 &&
       bytes[1] === 0x50 &&
       bytes[2] === 0x44 &&
       bytes[3] === 0x46
-    )
-      return true;
+    ) {
+      return "application/pdf";
+    }
 
-    return false;
+    return null;
   } catch {
     // If arrayBuffer reading fails, fall back to mime check
-    return ["image/jpeg", "image/png", "application/pdf"].includes(file.type);
+    if (["image/jpeg", "image/png", "application/pdf"].includes(file.type)) {
+      return file.type;
+    }
+    return null;
   }
+}
+
+export function isTypeAccepted(
+  detectedType: string,
+  accept: string,
+  file: File,
+): boolean {
+  if (!accept || accept.trim() === "" || accept.trim() === "*") return true;
+
+  const acceptedTokens = accept
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+
+  const lowerDetected = detectedType.toLowerCase();
+  const extension = file.name.includes(".")
+    ? `.${file.name.split(".").pop()?.toLowerCase()}`
+    : "";
+
+  return acceptedTokens.some((token) => {
+    if (token === lowerDetected) return true;
+
+    if (token.endsWith("/*")) {
+      const prefix = token.slice(0, -1);
+      if (lowerDetected.startsWith(prefix)) return true;
+    }
+
+    if (token.startsWith(".")) {
+      if (token === extension) return true;
+      if (
+        (token === ".jpg" || token === ".jpeg") &&
+        lowerDetected === "image/jpeg"
+      ) {
+        return true;
+      }
+      if (token === ".png" && lowerDetected === "image/png") {
+        return true;
+      }
+      if (token === ".pdf" && lowerDetected === "application/pdf") {
+        return true;
+      }
+    }
+
+    return false;
+  });
+}
+
+function formatAcceptErrorMessage(accept: string): string {
+  const tokens = accept.split(",").map((s) => s.trim().toLowerCase());
+  const formats: string[] = [];
+  if (tokens.some((t) => t.includes("jpeg") || t.includes("jpg")))
+    formats.push("JPG");
+  if (tokens.some((t) => t.includes("png"))) formats.push("PNG");
+  if (tokens.some((t) => t.includes("pdf"))) formats.push("PDF");
+
+  if (formats.length === 2) {
+    return `Invalid file type. Please upload a valid ${formats[0]} or ${formats[1]}.`;
+  }
+  if (formats.length > 2) {
+    return `Invalid file type. Please upload a valid ${formats.slice(0, -1).join(", ")}, or ${formats[formats.length - 1]}.`;
+  }
+  return "Invalid file type. Please upload a valid JPG, PNG, or PDF.";
 }
 
 export function FileDropzone({
@@ -69,10 +139,28 @@ export function FileDropzone({
 }: FileDropzoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const generatedId = useId();
+  const inputId = `file-dropzone-${generatedId.replace(/:/g, "")}`;
 
   const maxSizeBytes = maxSizeMb * 1024 * 1024;
+
+  const previewUrl = useMemo(() => {
+    if (!value) return null;
+    if (
+      value.type.startsWith("image/") ||
+      value.type === "image/jpeg" ||
+      value.type === "image/png" ||
+      /\.(jpe?g|png)$/i.test(value.name)
+    ) {
+      try {
+        return URL.createObjectURL(value);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }, [value]);
 
   useEffect(() => {
     return () => {
@@ -91,23 +179,15 @@ export function FileDropzone({
       }
 
       // Check mime type & magic numbers
-      const isValid = await validateFileSignature(file);
-      if (!isValid) {
-        setErrorMessage(
-          "Invalid file type. Please upload a valid JPG, PNG, or PDF.",
-        );
+      const detectedType = await detectFileSignature(file);
+      if (!detectedType || !isTypeAccepted(detectedType, accept, file)) {
+        setErrorMessage(formatAcceptErrorMessage(accept));
         return;
-      }
-
-      if (file.type.startsWith("image/")) {
-        setPreviewUrl(URL.createObjectURL(file));
-      } else {
-        setPreviewUrl(null);
       }
 
       onChange(file);
     },
-    [maxSizeBytes, maxSizeMb, onChange],
+    [accept, maxSizeBytes, maxSizeMb, onChange],
   );
 
   const onDragOver = (e: DragEvent<HTMLDivElement>) => {
@@ -129,21 +209,20 @@ export function FileDropzone({
     if (disabled) return;
 
     const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
+    if (files && files.length > 0 && files[0]) {
       await handleValidateAndSelect(files[0]);
     }
   };
 
   const onFileInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files.length > 0) {
+    if (files && files.length > 0 && files[0]) {
       await handleValidateAndSelect(files[0]);
     }
   };
 
   const onRemove = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(null);
     onChange(null);
     setErrorMessage(null);
     if (inputRef.current) inputRef.current.value = "";
@@ -152,7 +231,10 @@ export function FileDropzone({
   return (
     <div className="w-full space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+        <label
+          htmlFor={inputId}
+          className="text-sm font-medium text-zinc-900 dark:text-zinc-100"
+        >
           {label}
         </label>
         {value && !disabled && (
@@ -165,6 +247,16 @@ export function FileDropzone({
           </button>
         )}
       </div>
+
+      <input
+        id={inputId}
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        onChange={onFileInputChange}
+        disabled={disabled}
+        className="hidden"
+      />
 
       {!value ? (
         <div
@@ -187,15 +279,6 @@ export function FileDropzone({
               : "border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-600"
           } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
         >
-          <input
-            ref={inputRef}
-            type="file"
-            accept={accept}
-            onChange={onFileInputChange}
-            disabled={disabled}
-            className="hidden"
-          />
-
           <svg
             className="mb-2 h-8 w-8 text-zinc-400 dark:text-zinc-500"
             fill="none"
@@ -223,7 +306,7 @@ export function FileDropzone({
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={previewUrl}
-              alt="Uploaded preview"
+              alt={value.name}
               className="h-14 w-14 rounded-md border border-zinc-200 object-cover dark:border-zinc-700"
             />
           ) : (
@@ -251,15 +334,6 @@ export function FileDropzone({
               Replace
             </button>
           )}
-
-          <input
-            ref={inputRef}
-            type="file"
-            accept={accept}
-            onChange={onFileInputChange}
-            disabled={disabled}
-            className="hidden"
-          />
         </div>
       )}
 

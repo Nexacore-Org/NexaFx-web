@@ -14,16 +14,15 @@
     "prepare": "husky",
     "check:nav": "node scripts/check-nav-routes.mjs",
     "verify": "npm run lint && npm run type-check && npm run check:nav && npm run build && npm run check:bundle",
-    "test": "node --test scripts/__tests__/check-bundle-budget.test.mjs",
+    "test:bundle": "node --test scripts/__tests__/check-bundle-budget.test.mjs",
     "smoke": "node -e \"console.log(\"smoke ok\")\"",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "check:prod-env": "node scripts/check-production-env.mjs",
     "check:audit-exceptions": "node scripts/check-audit-exceptions.mjs",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
-    "test": "node --test __tests__/**/*.test.mjs",
+    "test:mjs": "node --test __tests__/**/*.test.mjs",
     "lighthouse": "lhci autorun",
-    "verify": "npm run lint && npm run type-check && npm run check:nav && npm run build",
     "test": "vitest run"
   },
   "lint-staged": {
@@ -67,7 +66,7 @@
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "@playwright/test": "^1.49.0"
+    "@playwright/test": "^1.49.0",
     "vitest": "^3.2.7"
   },
   "engines": {
