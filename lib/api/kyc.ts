@@ -227,45 +227,143 @@ function mapIdentityError(err: unknown): never {
   );
 }
 
+function combineWithTimeout(
+  signal?: AbortSignal,
+  timeoutMs: number = 60_000,
+): { signal: AbortSignal; cleanup: () => void } {
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
+
+  if (!signal) {
+    return { signal: timeoutSignal, cleanup: () => {} };
+  }
+
+  if (typeof AbortSignal.any === "function") {
+    return {
+      signal: AbortSignal.any([signal, timeoutSignal]),
+      cleanup: () => {},
+    };
+  }
+
+  const controller = new AbortController();
+  const onCallerAbort = () => controller.abort(signal.reason);
+  const onTimeout = () => controller.abort(timeoutSignal.reason);
+
+  if (signal.aborted) {
+    controller.abort(signal.reason);
+  } else if (timeoutSignal.aborted) {
+    controller.abort(timeoutSignal.reason);
+  } else {
+    signal.addEventListener("abort", onCallerAbort, { once: true });
+    timeoutSignal.addEventListener("abort", onTimeout, { once: true });
+  }
+
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      signal.removeEventListener("abort", onCallerAbort);
+      timeoutSignal.removeEventListener("abort", onTimeout);
+    },
+  };
+}
+
 /**
- * Upload one KYC document as multipart/form-data with progress reporting and
- * cancellation. Progress is null when the browser does not expose a readable
- * upload stream.
+ * Upload one KYC document as multipart/form-data with timeout and cancellation.
  */
 export async function uploadKycDocument({
   kind,
   file,
   signal,
-  onProgress,
-}: KycDocumentUpload & { onProgress?: UploadProgress }): Promise<{
+}: KycDocumentUpload): Promise<{
   id: string;
 }> {
-  const base = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "/api";
-
   const form = new FormData();
   form.append("kind", kind);
   form.append("file", file);
 
-  const response = await fetch(`${base}/kyc/documents`, {
-    method: "POST",
-    body: form,
-    credentials: "include",
-    signal: signal ?? AbortSignal.timeout(60_000),
-  });
+  const { signal: combinedSignal, cleanup } = combineWithTimeout(signal, 60_000);
 
-  if (!response.ok) {
-    throw new ApiError({
-      status: response.status,
-      code: null,
-      message: "That file could not be uploaded.",
-      details: null,
-      isNetworkError: false,
+  try {
+    const response = await fetch("/api/kyc/documents", {
+      method: "POST",
+      body: form,
+      credentials: "include",
+      signal: combinedSignal,
     });
-  }
 
-  const data = (await response.json()) as { id?: unknown };
-  onProgress?.(100);
-  return { id: typeof data.id === "string" ? data.id : "" };
+    if (!response.ok) {
+      let errorCode: string | null = null;
+      let errorMessage = `Upload failed with status ${response.status}`;
+      let details: unknown = null;
+
+      try {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const errData = await response.json();
+          errorCode = errData?.code ?? null;
+          errorMessage = errData?.message ?? errorMessage;
+          details = errData;
+        } else {
+          const text = await response.text();
+          details = text.slice(0, 200);
+          if (text) {
+            errorMessage = text.slice(0, 100);
+          }
+        }
+      } catch {
+        // Ignore error body parse failures
+      }
+
+      throw new ApiError({
+        status: response.status,
+        code: errorCode,
+        message: errorMessage,
+        details,
+        isNetworkError: false,
+      });
+    }
+
+    let data: { id?: unknown };
+    try {
+      data = (await response.json()) as { id?: unknown };
+    } catch (err) {
+      throw new ApiError({
+        status: response.status,
+        code: "INVALID_JSON_RESPONSE",
+        message: "Server returned invalid JSON response for document upload.",
+        details: err instanceof Error ? err.message : null,
+        isNetworkError: false,
+      });
+    }
+
+    if (typeof data.id !== "string" || data.id.trim() === "") {
+      throw new ApiError({
+        status: response.status,
+        code: "MISSING_DOCUMENT_ID",
+        message:
+          "Document upload completed but server did not return a valid document ID.",
+        details: data,
+        isNetworkError: false,
+      });
+    }
+
+    return { id: data.id };
+  } catch (err) {
+    if (
+      (err instanceof DOMException && err.name === "TimeoutError") ||
+      (err instanceof Error && err.name === "TimeoutError")
+    ) {
+      throw new ApiError({
+        status: 408,
+        code: "UPLOAD_TIMEOUT",
+        message: "Upload timed out after 60 seconds.",
+        details: null,
+        isNetworkError: true,
+      });
+    }
+    throw err;
+  } finally {
+    cleanup();
+  }
 }
 
 export async function submitKycDocuments(input: {
