@@ -42,7 +42,7 @@ export default function ChangePasswordForm() {
         // Specific, and scoped to one field so the other inputs survive.
         setWrongCurrent(err.message);
         setLocalError(null);
-        currentRef.current?.focus();
+        setTimeout(() => currentRef.current?.focus(), 0);
       } else {
         setWrongCurrent(null);
         setLocalError(
