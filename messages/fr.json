@@ -14,5 +14,42 @@
     "description": "Choisissez la langue utilisée sur le site. Cela modifie les textes affichés ainsi que le format des nombres et des dates.",
     "label": "Langue du site",
     "saved": "Langue mise à jour."
+  },
+  "settings": {
+    "sessions": {
+      "justNow": "à l'instant",
+      "unknown": "inconnu",
+      "unknownDevice": "Appareil inconnu",
+      "unknownTime": "Heure inconnue",
+      "deviceOnBrowser": "{device} sur {browser}",
+      "active": "Actif {time}",
+      "thisDevice": "Cet appareil",
+      "locationUnavailable": "Localisation indisponible",
+      "useLogout": "Utilisez Déconnexion pour terminer cette session",
+      "signOut": "Déconnexion",
+      "signingOut": "Déconnexion en cours…",
+      "signOutAllOther": "Déconnecter toutes les autres sessions ({count})",
+      "notSupported": "La gestion des sessions n'est pas encore disponible sur ce déploiement.",
+      "loading": "Chargement des sessions actives",
+      "loadError": "Impossible de charger vos sessions actives.",
+      "retry": "Réessayer",
+      "noSessions": "Aucune session active trouvée.",
+      "confirmAllTitle": "Déconnecter toutes les autres sessions",
+      "confirmAllButton": "Déconnecter toutes les autres",
+      "confirmAllDescription": "Cela mettra fin à {count} autre {count, plural, one {session} other {sessions}} sur vos autres appareils. Vous resterez connecté ici."
+    },
+    "activity": {
+      "filterLabel": "Filtrer par type d'événement",
+      "allEvents": "Tous les événements",
+      "unusualActivity": "Activité inhabituelle",
+      "redactedNotice": "Les détails de l'appareil et du réseau sont masqués pour cet événement.",
+      "loadError": "Impossible de charger l'activité de votre compte.",
+      "retry": "Réessayer",
+      "noActivity": "Aucune activité à afficher pour le moment.",
+      "loadMore": "Charger plus",
+      "loading": "Chargement…",
+      "loadingAria": "Chargement de l'activité du compte",
+      "unknownDate": "Date inconnue"
+    }
   }
 }

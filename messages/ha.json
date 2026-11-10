@@ -14,5 +14,42 @@
     "description": "Zaɓi harshen da ake amfani da shi a ko'ina. Wannan yana shafi rubutun da kuma tsarin adireshin lambobi da kwanaki.",
     "label": "Harshen gidan",
     "saved": "An sabunta harshen."
+  },
+  "settings": {
+    "sessions": {
+      "justNow": "yanzu-yanzu",
+      "unknown": "ba a sani ba",
+      "unknownDevice": "Na'urar da ba a sani ba",
+      "unknownTime": "Lokacin da ba a sani ba",
+      "deviceOnBrowser": "{device} a kan {browser}",
+      "active": "Aiki {time}",
+      "thisDevice": "Wannan na'urar",
+      "locationUnavailable": "Babu wurin zama",
+      "useLogout": "Yi amfani da Fita don rufe wannan zama",
+      "signOut": "Fita",
+      "signingOut": "Ana fita…",
+      "signOutAllOther": "Fita daga duk sauran zama ({count})",
+      "notSupported": "Ba a samar da tsarin sarrafa zama a nan ba tukuna.",
+      "loading": "Ana loda zama masu aiki",
+      "loadError": "Ba mu iya loda zama masu aiki ba.",
+      "retry": "Sake gwadawa",
+      "noSessions": "Babu wani zama mai aiki.",
+      "confirmAllTitle": "Fita daga duk sauran zama",
+      "confirmAllButton": "Fita daga sauran",
+      "confirmAllDescription": "Wannan zai rufe sauran {count} {count, plural, one {zama} other {zama}} a kan sauran na'urorin ku. Za ku ci gaba da zama a nan."
+    },
+    "activity": {
+      "filterLabel": "Tace ta nau'in aiki",
+      "allEvents": "Duk ayyukan",
+      "unusualActivity": "Aiki na ban mamaki",
+      "redactedNotice": "An ɓoye cikakkun bayanan na'ura da hanyar sadarwa don wannan aikin.",
+      "loadError": "Ba mu iya loda ayyukan asusun ku ba.",
+      "retry": "Sake gwadawa",
+      "noActivity": "Babu wani aiki da za a nuna tukuna.",
+      "loadMore": "Loda ƙari",
+      "loading": "Ana lodawa…",
+      "loadingAria": "Ana loda ayyukan asusu",
+      "unknownDate": "Kwanan da ba a sani ba"
+    }
   }
 }

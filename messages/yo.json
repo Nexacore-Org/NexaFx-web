@@ -5,7 +5,7 @@
     "description": "Ìtàdé ọkọ ìjàní púpọ̀ lórí nẹ́tìwọ̀kì Stellar."
   },
   "home": {
-    "tagline": "Ìtàdé ọkọ ìjàní púpọ̀ lórí nẹ́tìwọ̀kì Stellar.",
+    "tagline": "Multi-currency exchange on the Stellar network.",
     "rebuild": "Ìtúnṣe v2 bẹ̀rẹ̀ ní ibí.",
     "appName": "NexaFx"
   },
@@ -14,5 +14,42 @@
     "description": "Yan èdè tí a ń lò lórí gbogbo ojú-ìwé. Èyí yí ipa lórí ọ̀rọ̀ tí a ń hàn àti ọ̀nọ́ àti ọjọ́.",
     "label": "Èdè ojú-ìwé",
     "saved": "A ti ṣe àtúnṣe èdè náà."
+  },
+  "settings": {
+    "sessions": {
+      "justNow": "ní báyìí",
+      "unknown": "aimọ",
+      "unknownDevice": "Ẹ̀rọ tí a kò mọ̀",
+      "unknownTime": "Àkókò tí a kò mọ̀",
+      "deviceOnBrowser": "{device} lórí {browser}",
+      "active": "Lílo {time}",
+      "thisDevice": "Ẹ̀rọ yìí",
+      "locationUnavailable": "Ibùdó kò sí",
+      "useLogout": "Lo Jáde láti parí àkókò yìí",
+      "signOut": "Jáde",
+      "signingOut": "Ń jáde…",
+      "signOutAllOther": "Jáde kúrò ní gbogbo àwọn àkókò mìíràn ({count})",
+      "notSupported": "Ìṣàkóso àkókò kò tíì wà lórí ètò yìí.",
+      "loading": "Ń gbé àwọn àkókò tí ń ṣiṣẹ́ wá",
+      "loadError": "A kò le gbé àwọn àkókò tí ń ṣiṣẹ́ rẹ wá.",
+      "retry": "Tún gbìyànjú",
+      "noSessions": "Kò sí àkókò tí ń ṣiṣẹ́.",
+      "confirmAllTitle": "Jáde kúrò ní gbogbo àwọn àkókò mìíràn",
+      "confirmAllButton": "Jáde ní gbogbo àwọn tókù",
+      "confirmAllDescription": "Èyí yóò fòpin sí {count} {count, plural, one {àkókò} other {àwọn àkókò}} mìíràn lórí àwọn ẹ̀rọ rẹ yòókù. Ìwọ yóò wà ní wíwọlé níhìn-ín."
+    },
+    "activity": {
+      "filterLabel": "Ṣe àlẹmọ́ nípa irú ìṣẹ̀lẹ̀",
+      "allEvents": "Gbogbo àwọn ìṣẹ̀lẹ̀",
+      "unusualActivity": "Ìṣe àjèjì",
+      "redactedNotice": "Àwọn kúlẹ̀kúlẹ̀ ẹ̀rọ àti nẹ́tíwọ̀ọ̀kì ti wà ní fífarasin fún ìṣẹ̀lẹ̀ yìí.",
+      "loadError": "A kò le gbé ìgbòkègbodò àkọọ́lẹ̀ rẹ jáde.",
+      "retry": "Tún gbìyànjú",
+      "noActivity": "Kò sí ìgbòkègbodò kankan láti fi hàn báyìí.",
+      "loadMore": "Gbé púpọ̀ síi wá",
+      "loading": "Ń gbé wá…",
+      "loadingAria": "Ń gbé ìgbòkègbodò àkọọ́lẹ̀ wá",
+      "unknownDate": "Ọjọ́ tí a kò mọ̀"
+    }
   }
 }
