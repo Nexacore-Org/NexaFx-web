@@ -14,5 +14,42 @@
     "description": "Họrọ ọụọọ a ga-eji na saịtị ahụ. Nke a ga-emetụta edemede na ọtụtụ nọmba na ụbọchị.",
     "label": "Ọụọọ saịtị",
     "saved": "Emelitela ọụọọ ahụ."
+  },
+  "settings": {
+    "sessions": {
+      "justNow": "ugbu a",
+      "unknown": "amaghị",
+      "unknownDevice": "Ngwaọrụ a na-amaghị",
+      "unknownTime": "Oge a na-amaghị",
+      "deviceOnBrowser": "{device} na {browser}",
+      "active": "Na-arụ ọrụ {time}",
+      "thisDevice": "Ngwaọrụ a",
+      "locationUnavailable": "Ebe adịghị",
+      "useLogout": "Jiri Wepụ pụọ iji mechie nnọkọ a",
+      "signOut": "Pụọ",
+      "signingOut": "Na-apụ…",
+      "signOutAllOther": "Pụọ na nnọkọ ndị ọzọ niile ({count})",
+      "notSupported": "Njikwa nnọkọ adịghị na mbugharị a ugbu a.",
+      "loading": "Na-ebugo nnọkọ na-arụ ọrụ",
+      "loadError": "Anyị enweghị ike ibugo nnọkọ na-arụ ọrụ gị.",
+      "retry": "Nwaa ọzọ",
+      "noSessions": "Enweghị nnọkọ na-arụ ọrụ ahụrụ.",
+      "confirmAllTitle": "Pụọ na nnọkọ ndị ọzọ niile",
+      "confirmAllButton": "Pụọ na ndị ọzọ niile",
+      "confirmAllDescription": "Nke a ga-akwụsị {count} {count, plural, one {nnọkọ} other {nnọkọ}} ọzọ na ngwaọrụ ndị ọzọ gị. Ị ga-anọgide na-abanye ebe a."
+    },
+    "activity": {
+      "filterLabel": "Nyochaa site n'ụdị mmemme",
+      "allEvents": "Mmemme niile",
+      "unusualActivity": "Ọrụ pụrụ iche",
+      "redactedNotice": "Ezonarị nkọwa ngwaọrụ na netwọk maka mmemme a.",
+      "loadError": "Anyị enweghị ike ibugo ọrụ akaụntụ gị.",
+      "retry": "Nwaa ọzọ",
+      "noActivity": "Enweghị ọrụ a ga-egosi ugbu a.",
+      "loadMore": "Bugokwuo",
+      "loading": "Na-ebugo…",
+      "loadingAria": "Na-ebugo ọrụ akaụntụ",
+      "unknownDate": "Ụbọchị a na-amaghị"
+    }
   }
 }

@@ -2,28 +2,28 @@
 
 import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useFormatter, useTranslations } from "next-intl";
 import {
   EVENT_FILTERS,
   describeEvent,
   fetchActivity,
-  formatDay,
   groupByDay,
   isNotable,
   type ActivityEvent,
 } from "../../lib/api/activity";
 import { Skeleton } from "../ui/skeleton";
 
-const TIME = new Intl.DateTimeFormat("en", {
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
-function formatTime(iso: string): string {
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? "" : TIME.format(date);
-}
-
-function EventRow({ event }: { event: ActivityEvent }) {
+function EventRow({
+  event,
+  formatTime,
+  unusualActivityText,
+  redactedText,
+}: {
+  event: ActivityEvent;
+  formatTime: (iso: string) => string;
+  unusualActivityText: string;
+  redactedText: string;
+}) {
   const notable = isNotable(event);
 
   return (
@@ -37,7 +37,7 @@ function EventRow({ event }: { event: ActivityEvent }) {
           {describeEvent(event)}
           {notable && (
             <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-900 dark:text-amber-100">
-              Unusual activity
+              {unusualActivityText}
             </span>
           )}
         </p>
@@ -49,9 +49,7 @@ function EventRow({ event }: { event: ActivityEvent }) {
         )}
 
         {event.redacted && (
-          <p className="mt-0.5 text-xs text-zinc-500 italic">
-            Device and network details are hidden for this event.
-          </p>
+          <p className="mt-0.5 text-xs text-zinc-500 italic">{redactedText}</p>
         )}
       </div>
 
@@ -70,7 +68,28 @@ function EventRow({ event }: { event: ActivityEvent }) {
  * filterable by event type, with incremental paging.
  */
 export default function ActivityLog() {
+  const format = useFormatter();
+  const t = useTranslations("settings.activity");
   const [filter, setFilter] = useState<string>("all");
+
+  const formatTime = (iso: string): string => {
+    const date = new Date(iso);
+    return Number.isNaN(date.getTime())
+      ? ""
+      : format.dateTime(date, { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const formatDayHeading = (iso: string): string => {
+    const date = new Date(iso);
+    return Number.isNaN(date.getTime())
+      ? t("unknownDate")
+      : format.dateTime(date, {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+  };
 
   const {
     data,
@@ -90,11 +109,7 @@ export default function ActivityLog() {
 
   if (isPending) {
     return (
-      <div
-        aria-busy="true"
-        aria-label="Loading account activity"
-        className="space-y-3"
-      >
+      <div aria-busy="true" aria-label={t("loadingAria")} className="space-y-3">
         {[0, 1, 2, 3].map((i) => (
           <Skeleton key={i} height="2.5rem" />
         ))}
@@ -106,14 +121,14 @@ export default function ActivityLog() {
     return (
       <div role="alert">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          We could not load your account activity.
+          {t("loadError")}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
           className="mt-3 rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
         >
-          Retry
+          {t("retry")}
         </button>
       </div>
     );
@@ -129,7 +144,7 @@ export default function ActivityLog() {
           className="mb-1 block text-sm font-medium"
           htmlFor="activity-filter"
         >
-          Filter by event type
+          {t("filterLabel")}
         </label>
         <select
           id="activity-filter"
@@ -139,7 +154,7 @@ export default function ActivityLog() {
         >
           {EVENT_FILTERS.map((option) => (
             <option key={option.value} value={option.value}>
-              {option.label}
+              {option.value === "all" ? t("allEvents") : option.label}
             </option>
           ))}
         </select>
@@ -147,20 +162,26 @@ export default function ActivityLog() {
 
       {groups.length === 0 ? (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          No activity to show yet.
+          {t("noActivity")}
         </p>
       ) : (
         groups.map(([key, dayEvents]) => (
           <section key={key} className="mb-6">
             <h3 className="sticky top-0 bg-white py-1 text-sm font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
-              {formatDay(dayEvents[0].occurredAt)}
+              {formatDayHeading(dayEvents[0].occurredAt)}
             </h3>
             <ul
               role="list"
               className="divide-y divide-zinc-200 dark:divide-zinc-800"
             >
               {dayEvents.map((event) => (
-                <EventRow key={event.id} event={event} />
+                <EventRow
+                  key={event.id}
+                  event={event}
+                  formatTime={formatTime}
+                  unusualActivityText={t("unusualActivity")}
+                  redactedText={t("redactedNotice")}
+                />
               ))}
             </ul>
           </section>
@@ -174,7 +195,7 @@ export default function ActivityLog() {
           disabled={isFetchingNextPage}
           className="rounded border border-zinc-300 px-4 py-2 text-sm disabled:opacity-50 dark:border-zinc-700"
         >
-          {isFetchingNextPage ? "Loading…" : "Load more"}
+          {isFetchingNextPage ? t("loading") : t("loadMore")}
         </button>
       )}
     </div>

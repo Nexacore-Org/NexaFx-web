@@ -38,16 +38,15 @@ export interface ActivityPage {
   cursor: string | null;
 }
 
-const DAY = new Intl.DateTimeFormat("en", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-});
-
-export function formatDay(iso: string): string {
+export function formatDay(iso: string, locale: string = "en"): string {
   const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? "Unknown date" : DAY.format(date);
+  if (Number.isNaN(date.getTime())) return "Unknown date";
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
 }
 
 export function dayKey(iso: string): string {

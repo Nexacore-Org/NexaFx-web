@@ -14,5 +14,42 @@
     "description": "Choose the language used across the site. This affects visible text and how numbers and dates are formatted.",
     "label": "Site language",
     "saved": "Language updated."
+  },
+  "settings": {
+    "sessions": {
+      "justNow": "just now",
+      "unknown": "unknown",
+      "unknownDevice": "Unknown device",
+      "unknownTime": "Unknown time",
+      "deviceOnBrowser": "{device} on {browser}",
+      "active": "Active {time}",
+      "thisDevice": "This device",
+      "locationUnavailable": "Location unavailable",
+      "useLogout": "Use Logout to end this session",
+      "signOut": "Sign out",
+      "signingOut": "Signing out…",
+      "signOutAllOther": "Sign out all other sessions ({count})",
+      "notSupported": "Session management is not available on this deployment yet.",
+      "loading": "Loading active sessions",
+      "loadError": "We could not load your active sessions.",
+      "retry": "Retry",
+      "noSessions": "No active sessions found.",
+      "confirmAllTitle": "Sign out all other sessions",
+      "confirmAllButton": "Sign out all others",
+      "confirmAllDescription": "This will end {count} other {count, plural, one {session} other {sessions}} on your other devices. You will stay signed in here."
+    },
+    "activity": {
+      "filterLabel": "Filter by event type",
+      "allEvents": "All events",
+      "unusualActivity": "Unusual activity",
+      "redactedNotice": "Device and network details are hidden for this event.",
+      "loadError": "We could not load your account activity.",
+      "retry": "Retry",
+      "noActivity": "No activity to show yet.",
+      "loadMore": "Load more",
+      "loading": "Loading…",
+      "loadingAria": "Loading account activity",
+      "unknownDate": "Unknown date"
+    }
   }
 }
