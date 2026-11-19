@@ -1,101 +1,109 @@
-"use client";
+'use client';
 
-import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-function LoginForm() {
+const NOTICE_MESSAGES: Record<string, string> = {
+  'reset-email-sent': 'If an account exists for that email, a password reset link has been sent.',
+  'password-reset': 'Your password has been reset. You can now sign in.',
+};
+
+export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/dashboard";
+  const notice = searchParams.get('notice');
+  const noticeMessage = notice ? NOTICE_MESSAGES[notice] : undefined;
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setPending(true);
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setLoading(true);
+
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
-        credentials: "include",
       });
-      if (!res.ok) {
-        // Generic message — do not leak whether the account exists
-        setError("Invalid email or password");
-        setPending(false);
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error ?? 'Unable to sign in. Please try again.');
         return;
       }
-      router.replace(next);
+
+      router.push('/dashboard');
     } catch {
-      setError("Network error. Please try again.");
-      setPending(false);
+      setError('Unable to sign in. Please try again.');
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <div className="mx-auto max-w-md p-6">
-      <h1 className="text-xl font-semibold">Sign in</h1>
-      {error && (
-        <p role="alert" className="mt-2 text-sm text-red-600">
-          {error}
-        </p>
-      )}
-      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-        <div>
-          <label className="mb-1 block text-sm font-medium" htmlFor="email">
+    <main className="flex min-h-screen items-center justify-center p-4">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
+        <h1 className="text-2xl font-semibold">Sign in</h1>
+
+        {noticeMessage ? (
+          <p role="status" className="rounded border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+            {noticeMessage}
+          </p>
+        ) : null}
+
+        {error ? (
+          <p role="alert" className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="space-y-1">
+          <label htmlFor="email" className="block text-sm font-medium">
             Email
           </label>
           <input
             id="email"
             type="email"
-            name="email"
             autoComplete="email"
             required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded border border-gray-400 px-3 py-2"
+            onChange={(event) => setEmail(event.target.value)}
+            className="w-full rounded border p-2"
           />
         </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium" htmlFor="password">
+
+        <div className="space-y-1">
+          <label htmlFor="password" className="block text-sm font-medium">
             Password
           </label>
           <input
             id="password"
             type="password"
-            name="password"
             autoComplete="current-password"
             required
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded border border-gray-400 px-3 py-2"
+            onChange={(event) => setPassword(event.target.value)}
+            className="w-full rounded border p-2"
           />
+          <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+            Forgot password?
+          </Link>
         </div>
+
         <button
           type="submit"
-          disabled={pending}
-          className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          disabled={loading}
+          className="w-full rounded bg-blue-600 p-2 text-white disabled:opacity-50"
         >
-          {pending ? "Signing in…" : "Sign in"}
+          {loading ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
-      <p className="mt-4 text-center text-sm">
-        No account? <Link href="/signup">Sign up</Link>
-      </p>
-    </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="p-6">Loading…</div>}>
-      <LoginForm />
-    </Suspense>
+    </main>
   );
 }
