@@ -3,6 +3,12 @@ export interface RequestOptions {
   body?: unknown;
   query?: Record<string, string | number | boolean | string[]>;
   headers?: Record<string, string>;
+  /**
+   * When true, a 401 response will not trigger a token refresh or the
+   * unauthorized handler (and therefore no logout). Use for requests where a
+   * 401 is an expected, user-facing outcome (e.g. wrong password or TOTP).
+   */
+  skipAuthRefresh?: boolean;
 }
 
 export interface ApiErrorInit {
@@ -106,7 +112,7 @@ async function parseResponse<T>(res: Response): Promise<T> {
 
 export async function apiRequest<T>(
   path: string,
-  { method = "GET", body, query, headers }: RequestOptions = {},
+  { method = "GET", body, query, headers, skipAuthRefresh }: RequestOptions = {},
 ): Promise<T> {
   // Build URL with query string
   const baseUrl =
@@ -130,7 +136,9 @@ export async function apiRequest<T>(
     let res = await execute(url.toString(), options);
 
     // On 401, give the auth layer a chance to refresh and retry once.
-    if (res.status === 401 && unauthorizedHandler) {
+    // Requests that opt out (e.g. wrong password / TOTP) must not refresh or
+    // trigger logout — the 401 is surfaced to the caller as an ApiError.
+    if (res.status === 401 && !skipAuthRefresh && unauthorizedHandler) {
       const recovered = await unauthorizedHandler(path);
       if (recovered) {
         res = await execute(url.toString(), options);
