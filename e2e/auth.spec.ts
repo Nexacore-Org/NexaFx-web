@@ -94,4 +94,27 @@ test.describe("Auth journey (#1072)", () => {
     const content = await page.textContent("body");
     expect(content?.toLowerCase() ?? "").not.toMatch(/admin panel|user management/);
   });
+
+  test("user name survives a reload (#1142)", async ({ page }) => {
+    await page.context().clearCookies();
+    const email = uniqueEmail("reload");
+    const name = email.split("@")[0];
+
+    await loginViaUi(page, email, "Password1!");
+    await page.waitForURL((url) => url.pathname.includes("/dashboard"));
+
+    await page.reload();
+
+    const accountButton = page.getByRole("button", { name: new RegExp(name) });
+    await expect(accountButton).toBeVisible();
+    await expect(accountButton).toContainText(name);
+    await expect(accountButton).not.toContainText("Account");
+  });
+
+  test("profile API returns 401 without a session (#1142)", async ({
+    request,
+  }) => {
+    const res = await request.get("/api/auth/profile");
+    expect(res.status()).toBe(401);
+  });
 });
