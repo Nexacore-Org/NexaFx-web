@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import {
   Plus,
   Trash2,
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getBeneficiaries,
   createBeneficiary,
@@ -25,8 +26,7 @@ import {
   type Beneficiary,
   type CreateBeneficiaryDto,
 } from "@/lib/api/beneficiaries";
-import { toast } from "@/hooks/use-toast-store";
-import { haptics } from "@/lib/utils/haptics";
+import { notify } from "@/lib/notify";
 
 function DeleteConfirmDialog({
   name,
@@ -67,14 +67,26 @@ function DeleteConfirmDialog({
 }
 
 export default function BeneficiariesPage() {
-  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const {
+    data: beneficiaries = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["beneficiaries"],
+    queryFn: getBeneficiaries,
+    enabled: BENEFICIARIES_ENABLED,
+  });
+
+  const loadError = isError
+    ? "Unable to load saved recipients. Please try again."
+    : null;
 
   const {
     register,
@@ -86,23 +98,6 @@ export default function BeneficiariesPage() {
     resolver: zodResolver(CreateBeneficiarySchema),
     defaultValues: { name: "", address: "", memo: "", currency: "USDC" },
   });
-
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setLoadError(null);
-    try {
-      const list = await getBeneficiaries();
-      setBeneficiaries(list);
-    } catch {
-      setLoadError("Unable to load saved recipients. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   const handleOpenAdd = () => {
     setEditingId(null);
@@ -127,21 +122,17 @@ export default function BeneficiariesPage() {
   const onSubmit = async (data: CreateBeneficiaryDto) => {
     try {
       if (editingId) {
-        const updated = await updateBeneficiary(editingId, data);
-        setBeneficiaries((prev) =>
-          prev.map((b) => (b.id === editingId ? updated : b)),
-        );
-        toast("Recipient updated", "success");
+        await updateBeneficiary(editingId, data);
+        notify.success("Recipient updated");
       } else {
-        const created = await createBeneficiary(data);
-        setBeneficiaries((prev) => [...prev, created]);
-        toast("Recipient saved", "success");
+        await createBeneficiary(data);
+        notify.success("Recipient saved");
       }
+      await queryClient.invalidateQueries({ queryKey: ["beneficiaries"] });
       handleCloseForm();
     } catch (err) {
-      toast(
+      notify.error(
         err instanceof Error ? err.message : "Failed to save recipient",
-        "error",
       );
     }
   };
@@ -149,11 +140,10 @@ export default function BeneficiariesPage() {
   const handleDelete = async (id: string) => {
     try {
       await deleteBeneficiary(id);
-      setBeneficiaries((prev) => prev.filter((b) => b.id !== id));
-      toast("Recipient deleted", "success");
-      haptics.light();
+      await queryClient.invalidateQueries({ queryKey: ["beneficiaries"] });
+      notify.success("Recipient deleted");
     } catch {
-      toast("Failed to delete recipient", "error");
+      notify.error("Failed to delete recipient");
     } finally {
       setDeletingId(null);
     }
@@ -161,8 +151,7 @@ export default function BeneficiariesPage() {
 
   const handleCopyAddress = (address: string) => {
     navigator.clipboard.writeText(address);
-    haptics.light();
-    toast("Address copied", "success");
+    notify.success("Address copied");
   };
 
   const filtered = beneficiaries.filter(
@@ -261,12 +250,12 @@ export default function BeneficiariesPage() {
 
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">
-                Stellar Address *
+                Address *
               </label>
               <input
                 {...register("address")}
-                placeholder="G…"
-                className="w-full px-3 py-2 text-sm font-mono bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="G..."
+                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 font-mono"
               />
               {errors.address && (
                 <p className="text-xs text-destructive mt-1">
@@ -275,52 +264,47 @@ export default function BeneficiariesPage() {
               )}
             </div>
 
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="text-xs text-muted-foreground mb-1 block">
-                  Currency *
-                </label>
-                <select
-                  {...register("currency")}
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
-                >
-                  <option value="USDC">USDC</option>
-                  <option value="XLM">XLM</option>
-                  <option value="USD">USD</option>
-                  <option value="NGN">NGN</option>
-                </select>
-                {errors.currency && (
-                  <p className="text-xs text-destructive mt-1">
-                    {errors.currency.message}
-                  </p>
-                )}
-              </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Memo (optional)
+              </label>
+              <input
+                {...register("memo")}
+                placeholder="e.g. Rent"
+                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
 
-              <div className="flex-1">
-                <label className="text-xs text-muted-foreground mb-1 block">
-                  Memo (optional)
-                </label>
-                <input
-                  {...register("memo")}
-                  placeholder="Memo text"
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-              </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Currency
+              </label>
+              <select
+                {...register("currency")}
+                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="USDC">USDC</option>
+                <option value="XLM">XLM</option>
+              </select>
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex items-center justify-center gap-2 w-full py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            <Check className="size-4" />
-            {isSubmitting
-              ? "Saving…"
-              : editingId
-                ? "Save Changes"
-                : "Add Recipient"}
-          </button>
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={handleCloseForm}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-border hover:bg-muted transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {isSubmitting ? "Saving..." : editingId ? "Update" : "Save"}
+            </button>
+          </div>
         </form>
       )}
 
@@ -329,11 +313,10 @@ export default function BeneficiariesPage() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <input
-            type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search recipients…"
-            className="w-full pl-9 pr-4 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
+            placeholder="Search recipients..."
+            className="w-full pl-9 pr-3 py-2 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
         </div>
       )}
@@ -341,119 +324,111 @@ export default function BeneficiariesPage() {
       {/* List */}
       {isLoading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-20 rounded-xl bg-muted animate-pulse"
+            />
           ))}
         </div>
       ) : loadError ? (
-        <div className="text-center py-8">
-          <p className="text-sm text-destructive">{loadError}</p>
-          <button
-            onClick={load}
-            className="mt-3 text-sm text-primary hover:underline"
-          >
-            Retry
-          </button>
+        <div className="text-center py-12 text-muted-foreground">
+          <p className="text-sm">{loadError}</p>
         </div>
-      ) : filtered.length === 0 && query ? (
-        <div className="text-center py-8 text-muted-foreground">
-          <p className="text-sm">No recipients match &quot;{query}&quot;</p>
-        </div>
-      ) : beneficiaries.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <Users className="size-12 mx-auto mb-4 opacity-40" />
-          <p className="text-sm">No saved recipients yet.</p>
-          <p className="text-xs mt-1">
-            Add one to quickly fill in withdrawal details.
+          <p className="text-sm">
+            {beneficiaries.length === 0
+              ? "No saved recipients yet. Add one to get started."
+              : "No recipients match your search."}
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <ul className="space-y-3">
           {filtered.map((b) => {
             const isExpanded = expandedId === b.id;
             return (
-              <div
+              <li
                 key={b.id}
-                className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-colors"
+                className="bg-card border border-border rounded-xl p-4 space-y-3"
               >
-                <button
-                  type="button"
-                  onClick={() =>
-                    setExpandedId(isExpanded ? null : b.id)
-                  }
-                  className="w-full flex items-center justify-between p-4 text-left"
-                  aria-expanded={isExpanded}
-                >
+                <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground">
-                      {b.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">
-                      {b.address.slice(0, 12)}…{b.address.slice(-6)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 ml-3">
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                      {b.currency}
-                    </span>
-                    {isExpanded ? (
-                      <ChevronUp className="size-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="size-4 text-muted-foreground" />
-                    )}
-                  </div>
-                </button>
-
-                {isExpanded && (
-                  <div className="px-4 pb-4 pt-0 space-y-3 border-t border-border/50">
-                    {/* Full address with copy */}
-                    <div className="flex items-start justify-between gap-2 p-2 bg-muted/40 rounded-lg">
-                      <p className="text-xs font-mono text-muted-foreground break-all">
-                        {b.address}
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {b.name}
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyAddress(b.address)}
-                        aria-label="Copy address"
-                        className="flex-shrink-0 p-1 rounded-md hover:bg-muted transition-colors"
-                      >
-                        <Copy className="size-3.5 text-muted-foreground" />
-                      </button>
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                        {b.currency}
+                      </span>
                     </div>
-
+                    <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">
+                      {b.address}
+                    </p>
                     {b.memo && (
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">Memo</span>
-                        <span className="font-medium text-foreground">
-                          {b.memo}
-                        </span>
-                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {b.memo}
+                      </p>
                     )}
-
-                    <div className="flex gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEdit(b)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border hover:bg-muted transition-colors"
-                      >
-                        <Edit3 className="size-3.5" />
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeletingId(b.id)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors"
-                      >
-                        <Trash2 className="size-3.5" />
-                        Delete
-                      </button>
-                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => handleCopyAddress(b.address)}
+                      className="p-2 rounded-lg hover:bg-muted transition-colors"
+                      aria-label="Copy address"
+                    >
+                      <Copy className="size-4 text-muted-foreground" />
+                    </button>
+                    <button
+                      onClick={() => handleOpenEdit(b)}
+                      className="p-2 rounded-lg hover:bg-muted transition-colors"
+                      aria-label="Edit recipient"
+                    >
+                      <Edit3 className="size-4 text-muted-foreground" />
+                    </button>
+                    <button
+                      onClick={() => setDeletingId(b.id)}
+                      className="p-2 rounded-lg hover:bg-muted transition-colors"
+                      aria-label="Delete recipient"
+                    >
+                      <Trash2 className="size-4 text-destructive" />
+                    </button>
+                    <button
+                      onClick={() => setExpandedId(isExpanded ? null : b.id)}
+                      className="p-2 rounded-lg hover:bg-muted transition-colors"
+                      aria-label={isExpanded ? "Collapse" : "Expand"}
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="size-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="size-4 text-muted-foreground" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                {isExpanded && (
+                  <div className="pt-2 border-t border-border space-y-1">
+                    <p className="text-xs text-muted-foreground break-all">
+                      <span className="font-medium text-foreground">
+                        Address:{" "}
+                      </span>
+                      {b.address}
+                    </p>
+                    {b.memo && (
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">
+                          Memo:{" "}
+                        </span>
+                        {b.memo}
+                      </p>
+                    )}
                   </div>
                 )}
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );
