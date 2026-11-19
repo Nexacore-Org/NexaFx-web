@@ -10,7 +10,10 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+    return NextResponse.json(
+      { code: "INVALID_BODY", message: "Invalid body" },
+      { status: 400 },
+    );
   }
 
   const email = body.email?.trim() ?? "";
@@ -23,11 +26,17 @@ export async function POST(request: Request) {
 
   if (useMock) {
     if (!email || !password) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      return NextResponse.json(
+        { code: "INVALID_CREDENTIALS", message: "Invalid credentials" },
+        { status: 401 },
+      );
     }
     // Wrong-password path for E2E: password "wrong" always fails generically
     if (password === "wrong") {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      return NextResponse.json(
+        { code: "INVALID_CREDENTIALS", message: "Invalid credentials" },
+        { status: 401 },
+      );
     }
     await setSessionCookie(`e2e-session-${email}`, {
       httpOnly: true,
@@ -70,5 +79,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ user: data.user }, { status: 200 });
   }
 
-  return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+  return NextResponse.json(
+    { code: "INVALID_CREDENTIALS", message: "Invalid credentials" },
+    { status: 401 },
+  );
 }

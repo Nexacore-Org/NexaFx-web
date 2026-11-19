@@ -72,10 +72,18 @@ async function parseResponse<T>(res: Response): Promise<T> {
   if (contentType && contentType.includes("application/json")) {
     const data = await res.json();
     if (!res.ok) {
+      // Route handlers may respond with `{ code, message }` or the legacy
+      // `{ error }` shape. Prefer `message`, then fall back to `error`.
+      const message =
+        typeof data?.message === "string"
+          ? data.message
+          : typeof data?.error === "string"
+            ? data.error
+            : `Request failed with status ${res.status}`;
       throw new ApiError({
         status: res.status,
         code: data?.code ?? null,
-        message: data?.message ?? `Request failed with status ${res.status}`,
+        message,
         details: data ?? null,
         isNetworkError: false,
       });
