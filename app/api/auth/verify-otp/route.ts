@@ -9,11 +9,15 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
+  const email = body.email?.trim() ?? "";
+  if (!email) {
+    return NextResponse.json({ error: "Missing email" }, { status: 400 });
+  }
   const code = body.code?.trim() ?? "";
   if (code !== "123456") {
     return NextResponse.json({ error: "Invalid code" }, { status: 400 });
   }
-  await setSessionCookie(`e2e-session-${body.email ?? "user"}`, {
+  await setSessionCookie(`e2e-session-${email}`, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",

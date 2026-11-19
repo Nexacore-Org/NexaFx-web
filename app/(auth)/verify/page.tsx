@@ -1,10 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAttemptLimiter } from "@/hooks/use-attempt-limiter";
 import { OTPInput } from "@/components/auth/otp-input";
 
 export default function VerifyPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email") ?? "";
   const {
     failedAttempts,
     isLocked,
@@ -24,10 +28,10 @@ export default function VerifyPage() {
     setMessage("");
 
     try {
-      const res = await fetch("/api/auth/verify", {
+      const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ email, code }),
         credentials: "include",
       });
 
@@ -53,6 +57,7 @@ export default function VerifyPage() {
 
       setStatus("success");
       reset();
+      router.replace("/dashboard");
     } catch {
       increment();
       setStatus("error");
@@ -62,8 +67,10 @@ export default function VerifyPage() {
 
   const handleResend = async () => {
     try {
-      const res = await fetch("/api/auth/resend", {
+      const res = await fetch("/api/auth/resend-otp", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
         credentials: "include",
       });
       if (!res.ok) return;
@@ -76,7 +83,7 @@ export default function VerifyPage() {
   if (isLocked) {
     return (
       <div>
-        <h2>Account Locked</h2>
+        <h1>Account Locked</h1>
         <p>
           Too many failed attempts. Please wait{" "}
           <strong>{Math.round((timeRemaining ?? 0) / 1000)}</strong>s before
@@ -89,7 +96,7 @@ export default function VerifyPage() {
 
   return (
     <div>
-      <h2>Verify Your Code</h2>
+      <h1>Verify Your Code</h1>
       <OTPInput
         maxDigits={6}
         onSubmit={handleSubmit}
@@ -97,7 +104,11 @@ export default function VerifyPage() {
         onResend={handleResend}
         disabled={status === "verifying"}
       />
-      {status === "error" && <p style={{ color: "red" }}>{message}</p>}
+      {status === "error" && (
+        <p role="alert" style={{ color: "red" }}>
+          {message}
+        </p>
+      )}
       {status === "success" && <p>Verification successful!</p>}
     </div>
   );
