@@ -3,10 +3,12 @@
 import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
 import { useWithdrawalLimits } from "@/hooks/use-withdrawal-limits";
 import { useSubmitOnce } from "@/hooks/use-submit-once";
-import { ChevronLeft, Coins, CircleDollarSign, BadgeDollarSign } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createWithdrawal } from "@/lib/api/transactions";
 import { WithdrawalConfirmationModal } from "@/components/dashboard/withdraw/withdrawal-confirmation-modal";
+import { CurrencyIcon } from "@/components/ui/currency-icon";
+import { getCurrency, formatMoney } from "@/lib/currencies";
 import {
   calculateWithdrawalFee,
   formatWithdrawalFee,
@@ -14,21 +16,14 @@ import {
 } from "@/lib/utils/withdrawal-fee";
 import { useState } from "react";
 
-const currencies = [
-    { id: 'USDC', name: 'USD Coin', icon: <CircleDollarSign className="w-8 h-8 text-blue-500" /> },
-    { id: 'ETH', name: 'Ethereum', icon: <BadgeDollarSign className="w-8 h-8 text-neutral-500" /> },
-    { id: 'BNB', name: 'BNB', icon: <Coins className="w-8 h-8 text-yellow-500" /> },
-];
-
 export function WithdrawalReview() {
     const { currency, amount, walletAddress, step, setStep, setTransactionResult, close, reset } = useWithdrawalStore();
     const [showConfirmation, setShowConfirmation] = useState(false);
     const { remainingDaily, remainingMonthly, isLoading: limitsLoading } = useWithdrawalLimits(currency);
 
     const isProcessingStep = step === 'processing';
-    const selectedCurrency = currencies.find(c => c.id === currency) || currencies[0];
-    const network: WithdrawalNetwork =
-        currency === 'ETH' ? 'Ethereum' : currency === 'BNB' ? 'BSC' : 'Stellar';
+    const selectedCurrency = getCurrency(currency);
+    const network: WithdrawalNetwork = 'Stellar';
     const fee = calculateWithdrawalFee(currency, amount, network);
 
     const truncateAddress = (addr: string) => {
@@ -107,11 +102,14 @@ export function WithdrawalReview() {
                 <div className="text-center pb-4 border-b border-border">
                     <p className="text-sm text-muted-foreground mb-1">You are withdrawing</p>
                     <div className="flex items-center justify-center gap-3">
-                        {selectedCurrency.icon}
+                        <CurrencyIcon currency={currency} className="w-8 h-8" />
                         <span className="text-3xl font-bold text-foreground">
-                            {parseFloat(amount).toLocaleString()} {currency}
+                            {formatMoney(parseFloat(amount), currency)}
                         </span>
                     </div>
+                    {selectedCurrency && (
+                        <p className="text-sm text-muted-foreground mt-1">{selectedCurrency.name}</p>
+                    )}
                 </div>
 
                 {/* Details */}
@@ -176,31 +174,19 @@ export function WithdrawalReview() {
                     onClick={handleConfirmClick}
                     disabled={isProcessingStep}
                     className={cn(
-                        "w-full py-3.5 rounded-xl font-semibold",
-                        "bg-primary text-primary-foreground",
-                        "hover:bg-primary/90 active:scale-[0.98]",
-                        "transition-all duration-200",
-                        "flex items-center justify-center gap-2",
-                        isProcessingStep && "opacity-80 cursor-not-allowed"
-                    )}
-                >
-                    Confirm Withdrawal
-                </button>
-                <button
-                    onClick={() => setStep('form')}
-                    disabled={isProcessingStep}
-                    className={cn(
-                        "w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors",
+                        "w-full py-3 rounded-xl font-semibold transition-colors",
+                        "bg-primary text-primary-foreground hover:bg-primary/90",
                         isProcessingStep && "opacity-50 cursor-not-allowed"
                     )}
                 >
-                    Go Back
+                    {isProcessingStep ? 'Processing...' : 'Confirm Withdrawal'}
                 </button>
                 <button
                     onClick={handleCancel}
                     disabled={isProcessingStep}
                     className={cn(
-                        "w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors",
+                        "w-full py-3 rounded-xl font-semibold transition-colors",
+                        "bg-muted text-foreground hover:bg-muted/80",
                         isProcessingStep && "opacity-50 cursor-not-allowed"
                     )}
                 >
