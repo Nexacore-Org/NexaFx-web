@@ -1,0 +1,57 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+
+  // Next.js App Router entry points plus the repo's config and test entry
+  // points. Without these, knip reports every page/layout/route and test file
+  // as unused because nothing imports them.
+  "entry": [
+    "app/**/{page,layout,loading,error,not-found,template,default,route}.{ts,tsx}",
+    "e2e/**/*.spec.ts",
+    "**/*.test.{ts,tsx}",
+    "__tests__/**/*.test.mjs",
+    "scripts/**/*.test.mjs",
+  ],
+
+  // Analyse app code, scripts, styles and config files, including .mjs/.cjs.
+  "project": ["**/*.{js,jsx,ts,tsx,mjs,cjs,css}"],
+
+  // This check exists to catch dead files and broken imports (#1140), not
+  // unused exports or dependency hygiene.
+  "include": ["files", "unresolved"],
+
+  // Modules that already fail `tsc` on v2. Each is allow-listed until the
+  // corresponding implementation lands; removing an entry surfaces the
+  // breakage in CI again.
+  "ignoreUnresolved": [
+    "@/hooks/use-toast-store",
+    "@/lib/utils/haptics",
+    "@/lib/utils/stellar-validation",
+  ],
+
+  // Current unused modules. They are allow-listed instead of deleted because
+  // they are either superseded by follow-up work or waiting on a consumer.
+  // Remove an entry once the file is wired up or deleted.
+  "ignoreFiles": [
+    // Superseded by components/providers/auth-provider.tsx (#1142).
+    "hooks/use-session.ts",
+    // Reset-password form is not routed yet; keep for the auth flow follow-up.
+    "app/(auth)/reset-password/reset-password-form.tsx",
+    // Exchange-rate and notification API helpers pending their consumers.
+    "app/api/exchange-rates/bundle.ts",
+    "app/api/notifications/story.ts",
+    // Withdrawal/deposit UI pending backend and route wiring.
+    "components/dashboard/withdrawal/**",
+    "components/withdraw/qr-scanner.tsx",
+    "components/withdraw/limit-indicator.tsx",
+    "components/deposit/moonpay-button.tsx",
+    // Beneficiary and convert flow components not yet wired into their pages.
+    "components/beneficiaries/BeneficiarySelector.tsx",
+    "components/convert/convert-flow.tsx",
+    // Shared helpers pending consumers.
+    "components/ui/spinner.tsx",
+    "lib/api-errors.ts",
+    "lib/api/limits.ts",
+    "lib/stellar-uri.ts",
+    "lib/validation/withdraw.ts",
+  ],
+}
