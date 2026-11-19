@@ -141,13 +141,25 @@ export async function apiRequest<T>(
   } catch (err: unknown) {
     if (err instanceof ApiError) throw err;
 
-    if (err instanceof Error && err.name === "AbortError") {
+    // `AbortSignal.timeout` rejects with a DOMException named `TimeoutError`.
+    if (err instanceof Error && err.name === "TimeoutError") {
       throw new ApiError({
         status: 0,
         code: "REQUEST_TIMEOUT",
         message: "Request timed out",
         details: null,
         isNetworkError: true,
+      });
+    }
+
+    // Caller-initiated abort (e.g. component unmount) is not a timeout.
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new ApiError({
+        status: 0,
+        code: "REQUEST_ABORTED",
+        message: "Request was aborted",
+        details: null,
+        isNetworkError: false,
       });
     }
 
