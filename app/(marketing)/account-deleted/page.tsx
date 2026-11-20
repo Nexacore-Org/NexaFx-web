@@ -4,7 +4,7 @@ export const metadata = { title: "Account deleted · NexaFx" };
 
 export default function AccountDeletedPage() {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
       <h1 className="text-2xl font-semibold tracking-tight">
         Your account has been deleted
       </h1>
@@ -18,6 +18,6 @@ export default function AccountDeletedPage() {
       >
         Back to NexaFx
       </Link>
-    </main>
+    </div>
   );
 }

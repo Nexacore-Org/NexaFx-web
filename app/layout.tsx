@@ -49,15 +49,7 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           <QueryProvider>
             <AuthProvider>
-              <header role="banner" className="sr-only">
-                Site header
-              </header>
-              <main id="main-content" role="main" className="flex-1">
-                {children}
-              </main>
-              <footer role="contentinfo" className="sr-only">
-                Site footer
-              </footer>
+              {children}
               <Toaster />
             </AuthProvider>
           </QueryProvider>

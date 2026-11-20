@@ -21,7 +21,8 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body>
-        <div
+        <main
+          id="main-content"
           style={{
             minHeight: "100vh",
             display: "flex",
@@ -58,7 +59,7 @@ export default function GlobalError({
               Try again
             </button>
           )}
-        </div>
+        </main>
       </body>
     </html>
   );

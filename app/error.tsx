@@ -20,7 +20,10 @@ export default function ErrorBoundary({
   }, [error]);
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center gap-4 p-10 text-center">
+    <main
+      id="main-content"
+      className="flex min-h-full flex-col items-center justify-center gap-4 p-10 text-center"
+    >
       <h1 className="text-xl font-semibold text-gray-900">
         Something went wrong
       </h1>
@@ -37,6 +40,6 @@ export default function ErrorBoundary({
           Try again
         </button>
       )}
-    </div>
+    </main>
   );
 }
