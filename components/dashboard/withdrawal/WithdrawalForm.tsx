@@ -225,6 +225,7 @@ export function WithdrawalForm() {
                 <button
                   type="button"
                   onClick={fetchCurrenciesAndBalances}
+                  className="text-sm font-medium text-primary hover:underline"
                   className="text-sm font-medium text-destructive underline"
                 >
                   Retry
@@ -236,6 +237,16 @@ export function WithdrawalForm() {
       )}
 
       {!isLoadingCurrencies && !currencyError && (
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          {usedFallbackCurrencies && (
+            <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/40">
+              <AlertCircle className="size-4 shrink-0 text-amber-600 mt-0.5" />
+              <span className="text-sm text-amber-700 dark:text-amber-400">
+                Live currency list is unavailable — showing a default set.
+              </span>
+            </div>
+          )}
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
@@ -246,6 +257,16 @@ export function WithdrawalForm() {
                 type="button"
                 onClick={() => setShowCurrencyDropdown((v) => !v)}
                 className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-background text-left"
+                aria-haspopup="listbox"
+                aria-expanded={showCurrencyDropdown}
+              >
+                <span className="flex flex-col">
+                  <span className="text-sm font-medium text-foreground">
+                    {selectedCurrency?.id ?? "Select currency"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Balance: {selectedCurrency?.balance ?? "0.00"}
+                  </span>
               >
                 <span className="text-foreground">
                   {selectedCurrency?.id ?? "Select currency"}
@@ -253,6 +274,28 @@ export function WithdrawalForm() {
                 <ChevronDown className="size-4 text-muted-foreground" />
               </button>
               {showCurrencyDropdown && (
+                <ul
+                  role="listbox"
+                  className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-xl border border-border bg-background shadow-lg"
+                >
+                  {currencies.map((c) => (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={c.id === selectedCurrency?.id}
+                        onClick={() => {
+                          setValue("amount", "");
+                          setShowCurrencyDropdown(false);
+                        }}
+                        className="w-full flex items-center justify-between px-4 py-2 text-left hover:bg-muted"
+                      >
+                        <span className="text-sm text-foreground">{c.id}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {c.balance}
+                        </span>
+                      </button>
+                    </li>
                 <div className="absolute z-10 mt-1 w-full rounded-xl border border-border bg-background shadow-lg">
                   {currencies.map((c) => (
                     <button
@@ -266,12 +309,26 @@ export function WithdrawalForm() {
                       {c.id}
                     </button>
                   ))}
-                </div>
+                </ul>
               )}
             </div>
           </div>
 
           <div className="space-y-2">
+            <label
+              htmlFor="walletAddress"
+              className="text-sm font-medium text-foreground"
+            >
+              Wallet Address
+            </label>
+            <Input
+              id="walletAddress"
+              placeholder="Enter Stellar wallet address"
+              {...register("walletAddress")}
+            />
+            {errors.walletAddress && (
+              <p className="text-sm text-destructive">
+                {errors.walletAddress.message}
             <label className="text-sm font-medium text-foreground">
               Wallet Address
             </label>
@@ -286,8 +343,31 @@ export function WithdrawalForm() {
                 This address may require a memo. Add one to avoid lost funds.
               </p>
             )}
+            <BeneficiarySelector onSelect={handleBeneficiarySelect} />
           </div>
 
+          {showMemoWarning && (
+            <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/40">
+              <AlertCircle className="size-4 shrink-0 text-amber-600 mt-0.5" />
+              <span className="text-sm text-amber-700 dark:text-amber-400">
+                This address requires a memo. Withdrawals without a memo may be
+                lost.
+              </span>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="amount"
+                className="text-sm font-medium text-foreground"
+              >
+                Amount
+              </label>
+              <button
+                type="button"
+                onClick={handleMaxClick}
+                className="text-xs font-medium text-primary hover:underline"
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Memo</label>
             <Input
@@ -313,15 +393,48 @@ export function WithdrawalForm() {
                 onClick={handleMaxClick}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-primary"
               >
-                MAX
+                Max
               </button>
             </div>
+            <Input
+              id="amount"
+              inputMode="decimal"
+              maxLength={MAX_AMOUNT_INPUT_LENGTH}
+              placeholder="0.00"
+              {...register("amount")}
+            />
+            {errors.amount && (
+              <p className="text-sm text-destructive">
+                {errors.amount.message}
+              </p>
+            )}
           </div>
+
+          {!limitsLoading && (remainingDaily || remainingMonthly) && (
+            <div className="text-xs text-muted-foreground space-y-1">
+              {remainingDaily && (
+                <p>Remaining daily limit: {remainingDaily}</p>
+              )}
+              {remainingMonthly && (
+                <p>Remaining monthly limit: {remainingMonthly}</p>
+              )}
+            </div>
+          )}
+
+          {isEmptyBalance && (
+            <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive">
+              <AlertCircle className="size-4 shrink-0 text-destructive mt-0.5" />
+              <span className="text-sm text-destructive">
+                You have no available balance to withdraw.
+              </span>
+            </div>
+          )}
 
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={handleCancel}
+              className="flex-1 px-4 py-3 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
               className="flex-1 py-3 rounded-xl border border-border text-foreground font-medium"
             >
               Cancel
@@ -329,6 +442,9 @@ export function WithdrawalForm() {
             <button
               type="submit"
               disabled={!canSubmit || !isFormValid}
+              className="flex-1 px-4 py-3 rounded-xl bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Continue
               className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-50"
             >
               Review

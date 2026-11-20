@@ -1,6 +1,6 @@
 "use client";
 
-import { useWithdrawalStore } from "@/hooks/useWithdrawalStore";
+import { useWithdrawalStore } from "@/hooks/use-withdrawal-store";
 import { useWithdrawalLimits } from "@/hooks/use-withdrawal-limits";
 import { useSubmitOnce } from "@/hooks/use-submit-once";
 import { ChevronLeft } from "lucide-react";
