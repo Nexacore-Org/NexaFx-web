@@ -3,6 +3,7 @@ import { DEVELOPER_ENABLED } from "@/lib/api/api-keys";
 export type NavIconKey =
   | "dashboard"
   | "convert"
+  | "withdraw"
   | "transactions"
   | "notifications"
   | "settings"
@@ -33,6 +34,12 @@ const allNavItems: NavItem[] = [
     title: "Dashboard",
   },
   { key: "convert", href: "/convert", label: "Convert", title: "Convert" },
+  {
+    key: "withdraw",
+    href: "/withdraw",
+    label: "Withdraw",
+    title: "Withdraw",
+  },
   {
     key: "transactions",
     href: "/transactions",

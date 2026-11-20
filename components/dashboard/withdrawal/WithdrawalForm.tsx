@@ -77,7 +77,7 @@ export function WithdrawalForm() {
   } = useForm<WithdrawalFormValues>({
     resolver: zodResolver(withdrawalSchema),
     mode: "onChange",
-    defaultValues: { walletAddress: "", amount: "" },
+    defaultValues: { walletAddress: "", amount: "", memo: "" },
   });
 
   const fetchCurrenciesAndBalances = useCallback(async () => {
@@ -129,6 +129,7 @@ export function WithdrawalForm() {
   } = useWithdrawalLimits(currency);
   const walletAddress = watch("walletAddress");
   const amount = watch("amount");
+  const memo = watch("memo");
   const showMemoWarning = requiresMemo(walletAddress ?? "");
 
   const hasBalanceData =
@@ -146,19 +147,21 @@ export function WithdrawalForm() {
     Boolean(walletAddress) &&
     Boolean(amount) &&
     !errors.walletAddress &&
-    !errors.amount;
+    !errors.amount &&
+    !errors.memo;
 
   const onSubmit = (data: WithdrawalFormValues) => {
-    setFormData({ walletAddress: data.walletAddress, amount: data.amount });
+    setFormData({
+      walletAddress: data.walletAddress,
+      amount: data.amount,
+      memo: data.memo,
+    });
     setStep("review");
   };
 
   const handleBeneficiarySelect = (b: Beneficiary) => {
     setValue("walletAddress", b.address, { shouldValidate: true });
-    if (b.memo) {
-      // Memo field not yet in WithdrawalFormValues — store it for review use
-      // when the schema gains a memo field.
-    }
+    setValue("memo", b.memo ?? "", { shouldValidate: true });
   };
 
   const handleMaxClick = () => {
@@ -223,6 +226,7 @@ export function WithdrawalForm() {
                   type="button"
                   onClick={fetchCurrenciesAndBalances}
                   className="text-sm font-medium text-primary hover:underline"
+                  className="text-sm font-medium text-destructive underline"
                 >
                   Retry
                 </button>
@@ -243,6 +247,7 @@ export function WithdrawalForm() {
             </div>
           )}
 
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
               Currency
@@ -262,6 +267,9 @@ export function WithdrawalForm() {
                   <span className="text-xs text-muted-foreground">
                     Balance: {selectedCurrency?.balance ?? "0.00"}
                   </span>
+              >
+                <span className="text-foreground">
+                  {selectedCurrency?.id ?? "Select currency"}
                 </span>
                 <ChevronDown className="size-4 text-muted-foreground" />
               </button>
@@ -288,6 +296,18 @@ export function WithdrawalForm() {
                         </span>
                       </button>
                     </li>
+                <div className="absolute z-10 mt-1 w-full rounded-xl border border-border bg-background shadow-lg">
+                  {currencies.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => {
+                        setShowCurrencyDropdown(false);
+                      }}
+                      className="w-full px-4 py-2 text-left hover:bg-muted"
+                    >
+                      {c.id}
+                    </button>
                   ))}
                 </ul>
               )}
@@ -309,6 +329,18 @@ export function WithdrawalForm() {
             {errors.walletAddress && (
               <p className="text-sm text-destructive">
                 {errors.walletAddress.message}
+            <label className="text-sm font-medium text-foreground">
+              Wallet Address
+            </label>
+            <Input
+              {...register("walletAddress")}
+              placeholder="G..."
+              error={errors.walletAddress?.message}
+            />
+            <BeneficiarySelector onSelect={handleBeneficiarySelect} />
+            {showMemoWarning && !memo && (
+              <p className="text-xs text-amber-600">
+                This address may require a memo. Add one to avoid lost funds.
               </p>
             )}
             <BeneficiarySelector onSelect={handleBeneficiarySelect} />
@@ -336,6 +368,30 @@ export function WithdrawalForm() {
                 type="button"
                 onClick={handleMaxClick}
                 className="text-xs font-medium text-primary hover:underline"
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Memo</label>
+            <Input
+              {...register("memo")}
+              placeholder="Optional memo"
+              error={errors.memo?.message}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Amount
+            </label>
+            <div className="relative">
+              <Input
+                {...register("amount")}
+                placeholder="0.00"
+                maxLength={MAX_AMOUNT_INPUT_LENGTH}
+                error={errors.amount?.message}
+              />
+              <button
+                type="button"
+                onClick={handleMaxClick}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-primary"
               >
                 Max
               </button>
@@ -379,6 +435,7 @@ export function WithdrawalForm() {
               type="button"
               onClick={handleCancel}
               className="flex-1 px-4 py-3 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+              className="flex-1 py-3 rounded-xl border border-border text-foreground font-medium"
             >
               Cancel
             </button>
@@ -388,6 +445,9 @@ export function WithdrawalForm() {
               className="flex-1 px-4 py-3 rounded-xl bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Continue
+              className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-50"
+            >
+              Review
             </button>
           </div>
         </form>

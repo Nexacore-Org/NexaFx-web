@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { safeRedirect } from "@/lib/safe-redirect";
 
 const NOTICE_MESSAGES: Record<string, string> = {
   'reset-email-sent': 'If an account exists for that email, a password reset link has been sent.',
@@ -14,6 +18,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const notice = searchParams.get('notice');
   const noticeMessage = notice ? NOTICE_MESSAGES[notice] : undefined;
+  const next = safeRedirect(searchParams.get("next"));
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
