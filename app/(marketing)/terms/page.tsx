@@ -6,7 +6,9 @@ export default function TermsPage() {
   return (
     <article className="mx-auto max-w-3xl px-4 py-16 prose">
       <h1>Terms of Service</h1>
-      <p>Last updated: 2026</p>
+      <p>
+        Last updated: <time dateTime="2026-10-01">1 October 2026</time>
+      </p>
       <h2>1. Agreement to Terms</h2>
       <p>
         By accessing or using the NexaFx service, you agree to be bound by these

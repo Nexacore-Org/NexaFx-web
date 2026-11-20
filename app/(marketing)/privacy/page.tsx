@@ -6,7 +6,9 @@ export default function PrivacyPage() {
   return (
     <article className="mx-auto max-w-3xl px-4 py-16 prose">
       <h1>Privacy Policy</h1>
-      <p>Last updated: 2026</p>
+      <p>
+        Last updated: <time dateTime="2026-10-01">1 October 2026</time>
+      </p>
       <h2>1. Information We Collect</h2>
       <p>
         We collect information you provide directly to us, such as when you

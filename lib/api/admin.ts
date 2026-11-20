@@ -136,3 +136,29 @@ export async function getAuditLog(
     pageSize: data.pageSize ?? 20,
   };
 }
+
+/* -------------------------------------------------------------------------- */
+/* Admin transaction detail (#1217)                                           */
+/* -------------------------------------------------------------------------- */
+
+export async function getAdminTransaction(
+  id: string,
+): Promise<AdminTransaction | null> {
+  const t = await apiRequest<Partial<AdminTransaction> | null>(
+    toApiBase(`/admin/transactions/${encodeURIComponent(id)}`),
+  ).catch((err: { status?: number }) => {
+    if (err?.status === 404) return null;
+    throw err;
+  });
+  if (!t) return null;
+  return {
+    id: t.id ?? id,
+    reference: t.reference ?? "",
+    type: t.type ?? "",
+    amount: t.amount ?? "0",
+    currency: t.currency ?? "",
+    status: t.status ?? "",
+    createdAt: t.createdAt ?? "",
+    counterparty: t.counterparty ?? null,
+  };
+}
