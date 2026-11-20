@@ -4,46 +4,31 @@ import Link from "next/link";
 
 import type { AdminTransaction } from "@/lib/api/admin";
 
-function csvEscape(value: string): string {
-  if (/[",\n]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
+import { downloadCsv, toCsv, type CsvColumn } from "@/lib/csv";
+
+const CSV_KEYS = [
+  "id",
+  "reference",
+  "type",
+  "amount",
+  "currency",
+  "status",
+  "counterparty",
+  "createdAt",
+] as const;
+
+const CSV_COLUMNS: CsvColumn<AdminTransaction>[] = CSV_KEYS.map((key) => ({
+  header: key,
+  value: (t) => String(t[key] ?? ""),
+}));
+
+/** Build the CSV for the rows currently shown (#1220). */
+export function buildTransactionsCsv(transactions: AdminTransaction[]): string {
+  return toCsv(transactions, CSV_COLUMNS);
 }
 
 function exportToCsv(transactions: AdminTransaction[]): void {
-  const headers = [
-    "id",
-    "reference",
-    "type",
-    "amount",
-    "currency",
-    "status",
-    "counterparty",
-    "createdAt",
-  ];
-  const rows = transactions.map((t) =>
-    [
-      t.id,
-      t.reference,
-      t.type,
-      t.amount,
-      t.currency,
-      t.status,
-      t.counterparty ?? "",
-      t.createdAt,
-    ]
-      .map(csvEscape)
-      .join(","),
-  );
-  const csv = [headers.join(","), ...rows].join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "transactions.csv";
-  link.click();
-  URL.revokeObjectURL(url);
+  downloadCsv(buildTransactionsCsv(transactions), "transactions-this-page.csv");
 }
 
 export default function TransactionsTable({
@@ -60,7 +45,7 @@ export default function TransactionsTable({
           disabled={transactions.length === 0}
           onClick={() => exportToCsv(transactions)}
         >
-          Export CSV
+          Export this page (CSV)
         </button>
       </div>
       <table className="w-full border-collapse text-sm">
