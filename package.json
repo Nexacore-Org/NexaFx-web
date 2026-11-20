@@ -23,7 +23,7 @@
     "check:prod-env": "node scripts/check-production-env.mjs",
     "check:audit-exceptions": "node scripts/check-audit-exceptions.mjs",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
-    "lighthouse": "lhci autorun"
+    "lighthouse": "npm run build && lhci autorun"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs}": [
