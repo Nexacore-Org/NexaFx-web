@@ -25,10 +25,10 @@ Open http://localhost:3000.
 | `npm run type-check`     | Generate route types and run `tsc --noEmit`            |
 | `npm run format`         | Format all files with Prettier                         |
 | `npm run format:check`   | Check that files are formatted, without writing        |
-| `npm run test`           | Unit tests (Node test runner)                          |
+| `npm run test`           | Unit tests (Vitest, then the Node test runner scripts) |
 | `npm run check:prod-env` | Run the production environment guard manually          |
 | `npm run audit:prod`     | `npm audit` for production deps at high severity       |
-| `npm run lighthouse`     | Run Lighthouse CI against a local production server    |
+| `npm run lighthouse`     | Build, then run Lighthouse CI on a production server   |
 | `npm run verify`         | Lint, type-check and build, the same checks CI runs    |
 
 ## Deployment
@@ -59,25 +59,28 @@ NODE_ENV=production DEV_TOKEN=x NEXT_PUBLIC_API_URL=https://example.com npm run 
 Public pages (`/`, `/login`, `/signup`) are measured on pull requests by
 `.github/workflows/lighthouse.yml`. Thresholds (see `lighthouserc.json`):
 
-| Metric / category | Threshold | Notes |
-| ----------------- | --------- | ----- |
+| Metric / category | Threshold | Notes                                                    |
+| ----------------- | --------- | -------------------------------------------------------- |
 | Performance       | ≥ 0.80    | Baseline from initial desktop run on the marketing shell |
-| Accessibility     | ≥ 0.90    | Aligns with axe-core gate already in CI |
-| Best practices    | ≥ 0.85    | |
-| LCP               | ≤ 4000 ms | Soft warn budget |
-| CLS               | ≤ 0.1     | Hard error |
+| Accessibility     | ≥ 0.90    | Hard error                                               |
+| Best practices    | ≥ 0.85    | Hard error                                               |
+| SEO               | ≥ 0.90    | Soft warn budget                                         |
+| LCP               | ≤ 4000 ms | Soft warn budget                                         |
+| CLS               | ≤ 0.1     | Hard error                                               |
 
 The workflow is a **non-required** PR check at first so regressions are visible
 without blocking merges; mark it required once the baseline is stable.
 
-Locally:
+Locally, run the same command CI runs:
 
 ```sh
-npm run build && npm run start &
-npx @lhci/cli autorun
+npm run lighthouse
 ```
 
-Reports are written to `.lighthouseci/` and uploaded as CI artifacts.
+It builds the app, then `lhci autorun` starts `npm run start` itself
+(`startServerCommand` in `lighthouserc.json`), so do not start a server on
+port 3000 first. Reports are written to `.lighthouseci/` and uploaded as CI
+artifacts.
 
 ## Dependency audit
 

@@ -1,4 +1,4 @@
-import { apiRequest } from "../api-client";
+import { ApiError, apiRequest } from "../api-client";
 import { generateIdempotencyKey, idempotencyHeader } from "../idempotency";
 
 /**
@@ -277,15 +277,22 @@ export async function fetchTransaction(
     if (!data) return null;
     return normaliseTransaction(data);
   } catch (err) {
-    // 404 — not found or forbidden
+    // 404 / 403 — not found or forbidden. Match on the HTTP status, not the
+    // message: the backend's JSON `message` replaces the default text.
     if (
-      err instanceof Error &&
-      (err.message.includes("404") || err.message.includes("403"))
+      err instanceof ApiError &&
+      err.status !== null &&
+      [403, 404].includes(err.status)
     ) {
       return null;
     }
-    // Dev fallback: look up from mock list
-    if (process.env.NODE_ENV !== "production") {
+    // Dev fallback: only when the backend is unreachable. HTTP errors such as
+    // 401 or 500 must surface instead of rendering a mock transaction.
+    if (
+      process.env.NODE_ENV !== "production" &&
+      err instanceof ApiError &&
+      err.isNetworkError
+    ) {
       const { transactions } = getFallbackTransactions(10);
       return transactions.find((tx) => tx.id === id) ?? null;
     }
