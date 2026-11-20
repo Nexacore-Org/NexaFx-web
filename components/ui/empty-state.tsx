@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 type EmptyStateVariant = "empty" | "error" | "no-results";
 
 interface EmptyStateProps {
@@ -22,18 +20,17 @@ export function EmptyState({
   action,
   retry,
 }: EmptyStateProps) {
-  const [showRetry, setShowRetry] = useState(false);
-
   return (
     <div style={{ textAlign: "center", padding: "48px 24px" }}>
       {variant === "error" && (
-        <div style={{ marginBottom: "16px" }}>
+        <div role="alert" style={{ marginBottom: "16px" }}>
           <svg
             width="48"
             height="48"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
+            aria-hidden="true"
             style={{ margin: "0 auto 12px" }}
           >
             <path d="M18 6L6 18M6 6l12 12" />
@@ -67,7 +64,7 @@ export function EmptyState({
         </button>
       )}
 
-      {variant === "error" && retry && showRetry && (
+      {variant === "error" && retry && (
         <button
           onClick={retry}
           style={{

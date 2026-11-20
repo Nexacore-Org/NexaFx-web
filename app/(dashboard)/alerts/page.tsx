@@ -17,19 +17,20 @@ export default function AlertsPage() {
   const [maxAlerts, setMaxAlerts] = useState(20);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setLoadError(null);
     try {
       const res = await listAlerts();
       setAlerts(res.alerts);
       setMaxAlerts(res.maxAlerts);
     } catch (err) {
-      setError(
+      setLoadError(
         err instanceof Error ? err.message : "Failed to load rate alerts.",
       );
     } finally {
@@ -55,6 +56,7 @@ export default function AlertsPage() {
 
   async function handleDelete(id: string) {
     setDeletingId(id);
+    setError(null);
     try {
       await deleteAlert(id);
       setAlerts((prev) => prev.filter((a) => a.id !== id));
@@ -121,6 +123,13 @@ export default function AlertsPage() {
             />
           ))}
         </div>
+      ) : loadError ? (
+        <EmptyState
+          variant="error"
+          title="Couldn't load rate alerts"
+          description={loadError}
+          retry={() => void refresh()}
+        />
       ) : alerts.length === 0 ? (
         <EmptyState
           variant="empty"
