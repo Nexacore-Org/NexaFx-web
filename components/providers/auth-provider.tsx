@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   User,
   SessionStatus,
@@ -40,6 +41,7 @@ export function useAuth(): AuthContextValue {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [status, setStatus] = useState<SessionStatus>("loading");
   const [sessionExpired, setSessionExpired] = useState(false);
@@ -48,7 +50,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setStatus("unauthenticated");
     setSessionExpired(false);
-  }, []);
+    queryClient.clear();
+    void fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {
+      // Best-effort: local state is already cleared.
+    });
+  }, [queryClient]);
 
   const dismissSessionExpired = useCallback(() => {
     setSessionExpired(false);

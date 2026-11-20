@@ -1,3 +1,4 @@
+import { getAccessToken, refreshAccessToken } from "./auth";
 export interface RequestOptions {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
@@ -20,58 +21,39 @@ export interface ApiErrorInit {
 }
 
 export class ApiError extends Error {
-  status: number | null;
-  code: string | null;
-  details: unknown | null;
-  isNetworkError: boolean;
+  status: number;
+  body: unknown;
 
-  constructor({
-    status,
-    code,
-    message,
-    details,
-    isNetworkError,
-  }: ApiErrorInit) {
+  constructor(message: string, status: number, body?: unknown) {
     super(message);
     this.name = "ApiError";
     this.status = status;
-    this.code = code;
-    this.message = message;
-    this.details = details;
-    this.isNetworkError = isNetworkError;
+    this.body = body;
   }
 }
 
-/**
- * A 401 handler registered by the auth layer. It returns `true` when the
- * request was refreshed and should be retried once, or `false` when recovery
- * is not possible (e.g. the refresh token itself expired).
- */
-export type UnauthorizedHandler = (path: string) => Promise<boolean>;
-
-let unauthorizedHandler: UnauthorizedHandler | null = null;
-
-export function setUnauthorizedHandler(
-  handler: UnauthorizedHandler | null,
-): void {
-  unauthorizedHandler = handler;
+export interface ApiRequestOptions extends Omit<RequestInit, "body"> {
+  body?: unknown;
+  /** Skip attaching the Authorization header (used by auth endpoints). */
+  skipAuth?: boolean;
+  /** Skip the automatic refresh-and-retry on 401. */
+  skipRefresh?: boolean;
 }
 
-async function execute(
-  url: string,
-  { method, body, headers }: RequestOptions,
-): Promise<Response> {
-  return fetch(url, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      ...headers,
-    },
-    body: body ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(10000),
-  });
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+
+function buildUrl(path: string): string {
+  if (/^https?:\/\//.test(path)) return path;
+  return `${BASE_URL}${path}`;
 }
 
+function isJsonContentType(contentType: string | null): boolean {
+  if (!contentType) return false;
+  return /\bapplication\/(?:[\w.+-]+\+)?json\b/i.test(contentType);
+}
+
+async function parseBody(res: Response): Promise<unknown> {
+  if (res.status === 204 || res.status === 205) return undefined;
 async function parseResponse<T>(res: Response): Promise<T> {
   const contentType = res.headers.get("content-type");
 
@@ -97,48 +79,47 @@ async function parseResponse<T>(res: Response): Promise<T> {
     return data as T;
   }
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new ApiError({
-      status: res.status,
-      code: null,
-      message: `Request failed with status ${res.status}`,
-      details: text.substring(0, 200),
-      isNetworkError: false,
-    });
+  const text = await res.text();
+  if (text.length === 0) return undefined;
+
+  if (!isJsonContentType(res.headers.get("content-type"))) {
+    throw new ApiError("Unexpected non-JSON response", res.status, text);
   }
 
-  const text = await res.text();
-  throw new ApiError({
-    status: res.status,
-    code: null,
-    message: "Unexpected non-JSON response",
-    details: text.substring(0, 200),
-    isNetworkError: false,
-  });
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new ApiError("Failed to parse JSON response", res.status, text);
+  }
 }
 
-export async function apiRequest<T>(
+export async function apiRequest<T = unknown>(
   path: string,
+  options: ApiRequestOptions = {},
   { method = "GET", body, query, headers, skipAuthRefresh }: RequestOptions = {},
 ): Promise<T> {
-  // Build URL with query string
-  const baseUrl =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "http://localhost:3000";
-  const url = new URL(path, baseUrl);
+  const { body, skipAuth, skipRefresh, headers, ...rest } = options;
 
-  // Add query parameters safely
-  if (query) {
-    Object.entries(query).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        const arr = Array.isArray(value) ? value : [value];
-        arr.forEach((item) => url.searchParams.append(key, String(item)));
-      }
-    });
+  const requestHeaders = new Headers(headers);
+  if (body !== undefined && !requestHeaders.has("Content-Type")) {
+    requestHeaders.set("Content-Type", "application/json");
   }
 
+  if (!skipAuth) {
+    const token = getAccessToken();
+    if (token) requestHeaders.set("Authorization", `Bearer ${token}`);
+  }
+
+  const res = await fetch(buildUrl(path), {
+    ...rest,
+    headers: requestHeaders,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
+  if (res.status === 401 && !skipRefresh && !skipAuth) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      return apiRequest<T>(path, { ...options, skipRefresh: true });
   try {
     const options: RequestOptions = { method, body, headers };
     let res = await execute(url.toString(), options);
@@ -167,7 +148,19 @@ export async function apiRequest<T>(
         isNetworkError: true,
       });
     }
+  }
 
+  if (!res.ok) {
+    let errorBody: unknown;
+    try {
+      errorBody = await parseBody(res);
+    } catch {
+      errorBody = undefined;
+    }
+    const message =
+      (errorBody as { message?: string } | undefined)?.message ??
+      `Request failed with status ${res.status}`;
+    throw new ApiError(message, res.status, errorBody);
     // Caller-initiated abort (e.g. component unmount) is not a timeout.
     if (err instanceof Error && err.name === "AbortError") {
       throw new ApiError({
@@ -188,4 +181,6 @@ export async function apiRequest<T>(
       isNetworkError: true,
     });
   }
+
+  return (await parseBody(res)) as T;
 }
