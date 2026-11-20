@@ -8,7 +8,9 @@ export default function AdminLayout({
       <div className="sidebar">
         <h2>Admin</h2>
       </div>
-      <div className="content">{children}</div>
+      <main id="main-content" className="content flex-1">
+        {children}
+      </main>
     </div>
   );
 }
