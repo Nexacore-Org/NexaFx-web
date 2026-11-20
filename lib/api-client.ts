@@ -3,6 +3,12 @@ export interface RequestOptions {
   body?: unknown;
   query?: Record<string, string | number | boolean | string[]>;
   headers?: Record<string, string>;
+  /**
+   * When true, a 401 response will not trigger a token refresh or the
+   * unauthorized handler (and therefore no logout). Use for requests where a
+   * 401 is an expected, user-facing outcome (e.g. wrong password or TOTP).
+   */
+  skipAuthRefresh?: boolean;
 }
 
 export interface ApiErrorInit {
@@ -72,10 +78,18 @@ async function parseResponse<T>(res: Response): Promise<T> {
   if (contentType && contentType.includes("application/json")) {
     const data = await res.json();
     if (!res.ok) {
+      // Route handlers may respond with `{ code, message }` or the legacy
+      // `{ error }` shape. Prefer `message`, then fall back to `error`.
+      const message =
+        typeof data?.message === "string"
+          ? data.message
+          : typeof data?.error === "string"
+            ? data.error
+            : `Request failed with status ${res.status}`;
       throw new ApiError({
         status: res.status,
         code: data?.code ?? null,
-        message: data?.message ?? `Request failed with status ${res.status}`,
+        message,
         details: data ?? null,
         isNetworkError: false,
       });
@@ -106,7 +120,7 @@ async function parseResponse<T>(res: Response): Promise<T> {
 
 export async function apiRequest<T>(
   path: string,
-  { method = "GET", body, query, headers }: RequestOptions = {},
+  { method = "GET", body, query, headers, skipAuthRefresh }: RequestOptions = {},
 ): Promise<T> {
   // Build URL with query string
   const baseUrl =
@@ -130,7 +144,9 @@ export async function apiRequest<T>(
     let res = await execute(url.toString(), options);
 
     // On 401, give the auth layer a chance to refresh and retry once.
-    if (res.status === 401 && unauthorizedHandler) {
+    // Requests that opt out (e.g. wrong password / TOTP) must not refresh or
+    // trigger logout — the 401 is surfaced to the caller as an ApiError.
+    if (res.status === 401 && !skipAuthRefresh && unauthorizedHandler) {
       const recovered = await unauthorizedHandler(path);
       if (recovered) {
         res = await execute(url.toString(), options);
@@ -141,13 +157,25 @@ export async function apiRequest<T>(
   } catch (err: unknown) {
     if (err instanceof ApiError) throw err;
 
-    if (err instanceof Error && err.name === "AbortError") {
+    // `AbortSignal.timeout` rejects with a DOMException named `TimeoutError`.
+    if (err instanceof Error && err.name === "TimeoutError") {
       throw new ApiError({
         status: 0,
         code: "REQUEST_TIMEOUT",
         message: "Request timed out",
         details: null,
         isNetworkError: true,
+      });
+    }
+
+    // Caller-initiated abort (e.g. component unmount) is not a timeout.
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new ApiError({
+        status: 0,
+        code: "REQUEST_ABORTED",
+        message: "Request was aborted",
+        details: null,
+        isNetworkError: false,
       });
     }
 

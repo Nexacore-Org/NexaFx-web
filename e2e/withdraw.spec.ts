@@ -28,24 +28,24 @@ test.describe("Withdraw flow (#1073)", () => {
     });
 
     await page.goto("/withdraw");
-    // Soft assertions — page may be under construction
+
+    // The /withdraw route must render the withdrawal form.
     const address = page.getByLabel(/wallet|address|stellar/i).first();
-    if (await address.count()) {
-      await address.fill("not-a-valid-address");
-      const amount = page.getByLabel(/amount/i).first();
-      if (await amount.count()) await amount.fill("10");
-      const submit = page.getByRole("button", { name: /continue|review|withdraw|submit/i }).first();
-      if (await submit.count()) {
-        await submit.click();
-        // Either validation error or API error — form should retain values
-        await expect(address).toHaveValue("not-a-valid-address");
-      }
-    } else {
-      test.info().annotations.push({
-        type: "note",
-        description: "Withdraw form labels not found; page may still be a placeholder",
-      });
-    }
+    await expect(address).toBeVisible();
+
+    await address.fill("not-a-valid-address");
+    const amount = page.getByLabel(/amount/i).first();
+    await expect(amount).toBeVisible();
+    await amount.fill("10");
+
+    const submit = page
+      .getByRole("button", { name: /continue|review|withdraw|submit/i })
+      .first();
+    await expect(submit).toBeVisible();
+    await submit.click();
+
+    // Either validation error or API error — form should retain values
+    await expect(address).toHaveValue("not-a-valid-address");
     expect(calls).toBeLessThanOrEqual(1);
   });
 });
