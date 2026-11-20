@@ -74,8 +74,11 @@ export async function updateProfile(
     toApiBase("/user/profile"),
     { method: "PUT", body: input },
   );
+  if (!data.id) {
+    throw new Error("updateProfile response did not include a user id");
+  }
   return {
-    id: data.id ?? input.firstName,
+    id: data.id,
     email: data.email ?? "",
     firstName: data.firstName ?? input.firstName,
     lastName: data.lastName ?? input.lastName,
@@ -140,7 +143,7 @@ export async function requestDataExport(password: string): Promise<DataExportReq
 
 export async function getDataExportStatus(requestId?: string): Promise<DataExportRequest | null> {
   const path = requestId
-    ? `/user/data-export/requests/${requestId}`
+    ? `/user/data-export/requests/${encodeURIComponent(requestId)}`
     : "/user/data-export/requests/latest";
   try {
     const data = await apiRequest<Partial<DataExportRequest>>(toApiBase(path));
