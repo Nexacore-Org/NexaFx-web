@@ -6,6 +6,7 @@ import {
 } from "../../../../components/settings/settings-section";
 import ChangePasswordForm from "../../../../components/settings/change-password-form";
 import TwoFactorSettings from "../../../../components/settings/two-factor";
+import BackupCodesManager from "../../../../components/settings/backup-codes-manager";
 import ActiveSessions from "../../../../components/settings/active-sessions";
 
 export const metadata: Metadata = { title: "Security · Settings" };
@@ -30,6 +31,7 @@ export default function SettingsSecurityPage() {
         description="Require a one-time code from an authenticator app in addition to your password."
       >
         <TwoFactorSettings />
+        <BackupCodesManager />
       </SettingsCard>
 
       <SettingsCard

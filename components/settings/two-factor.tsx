@@ -355,7 +355,7 @@ function ScanStep({
   );
 }
 
-function BackupCodesStep({
+export function BackupCodesStep({
   codes,
   saved,
   onChange,

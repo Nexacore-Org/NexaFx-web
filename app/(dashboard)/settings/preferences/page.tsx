@@ -14,7 +14,7 @@ export default async function SettingsPreferencesPage() {
   const t = await getTranslations({ locale, namespace: "language" });
 
   return (
-    <SettingsSection title={t("heading")} description={t("description")}>
+    <SettingsSection title={t("heading")}>
       <SettingsCard title={t("heading")}>
         <LanguageSelect current={locale} />
       </SettingsCard>

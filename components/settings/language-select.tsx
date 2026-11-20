@@ -19,14 +19,17 @@ export default function LanguageSelect({ current }: { current: Locale }) {
   const t = useTranslations("language");
   const [locale, setLocaleState] = useState<Locale>(current);
   const [pending, startTransition] = useTransition();
+  const [justSaved, setJustSaved] = useState(false);
 
   const handleChange = (next: Locale) => {
     const previous = locale;
     setLocaleState(next);
+    setJustSaved(false);
 
     startTransition(async () => {
       try {
         await setLocale(next);
+        setJustSaved(true);
       } catch {
         // Roll the control back so it never claims a language the page is
         // not actually rendering in.
@@ -68,7 +71,7 @@ export default function LanguageSelect({ current }: { current: Locale }) {
         aria-live="polite"
         className="mt-2 min-h-5 text-sm text-green-600"
       >
-        {!pending && locale !== current ? t("saved") : ""}
+        {!pending && justSaved ? t("saved") : ""}
       </p>
     </div>
   );
