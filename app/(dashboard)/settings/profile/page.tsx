@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
 import {
   SettingsCard,
   SettingsSection,
@@ -31,6 +32,16 @@ export default function SettingsProfilePage() {
     },
   });
 
+  // Server data seeds the form; keepDirtyValues stops a refetch overwriting edits.
+  const form = useForm({
+    values: {
+      firstName: data?.firstName ?? "",
+      lastName: data?.lastName ?? "",
+      phone: data?.phone ?? "",
+    },
+    resetOptions: { keepDirtyValues: true },
+  });
+
   if (isPending) {
     return <p className="text-sm text-zinc-500">Loading profile…</p>;
   }
@@ -58,15 +69,10 @@ export default function SettingsProfilePage() {
       description="Your name and contact details. Your email address is used for sign-in and cannot be changed here."
     >
       <form
-        onSubmit={(event) => {
-          event.preventDefault();
+        onSubmit={form.handleSubmit((values) => {
           setSaved(false);
-          mutation.mutate({
-            firstName: data?.firstName ?? "",
-            lastName: data?.lastName ?? "",
-            phone: data?.phone ?? "",
-          });
-        }}
+          mutation.mutate(values);
+        })}
       >
         <SettingsCard title="Personal details">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -79,12 +85,7 @@ export default function SettingsProfilePage() {
               </label>
               <input
                 id="first-name"
-                defaultValue={data?.firstName ?? ""}
-                onChange={(e) =>
-                  queryClient.setQueryData(["profile"], (old: typeof data) =>
-                    old ? { ...old, firstName: e.target.value } : old,
-                  )
-                }
+                {...form.register("firstName")}
                 className="w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
               />
             </div>
@@ -97,12 +98,19 @@ export default function SettingsProfilePage() {
               </label>
               <input
                 id="last-name"
-                defaultValue={data?.lastName ?? ""}
-                onChange={(e) =>
-                  queryClient.setQueryData(["profile"], (old: typeof data) =>
-                    old ? { ...old, lastName: e.target.value } : old,
-                  )
-                }
+                {...form.register("lastName")}
+                className="w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-sm font-medium" htmlFor="phone">
+                Phone
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                autoComplete="tel"
+                {...form.register("phone")}
                 className="w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
               />
             </div>

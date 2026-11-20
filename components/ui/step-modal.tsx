@@ -28,6 +28,8 @@ export interface StepModalProps {
   busy?: boolean;
   hideSteps?: boolean;
   hideFooter?: boolean;
+  /** When false, Next/Finish are disabled for the current step. */
+  canAdvance?: boolean;
 }
 
 /**
@@ -50,6 +52,7 @@ export default function StepModal({
   busy = false,
   hideSteps = false,
   hideFooter = false,
+  canAdvance = true,
 }: StepModalProps) {
   const [internalIndex, setInternalIndex] = useState(initialStep);
   const [wasOpen, setWasOpen] = useState(open);
@@ -218,7 +221,7 @@ export default function StepModal({
               <button
                 type="button"
                 onClick={onFinish}
-                disabled={busy}
+                disabled={busy || !canAdvance}
                 className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
               >
                 {finishLabel}
@@ -229,7 +232,7 @@ export default function StepModal({
                 onClick={() =>
                   setIndex((i) => Math.min(steps.length - 1, i + 1))
                 }
-                disabled={busy}
+                disabled={busy || !canAdvance}
                 className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
               >
                 Next
