@@ -46,8 +46,11 @@ jobs:
       - name: Unused files & unresolved imports (#1140)
         run: npm run check:unused
 
-      - name: Smoke tests
-        run: npm run smoke
+      - name: Nav routes check
+        run: npm run check:nav
+
+      - name: Audit exceptions check
+        run: npm run check:audit-exceptions
 
       - name: Unit tests
         run: npm test

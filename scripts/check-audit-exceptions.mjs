@@ -72,7 +72,42 @@ export function evaluateAuditExceptions(markdown, now = new Date()) {
   };
 }
 
+/**
+ * Remove advisories covered by unexpired exceptions from an `npm audit --json`
+ * report and return what is still high or critical (#1134).
+ * @param {any} report
+ * @param {string} markdown
+ * @param {Date} [now]
+ */
+export function filterAuditReport(report, markdown, now = new Date()) {
+  const accepted = new Set();
+  for (const block of markdown.split(/^##\s+/m).slice(1)) {
+    const id = block.split("\n")[0].match(/[—–-]\s+(\S+)\s*$/)?.[1];
+    const expires = block.match(/expires:\s*(\d{4}-\d{2}-\d{2})/i)?.[1];
+    if (id && expires && new Date(`${expires}T23:59:59.999Z`) >= now) accepted.add(id);
+  }
+  const remaining = [];
+  for (const [name, vuln] of Object.entries(report?.vulnerabilities ?? {})) {
+    for (const via of vuln.via ?? []) {
+      if (typeof via !== "object" || !["high", "critical"].includes(via.severity)) continue;
+      const ids = [String(via.source), via.url?.split("/").pop()].filter(Boolean);
+      if (!ids.some((id) => accepted.has(id))) remaining.push({ package: name, advisory: ids.at(-1), severity: via.severity });
+    }
+  }
+  return remaining;
+}
+
 function main() {
+  const auditIdx = process.argv.indexOf("--audit");
+  if (auditIdx > -1) {
+    const report = JSON.parse(readFileSync(process.argv[auditIdx + 1], "utf8"));
+    const md = existsSync(EXCEPTIONS_PATH) ? readFileSync(EXCEPTIONS_PATH, "utf8") : "";
+    const remaining = filterAuditReport(report, md);
+    for (const r of remaining) console.error(`  • ${r.package} ${r.advisory} (${r.severity})`);
+    if (remaining.length) process.exit(1);
+    console.log("No unaccepted high/critical advisories.");
+  }
+
   if (!existsSync(EXCEPTIONS_PATH)) {
     console.log("No audit-exceptions.md found — nothing to check.");
     process.exit(0);

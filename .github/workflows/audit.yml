@@ -41,5 +41,7 @@ jobs:
       - name: Check audit exception expiry
         run: node scripts/check-audit-exceptions.mjs
 
-      - name: Production dependency audit (high/critical)
-        run: npm audit --omit=dev --audit-level=high
+      - name: Production dependency audit (high/critical, minus accepted exceptions)
+        run: |
+          npm audit --omit=dev --json > audit.json || true
+          node scripts/check-audit-exceptions.mjs --audit audit.json
