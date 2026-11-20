@@ -59,6 +59,29 @@ export interface TransactionsResponse {
 }
 
 /**
+ * Maps a `TransactionStatus` to the label shown in the withdrawal success pill.
+ * `completed` -> "Completed", `failed` -> "Failed", `pending` -> "Pending".
+ */
+export function getTransactionStatusLabel(status: TransactionStatus): string {
+  switch (status) {
+    case "completed":
+      return "Completed";
+    case "failed":
+      return "Failed";
+    case "pending":
+    default:
+      return "Pending";
+  }
+}
+
+/**
+ * A transaction is final once it reaches `completed` or `failed`; polling
+ * should stop at that point.
+ */
+export function isFinalTransactionStatus(status: TransactionStatus): boolean {
+  return status === "completed" || status === "failed";
+}
+
  * Thrown when a money-moving request succeeds but the backend response does not
  * include a transaction id. Callers should treat this as a failed operation.
  */
@@ -208,6 +231,30 @@ export async function fetchTransactions(
   }
 }
 
+/**
+ * Fetches a single transaction by id. Returns `null` when the backend has no
+ * record for the given id so callers can render a safe fallback.
+ */
+export async function fetchTransaction(id: string): Promise<Transaction | null> {
+  try {
+    const data = await apiRequest<unknown>(
+      `/api/transactions/${encodeURIComponent(id)}`,
+    );
+    if (!data || typeof data !== "object") return null;
+    const res = data as Record<string, unknown>;
+    const raw = res.transaction ?? data;
+    return normaliseTransaction(raw);
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      const fallback = getFallbackTransactions(50, 0).transactions.find(
+        (tx) => tx.id === id,
+      );
+      if (fallback) return fallback;
+    }
+    throw err;
+  }
+}
+
 function getFallbackTransactions(
   limit: number,
   page = 0,
@@ -282,6 +329,7 @@ function getFallbackTransactions(
 
   return {
     transactions: paged,
+    nextCursor: null,
     total: fallbackList.length,
     totalPages: Math.ceil(fallbackList.length / limit),
     page,

@@ -17,6 +17,10 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
+  const email = body.email?.trim() ?? "";
+  if (!email) {
+    return NextResponse.json({ error: "Missing email" }, { status: 400 });
+  }
 
   const email = body.email?.trim() ?? "";
   if (!email || !EMAIL_RE.test(email)) {

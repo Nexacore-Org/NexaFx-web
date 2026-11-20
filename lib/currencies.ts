@@ -83,6 +83,13 @@ export function formatCode(code: string): string {
   return currency ? currency.symbol : code;
 }
 
+/**
+ * Currencies supported for withdrawals. Derived from the canonical currency
+ * registry so the success screen never references a non-existent constant.
+ */
+export const WITHDRAWAL_SUCCESS_CURRENCIES: Currency[] = Object.values(
+  currencies,
+);
 export function formatMoney(
   amount: number | string,
   code: string,
