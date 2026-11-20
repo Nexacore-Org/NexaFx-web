@@ -1,18 +1,27 @@
 import { NextResponse } from "next/server";
 
-/** Signup stub — E2E/CI never hits production. */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Signup stub, only reachable in E2E/test mode. */
 export async function POST(request: Request) {
+  const useMock =
+    process.env.E2E_MOCK === "1" || process.env.NODE_ENV === "test";
+  if (!useMock) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   let body: { email?: string; password?: string; firstName?: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
-  if (!body.email || !body.password) {
+  const email = body.email?.trim() ?? "";
+  if (!email || !EMAIL_RE.test(email) || !body.password) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
-  if (body.email === "taken@example.com") {
+  if (email === "taken@example.com") {
     return NextResponse.json({ error: "Email already taken" }, { status: 409 });
   }
-  return NextResponse.json({ ok: true, email: body.email }, { status: 201 });
+  return NextResponse.json({ ok: true, email }, { status: 201 });
 }

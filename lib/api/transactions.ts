@@ -1,4 +1,4 @@
-import { apiRequest } from "../api-client";
+import { ApiError, apiRequest } from "../api-client";
 import { generateIdempotencyKey, idempotencyHeader } from "../idempotency";
 
 /**
@@ -294,6 +294,43 @@ export interface CreateWithdrawalParams {
   currency: string;
   destination: string;
   memo?: string;
+/**
+ * Fetch a single transaction by ID.
+ *
+ * Returns the transaction if found, or `null` if the server returns 404.
+ * Throws for other errors.
+ */
+export async function fetchTransaction(
+  id: string,
+): Promise<Transaction | null> {
+  try {
+    const data = await apiRequest<unknown>(
+      `/api/transactions/${encodeURIComponent(id)}`,
+    );
+    if (!data) return null;
+    return normaliseTransaction(data);
+  } catch (err) {
+    // 404 / 403 — not found or forbidden. Match on the HTTP status, not the
+    // message: the backend's JSON `message` replaces the default text.
+    if (
+      err instanceof ApiError &&
+      err.status !== null &&
+      [403, 404].includes(err.status)
+    ) {
+      return null;
+    }
+    // Dev fallback: only when the backend is unreachable. HTTP errors such as
+    // 401 or 500 must surface instead of rendering a mock transaction.
+    if (
+      process.env.NODE_ENV !== "production" &&
+      err instanceof ApiError &&
+      err.isNetworkError
+    ) {
+      const { transactions } = getFallbackTransactions(10);
+      return transactions.find((tx) => tx.id === id) ?? null;
+    }
+    throw err;
+  }
 }
 
 export interface CreateDepositParams {

@@ -9,10 +9,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lighthouse:
     name: Public pages performance & a11y
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -29,15 +34,13 @@ jobs:
         env:
           HUSKY: "0"
 
-      - name: Production build
-        run: npm run build
+      # `npm run lighthouse` builds the app, then `lhci autorun` starts it via
+      # `startServerCommand` in lighthouserc.json — the same command as locally.
+      - name: Build and run Lighthouse CI
+        run: npm run lighthouse
         env:
           NODE_ENV: production
           NEXT_PUBLIC_API_URL: https://nexafx-backend.onrender.com/v1
-
-      - name: Run Lighthouse CI
-        run: npx --yes @lhci/cli@0.14.0 autorun
-        env:
           LHCI_BUILD_CONTEXT__CURRENT_HASH: ${{ github.sha }}
 
       - name: Upload Lighthouse reports
