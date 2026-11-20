@@ -72,10 +72,18 @@ async function parseResponse<T>(res: Response): Promise<T> {
   if (contentType && contentType.includes("application/json")) {
     const data = await res.json();
     if (!res.ok) {
+      // Route handlers may respond with `{ code, message }` or the legacy
+      // `{ error }` shape. Prefer `message`, then fall back to `error`.
+      const message =
+        typeof data?.message === "string"
+          ? data.message
+          : typeof data?.error === "string"
+            ? data.error
+            : `Request failed with status ${res.status}`;
       throw new ApiError({
         status: res.status,
         code: data?.code ?? null,
-        message: data?.message ?? `Request failed with status ${res.status}`,
+        message,
         details: data ?? null,
         isNetworkError: false,
       });
@@ -141,13 +149,25 @@ export async function apiRequest<T>(
   } catch (err: unknown) {
     if (err instanceof ApiError) throw err;
 
-    if (err instanceof Error && err.name === "AbortError") {
+    // `AbortSignal.timeout` rejects with a DOMException named `TimeoutError`.
+    if (err instanceof Error && err.name === "TimeoutError") {
       throw new ApiError({
         status: 0,
         code: "REQUEST_TIMEOUT",
         message: "Request timed out",
         details: null,
         isNetworkError: true,
+      });
+    }
+
+    // Caller-initiated abort (e.g. component unmount) is not a timeout.
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new ApiError({
+        status: 0,
+        code: "REQUEST_ABORTED",
+        message: "Request was aborted",
+        details: null,
+        isNetworkError: false,
       });
     }
 
