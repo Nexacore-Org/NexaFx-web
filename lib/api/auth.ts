@@ -48,6 +48,7 @@ export async function changePassword(
       "/api/auth/change-password",
       {
         method: "POST",
+        skipAuthRefresh: true,
         body: {
           currentPassword: input.currentPassword,
           newPassword: input.newPassword,

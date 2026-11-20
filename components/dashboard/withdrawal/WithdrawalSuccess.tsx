@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/utils/haptics";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "@/hooks/use-toast-store";
-import { WITHDRAWAL_SUCCESS_CURRENCIES } from "@/lib/currencies";
-import { getTransactionById } from "@/lib/api/transactions";
+import { currencies } from "@/lib/currencies";
+import { fetchTransaction } from "@/lib/api/transactions";
 import type { TransactionStatus } from "@/lib/api/transactions";
 import Link from "next/link";
 
@@ -31,7 +31,7 @@ function StatusPill({ status }: StatusPillProps) {
       dotClass: "bg-yellow-500 animate-pulse",
     },
     success: {
-      label: "Success",
+      label: "Completed",
       className: "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20",
       dotClass: "bg-green-500",
     },
@@ -58,10 +58,15 @@ function StatusPill({ status }: StatusPillProps) {
 }
 
 /** Map API TransactionStatus to the StatusPill variant. */
-function toStatusPillVariant(status: TransactionStatus | null): StatusPillVariant {
-  if (status === "Success") return "success";
-  if (status === "Failed") return "failed";
+export function toStatusPillVariant(status: TransactionStatus | null): StatusPillVariant {
+  if (status === "completed") return "success";
+  if (status === "failed") return "failed";
   return "pending";
+}
+
+/** Whether a TransactionStatus is terminal (polling can stop). */
+function isTerminalStatus(status: TransactionStatus | null): boolean {
+  return status === "completed" || status === "failed";
 }
 
 /** Truncate a long address for display. */
@@ -91,15 +96,14 @@ export function WithdrawalSuccess() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedCurrency =
-    WITHDRAWAL_SUCCESS_CURRENCIES.find((c) => c.id === currency) ||
-    WITHDRAWAL_SUCCESS_CURRENCIES[0];
+    currencies.find((c) => c.id === currency) || currencies[0];
 
   const isSuccess = transactionStatus === "success";
 
   // Derive the display status: prefer polled result (real API status),
   // fall back to the status from the initial withdrawal response.
   const displayStatus: TransactionStatus | null = polledStatus
-    ?? (transactionStatus === "success" ? "Success" : transactionStatus === "failed" ? "Failed" : "Pending");
+    ?? (transactionStatus === "success" ? "completed" : transactionStatus === "failed" ? "failed" : "pending");
 
   const statusPillVariant = toStatusPillVariant(displayStatus);
 
@@ -109,16 +113,16 @@ export function WithdrawalSuccess() {
     pollCountRef.current += 1;
 
     try {
-      const tx = await getTransactionById(transactionId);
+      const tx = await fetchTransaction(transactionId);
       setPolledStatus(tx.status);
       // Update the store so other components see the latest status too
       setTransactionResult(
         transactionId,
-        tx.status === "Success" ? "success" : tx.status === "Failed" ? "failed" : "pending",
+        tx.status === "completed" ? "success" : tx.status === "failed" ? "failed" : "pending",
       );
 
       // Stop polling once we reach a terminal state
-      if (tx.status === "Success" || tx.status === "Failed") return;
+      if (isTerminalStatus(tx.status)) return;
     } catch {
       // Polling failure is non-fatal — silently stop
     }
@@ -237,82 +241,47 @@ export function WithdrawalSuccess() {
 
           {/* Status row */}
           <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
-            <div className="space-y-0.5">
-              <p className="text-xs text-muted-foreground">Status</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {polledStatus === null && pollCountRef.current === 0 && (
-                <Loader2 className="size-3 animate-spin text-muted-foreground" />
-              )}
-              <StatusPill status={statusPillVariant} />
-            </div>
+            <p className="text-xs text-muted-foreground">Status</p>
+            <StatusPill status={statusPillVariant} />
           </div>
 
-          {/* Destination row */}
+          {/* Wallet Address row */}
           {walletAddress && (
             <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
-              <div className="space-y-0.5">
+              <div className="space-y-0.5 min-w-0">
                 <p className="text-xs text-muted-foreground">Destination</p>
-                <p className="text-sm font-mono font-medium text-foreground">
+                <p className="text-sm font-mono font-medium text-foreground truncate">
                   {truncateAddress(walletAddress)}
                 </p>
               </div>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(walletAddress);
-                  toast("Address copied", "success");
-                }}
-                aria-label="Copy destination address"
-                className="ml-2 p-1.5 rounded-md hover:bg-muted transition-colors flex-shrink-0"
-              >
-                <Copy className="size-4 text-muted-foreground" />
-              </button>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Info Note */}
-      {isSuccess && (
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-          <p className="text-xs text-blue-600 dark:text-blue-400">
-            Your transaction is being processed. It may take a few minutes to
-            reflect in your wallet.
-          </p>
         </div>
       )}
 
       {/* Actions */}
       <div className="space-y-3 pt-2">
-        <button
-          onClick={isSuccess ? handleDone : () => setStep("review")}
-          className={cn(
-            "w-full py-3.5 rounded-xl font-semibold",
-            "bg-primary text-primary-foreground",
-            "hover:bg-primary/90 active:scale-[0.98]",
-            "transition-all duration-200",
-          )}
-        >
-          {isSuccess ? "Done" : "Try Again"}
-        </button>
-
-        {isSuccess && transactionId && (
-          <Link
-            href={`/transactions/${transactionId}`}
-            onClick={handleDone}
-            className="w-full py-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-2"
-          >
-            <ExternalLink className="size-4" />
-            View Transaction
-          </Link>
-        )}
-
-        {isSuccess && (
+        {isSuccess ? (
+          <>
+            <button
+              onClick={handleDone}
+              className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+            >
+              Done
+            </button>
+            <button
+              onClick={handleMakeAnother}
+              className="w-full py-3 rounded-xl bg-muted text-foreground font-medium hover:bg-muted/80 transition-colors"
+            >
+              Make Another Withdrawal
+            </button>
+          </>
+        ) : (
           <button
             onClick={handleMakeAnother}
-            className="w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
           >
-            Make another withdrawal
+            Try Again
           </button>
         )}
       </div>

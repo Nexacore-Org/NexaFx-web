@@ -14,7 +14,7 @@
  */
 
 import { z } from "zod";
-import { apiClient } from "@/lib/api-client";
+import { apiRequest } from "@/lib/api-client";
 import { validateStellarAddress } from "@/lib/utils/stellar-validation";
 
 // ---------------------------------------------------------------------------
@@ -72,7 +72,7 @@ export async function getBeneficiaries(): Promise<Beneficiary[]> {
   if (!BENEFICIARIES_ENABLED) return [];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const json = await apiClient<any>("/beneficiaries");
+  const json = await apiRequest<any>("/beneficiaries");
   const list: unknown[] = Array.isArray(json)
     ? json
     : (json.data ?? json.beneficiaries ?? []);
@@ -92,9 +92,9 @@ export async function createBeneficiary(
   CreateBeneficiarySchema.parse(data);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const json = await apiClient<any>("/beneficiaries", {
+  const json = await apiRequest<any>("/beneficiaries", {
     method: "POST",
-    body: JSON.stringify(data),
+    body: data,
   });
 
   const dto = (json.data ?? json) as Record<string, unknown>;
@@ -108,15 +108,20 @@ export async function updateBeneficiary(
   UpdateBeneficiarySchema.parse(data);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const json = await apiClient<any>(`/beneficiaries/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
+  const json = await apiRequest<any>(
+    `/beneficiaries/${encodeURIComponent(id)}`,
+    {
+      method: "PUT",
+      body: data,
+    },
+  );
 
   const dto = (json.data ?? json) as Record<string, unknown>;
   return BeneficiarySchema.parse(dto);
 }
 
 export async function deleteBeneficiary(id: string): Promise<void> {
-  await apiClient(`/beneficiaries/${id}`, { method: "DELETE" });
+  await apiRequest(`/beneficiaries/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
 }

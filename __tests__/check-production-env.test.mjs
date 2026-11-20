@@ -22,6 +22,7 @@ describe("evaluateProductionEnv", () => {
       NODE_ENV: "production",
       DEV_TOKEN: "should-not-ship",
       NEXT_PUBLIC_API_URL: "https://api.example.com",
+      AUTH_API_URL: "https://auth.example.com",
     });
     assert.equal(result.ok, false);
     assert.ok(result.errors.some((e) => e.includes("DEV_TOKEN")));
@@ -34,6 +35,7 @@ describe("evaluateProductionEnv", () => {
       VERCEL_ENV: "production",
       TEST_ACCESS_TOKEN: "x",
       NEXT_PUBLIC_API_URL: "https://api.example.com",
+      AUTH_API_URL: "https://auth.example.com",
     });
     assert.equal(result.ok, false);
     assert.ok(result.errors.some((e) => e.includes("TEST_ACCESS_TOKEN")));
@@ -44,9 +46,30 @@ describe("evaluateProductionEnv", () => {
       NODE_ENV: "production",
       NEXT_PUBLIC_API_MOCKING: "enabled",
       NEXT_PUBLIC_API_URL: "https://api.example.com",
+      AUTH_API_URL: "https://auth.example.com",
     });
     assert.equal(result.ok, false);
     assert.ok(result.errors.some((e) => e.includes("NEXT_PUBLIC_API_MOCKING")));
+  });
+
+  it("fails when E2E_MOCK is set in production", () => {
+    const result = evaluateProductionEnv({
+      NODE_ENV: "production",
+      E2E_MOCK: "1",
+      NEXT_PUBLIC_API_URL: "https://api.example.com",
+      AUTH_API_URL: "https://auth.example.com",
+    });
+    assert.equal(result.ok, false);
+    assert.ok(result.errors.some((e) => e.includes("E2E_MOCK")));
+  });
+
+  it("fails when AUTH_API_URL is missing in production", () => {
+    const result = evaluateProductionEnv({
+      NODE_ENV: "production",
+      NEXT_PUBLIC_API_URL: "https://api.example.com",
+    });
+    assert.equal(result.ok, false);
+    assert.ok(result.errors.some((e) => e.includes("AUTH_API_URL")));
   });
 
   it("fails for unapproved NEXT_PUBLIC_FLAG_* keys", () => {
@@ -54,6 +77,7 @@ describe("evaluateProductionEnv", () => {
       NODE_ENV: "production",
       NEXT_PUBLIC_FLAG_EXPERIMENTAL_UI: "1",
       NEXT_PUBLIC_API_URL: "https://api.example.com",
+      AUTH_API_URL: "https://auth.example.com",
     });
     assert.equal(result.ok, false);
     assert.ok(
@@ -65,6 +89,7 @@ describe("evaluateProductionEnv", () => {
     const result = evaluateProductionEnv({
       NODE_ENV: "production",
       NEXT_PUBLIC_API_URL: "http://insecure.example.com",
+      AUTH_API_URL: "https://auth.example.com",
     });
     assert.equal(result.ok, false);
     assert.ok(result.errors.some((e) => e.includes("https://")));
@@ -74,6 +99,7 @@ describe("evaluateProductionEnv", () => {
     const result = evaluateProductionEnv({
       NODE_ENV: "production",
       NEXT_PUBLIC_API_URL: "https://api.nexafx.com/v1",
+      AUTH_API_URL: "https://auth.nexafx.com",
     });
     assert.equal(result.ok, true);
     assert.deepEqual(result.errors, []);
@@ -83,5 +109,6 @@ describe("evaluateProductionEnv", () => {
     assert.ok(FORBIDDEN_ENV_KEYS.includes("DEV_TOKEN"));
     assert.ok(FORBIDDEN_ENV_KEYS.includes("TEST_ACCESS_TOKEN"));
     assert.ok(FORBIDDEN_ENV_KEYS.includes("NEXT_PUBLIC_API_MOCKING"));
+    assert.ok(FORBIDDEN_ENV_KEYS.includes("E2E_MOCK"));
   });
 });

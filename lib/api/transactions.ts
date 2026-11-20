@@ -1,5 +1,11 @@
-import { apiRequest } from "../api-client";
+import { ApiError, apiRequest } from "../api-client";
 import { generateIdempotencyKey, idempotencyHeader } from "../idempotency";
+
+/** Resolve API paths against the configured backend base (#1168). */
+function apiUrl(path: string): string {
+  const base = (process.env.NEXT_PUBLIC_API_URL ?? "/api").replace(/\/$/, "");
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+}
 
 /**
  * NOTE: The backend transactions contract is NOT confirmed. The app has no reachable
@@ -58,6 +64,40 @@ export interface TransactionsResponse {
   page?: number;
 }
 
+/**
+ * Maps a `TransactionStatus` to the label shown in the withdrawal success pill.
+ * `completed` -> "Completed", `failed` -> "Failed", `pending` -> "Pending".
+ */
+export function getTransactionStatusLabel(status: TransactionStatus): string {
+  switch (status) {
+    case "completed":
+      return "Completed";
+    case "failed":
+      return "Failed";
+    case "pending":
+    default:
+      return "Pending";
+  }
+}
+
+/**
+ * A transaction is final once it reaches `completed` or `failed`; polling
+ * should stop at that point.
+ */
+export function isFinalTransactionStatus(status: TransactionStatus): boolean {
+  return status === "completed" || status === "failed";
+}
+
+ * Thrown when a money-moving request succeeds but the backend response does not
+ * include a transaction id. Callers should treat this as a failed operation.
+ */
+export class MissingTransactionIdError extends Error {
+  constructor(operation: string) {
+    super(`${operation} response did not include a transaction id`);
+    this.name = "MissingTransactionIdError";
+  }
+}
+
 function num(val: unknown, fallback = 0): number {
   if (typeof val === "number" && Number.isFinite(val)) return val;
   if (typeof val === "string") {
@@ -69,6 +109,22 @@ function num(val: unknown, fallback = 0): number {
 
 function str(val: unknown, fallback = ""): string {
   return typeof val === "string" ? val : fallback;
+}
+
+/**
+ * Extract a transaction id from a create response, throwing a typed error when
+ * the backend omits it instead of silently casting `undefined` to a string.
+ */
+function requireTransactionId(data: unknown, operation: string): string {
+  const id =
+    data && typeof data === "object"
+      ? (data as Record<string, unknown>).transactionId ??
+        (data as Record<string, unknown>).id
+      : undefined;
+  if (typeof id !== "string" || id.length === 0) {
+    throw new MissingTransactionIdError(operation);
+  }
+  return id;
 }
 
 export function normaliseTransaction(raw: unknown): Transaction {
@@ -99,7 +155,7 @@ export function normaliseTransaction(raw: unknown): Transaction {
     rawStatus,
   )
     ? (rawStatus as TransactionStatus)
-    : "completed";
+    : "pending";
 
   const destAmt =
     d.destinationAmount !== undefined ? num(d.destinationAmount) : undefined;
@@ -109,7 +165,7 @@ export function normaliseTransaction(raw: unknown): Transaction {
       : undefined;
 
   return {
-    id: str(d.id, Math.random().toString(36).substring(2, 9)),
+    id: str(d.id),
     type,
     status,
     sourceAmount: num(d.sourceAmount ?? d.amount),
@@ -118,7 +174,7 @@ export function normaliseTransaction(raw: unknown): Transaction {
     destinationCurrency: destCurr ? destCurr.toUpperCase() : undefined,
     rate: d.rate !== undefined ? num(d.rate) : undefined,
     fee: d.fee !== undefined ? num(d.fee) : undefined,
-    createdAt: str(d.createdAt ?? d.timestamp, new Date().toISOString()),
+    createdAt: str(d.createdAt ?? d.timestamp),
     updatedAt: typeof d.updatedAt === "string" ? d.updatedAt : undefined,
     counterparty:
       typeof d.counterparty === "string" ? d.counterparty : undefined,
@@ -144,7 +200,7 @@ export async function fetchTransactions(
     if (query.dateTo) queryParams.dateTo = query.dateTo;
     if (query.page !== undefined) queryParams.page = query.page;
 
-    const data = await apiRequest<unknown>("/api/transactions", {
+    const data = await apiRequest<unknown>(apiUrl("/transactions"), {
       query: queryParams,
     });
 
@@ -163,7 +219,14 @@ export async function fetchTransactions(
     const limit = query.limit ?? 10;
 
     return {
-      transactions: rawList.map(normaliseTransaction),
+      transactions: rawList
+        .filter(
+          (item) =>
+            item &&
+            typeof item === "object" &&
+            typeof (item as Record<string, unknown>).id === "string",
+        )
+        .map(normaliseTransaction),
       nextCursor: typeof res.nextCursor === "string" ? res.nextCursor : null,
       total,
       totalPages:
@@ -176,6 +239,30 @@ export async function fetchTransactions(
     // If backend is unreachable, gracefully return mock recent transactions for development if empty
     if (process.env.NODE_ENV !== "production") {
       return getFallbackTransactions(query.limit ?? 5, query.page ?? 0);
+    }
+    throw err;
+  }
+}
+
+/**
+ * Fetches a single transaction by id. Returns `null` when the backend has no
+ * record for the given id so callers can render a safe fallback.
+ */
+export async function fetchTransaction(id: string): Promise<Transaction | null> {
+  try {
+    const data = await apiRequest<unknown>(
+      apiUrl(`/transactions/${encodeURIComponent(id)}`),
+    );
+    if (!data || typeof data !== "object") return null;
+    const res = data as Record<string, unknown>;
+    const raw = res.transaction ?? data;
+    return normaliseTransaction(raw);
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      const fallback = getFallbackTransactions(50, 0).transactions.find(
+        (tx) => tx.id === id,
+      );
+      if (fallback) return fallback;
     }
     throw err;
   }
@@ -255,12 +342,19 @@ function getFallbackTransactions(
 
   return {
     transactions: paged,
+    nextCursor: null,
     total: fallbackList.length,
     totalPages: Math.ceil(fallbackList.length / limit),
     page,
+    nextCursor: null,
   };
 }
 
+export interface CreateWithdrawalParams {
+  amount: number;
+  currency: string;
+  destination: string;
+  memo?: string;
 /**
  * Fetch a single transaction by ID.
  *
@@ -272,20 +366,27 @@ export async function fetchTransaction(
 ): Promise<Transaction | null> {
   try {
     const data = await apiRequest<unknown>(
-      `/api/transactions/${encodeURIComponent(id)}`,
+      apiUrl(`/transactions/${encodeURIComponent(id)}`),
     );
     if (!data) return null;
     return normaliseTransaction(data);
   } catch (err) {
-    // 404 — not found or forbidden
+    // 404 / 403 — not found or forbidden. Match on the HTTP status, not the
+    // message: the backend's JSON `message` replaces the default text.
     if (
-      err instanceof Error &&
-      (err.message.includes("404") || err.message.includes("403"))
+      err instanceof ApiError &&
+      err.status !== null &&
+      [403, 404].includes(err.status)
     ) {
       return null;
     }
-    // Dev fallback: look up from mock list
-    if (process.env.NODE_ENV !== "production") {
+    // Dev fallback: only when the backend is unreachable. HTTP errors such as
+    // 401 or 500 must surface instead of rendering a mock transaction.
+    if (
+      process.env.NODE_ENV !== "production" &&
+      err instanceof ApiError &&
+      err.isNetworkError
+    ) {
       const { transactions } = getFallbackTransactions(10);
       return transactions.find((tx) => tx.id === id) ?? null;
     }
@@ -293,176 +394,74 @@ export async function fetchTransaction(
   }
 }
 
-// ==================== Conversion Summary ====================
+export interface CreateDepositParams {
+  amount: number;
+  currency: string;
+  source?: string;
+  memo?: string;
+}
 
-export interface ConversionSummary {
-  period: string;
+export interface CreateSwapParams {
   fromCurrency: string;
   toCurrency: string;
-  totalAmount: number;
-  transactionCount: number;
-}
-
-export const getConversionSummary = (
-  transactions: Transaction[],
-): ConversionSummary[] => {
-  const convertTxs = transactions.filter((t) => t.type === "convert");
-  const grouped: Record<string, ConversionSummary> = {};
-
-  convertTxs.forEach((tx) => {
-    const date = new Date(tx.createdAt);
-    const period = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-    const key = `${period}-${tx.sourceCurrency}-${tx.destinationCurrency ?? ""}`;
-
-    if (!grouped[key]) {
-      grouped[key] = {
-        period,
-        fromCurrency: tx.sourceCurrency,
-        toCurrency: tx.destinationCurrency ?? "",
-        totalAmount: 0,
-        transactionCount: 0,
-      };
-    }
-    grouped[key].totalAmount += tx.sourceAmount;
-    grouped[key].transactionCount += 1;
-  });
-
-  return Object.values(grouped).sort((a, b) =>
-    a.period.localeCompare(b.period),
-  );
-};
-
-// ==================== Withdrawal ====================
-
-// Confirmed against backend src/transactions/dtos/transaction.dto.ts:
-// - field is `destinationAddress` (not `walletAddress`)
-// - `amount` must be a number, not a string
-// - `beneficiaryId` and `walletId` are optional alternative targeting fields
-export interface CreateWithdrawalDto {
-  currency: string;
   amount: number;
-  destinationAddress?: string;
-  beneficiaryId?: string;
-  walletId?: string;
-}
-
-export interface WithdrawalResponse {
-  transactionId: string;
-  status: "pending" | "success" | "failed";
-  message?: string;
 }
 
 export async function createWithdrawal(
-  data: CreateWithdrawalDto,
-  idempotencyKey?: string,
-): Promise<WithdrawalResponse> {
-  const key = idempotencyKey ?? generateIdempotencyKey();
-
-  // NOTE: The `Idempotency-Key` header is sent so that a future backend
-  // update requires no frontend changes. Until the backend confirms it
-  // honours this header for deduplication, the client-side `useSubmitOnce`
-  // guard prevents duplicate in-flight requests.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const json = await apiRequest<any>("/transactions/withdraw", {
+  params: CreateWithdrawalParams,
+): Promise<{ transactionId: string }> {
+  const idempotencyKey = generateIdempotencyKey();
+  const data = await apiRequest<unknown>(apiUrl("/transactions/withdraw"), {
     method: "POST",
-    headers: idempotencyHeader(key),
-    body: JSON.stringify(data),
+    // Pass a plain object: apiRequest serialises the body itself. Passing a
+    // JSON string here would double-encode and send a string literal.
+    body: {
+      amount: params.amount,
+      currency: params.currency,
+      destination: params.destination,
+      memo: params.memo,
+    },
+    headers: idempotencyHeader(idempotencyKey),
   });
 
-  // Normalize response - backend may use different field names
-  const transactionId = (json.transactionId ??
-    json.transaction_id ??
-    json.id ??
-    json.data?.id ??
-    json.data?.transactionId) as string;
-
-  const status = (json.status ?? json.data?.status ?? "pending") as
-    "pending" | "success" | "failed";
-
-  return {
-    transactionId,
-    status,
-    message: json.message as string | undefined,
-  };
+  return { transactionId: requireTransactionId(data, "createWithdrawal") };
 }
 
-// ==================== Deposit ====================
-
-export interface CreateDepositDto {
-  amount: string;
-  currency: string;
-  sourceAddress?: string;
-}
-
-export interface DepositResponse {
-  transactionId: string;
-  status: "pending" | "success" | "failed";
-  walletAddress?: string;
-  message?: string;
-}
-
-export async function createDeposit({
-  amount,
-  currency,
-  sourceAddress,
-}: CreateDepositDto): Promise<DepositResponse> {
-  const body: Record<string, string> = { amount, currency };
-  if (sourceAddress) body.sourceAddress = sourceAddress;
-
-  const key = generateIdempotencyKey();
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const json = await apiRequest<any>("/transactions/deposit", {
+export async function createDeposit(
+  params: CreateDepositParams,
+): Promise<{ transactionId: string }> {
+  const idempotencyKey = generateIdempotencyKey();
+  const data = await apiRequest<unknown>(apiUrl("/transactions/deposit"), {
     method: "POST",
-    headers: idempotencyHeader(key),
-    body: JSON.stringify(body),
+    // Pass a plain object: apiRequest serialises the body itself. Passing a
+    // JSON string here would double-encode and send a string literal.
+    body: {
+      amount: params.amount,
+      currency: params.currency,
+      source: params.source,
+      memo: params.memo,
+    },
+    headers: idempotencyHeader(idempotencyKey),
   });
 
-  // Normalize response - backend may use different field names
-  const transactionId = (json.transactionId ??
-    json.transaction_id ??
-    json.id ??
-    json.data?.id ??
-    json.data?.transactionId) as string;
-
-  const status = (json.status ?? json.data?.status ?? "pending") as
-    "pending" | "success" | "failed";
-
-  return {
-    transactionId,
-    status,
-    walletAddress: json.walletAddress as string | undefined,
-    message: json.message as string | undefined,
-  };
+  return { transactionId: requireTransactionId(data, "createDeposit") };
 }
 
-// ==================== Swap ====================
-
-export interface CreateSwapDto {
-  fromCurrency: string;
-  toCurrency: string;
-  amount: number;
-  lockId?: string;
-}
-
-/**
- * Pass `idempotencyKey` to reuse one key across retries of the same intent.
- * `apiRequest` stringifies the body itself, so it must not be stringified here.
- */
 export async function createSwap(
-  data: CreateSwapDto,
-  idempotencyKey?: string,
-): Promise<Transaction> {
-  const key = idempotencyKey ?? generateIdempotencyKey();
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const json = await apiRequest<any>("/transactions/swap", {
+  params: CreateSwapParams,
+): Promise<{ transactionId: string }> {
+  const idempotencyKey = generateIdempotencyKey();
+  // NOTE: pass a plain object, not JSON.stringify — apiRequest serialises the
+  // body itself, so stringifying here would double-encode the payload.
+  const data = await apiRequest<unknown>(apiUrl("/transactions/swap"), {
     method: "POST",
-    headers: idempotencyHeader(key),
-    body: data,
+    body: {
+      fromCurrency: params.fromCurrency,
+      toCurrency: params.toCurrency,
+      amount: params.amount,
+    },
+    headers: idempotencyHeader(idempotencyKey),
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const dto = (json.data ?? json) as Record<string, any>;
-  return normaliseTransaction(dto);
+  return { transactionId: requireTransactionId(data, "createSwap") };
 }

@@ -63,7 +63,7 @@ export function formatMoney(
 ): string {
   const numericAmount =
     typeof amount === "string" ? parseAmount(amount) : amount;
-  if (isNaN(numericAmount)) return "0.00";
+  if (isNaN(numericAmount)) return "—";
 
   const currency = getCurrency(currencyCode) || { decimals: 2, symbol: "" };
   const decimals = currency.decimals;
@@ -74,7 +74,6 @@ export function formatMoney(
   });
 
   const formatted = formatter.format(numericAmount);
-  const sign = numericAmount < 0 ? "-" : "";
 
   if (options.compact) {
     return new Intl.NumberFormat(undefined, {
@@ -83,16 +82,20 @@ export function formatMoney(
     }).format(numericAmount);
   }
 
-  return `${sign}${formatted}`;
+  return formatted;
+}
+
+/** Small rates need significant digits, not fixed currency decimals. */
+export function formatRate(rate: number): string {
+  if (!Number.isFinite(rate) || rate <= 0) return "—";
+  return new Intl.NumberFormat(undefined, { maximumSignificantDigits: 6 }).format(rate);
 }
 
 export function parseAmount(input: string): number {
   if (!input) return 0;
-  const cleaned = input.replace(/[^\d.,-]/g, "");
-  const parts = cleaned.split(".");
-  const integerPart = parts[0].replace(/,/g, "");
-  const decimalPart = parts[1] ? parts[1].padEnd(2, "0") : "00";
-  return parseFloat(`${integerPart}.${decimalPart}`);
+  const cleaned = input.trim();
+  if (!/^-?\d+([.,]\d+)?$/.test(cleaned)) return NaN;
+  return Number(cleaned.replace(",", "."));
 }
 
 export function compareAmounts(a: number | string, b: number | string): number {
