@@ -1,4 +1,4 @@
-import { apiRequest } from "../api-client";
+import { ApiError, apiRequest } from "../api-client";
 import { generateIdempotencyKey, idempotencyHeader } from "../idempotency";
 
 /**
@@ -82,6 +82,16 @@ export function isFinalTransactionStatus(status: TransactionStatus): boolean {
   return status === "completed" || status === "failed";
 }
 
+ * Thrown when a money-moving request succeeds but the backend response does not
+ * include a transaction id. Callers should treat this as a failed operation.
+ */
+export class MissingTransactionIdError extends Error {
+  constructor(operation: string) {
+    super(`${operation} response did not include a transaction id`);
+    this.name = "MissingTransactionIdError";
+  }
+}
+
 function num(val: unknown, fallback = 0): number {
   if (typeof val === "number" && Number.isFinite(val)) return val;
   if (typeof val === "string") {
@@ -93,6 +103,22 @@ function num(val: unknown, fallback = 0): number {
 
 function str(val: unknown, fallback = ""): string {
   return typeof val === "string" ? val : fallback;
+}
+
+/**
+ * Extract a transaction id from a create response, throwing a typed error when
+ * the backend omits it instead of silently casting `undefined` to a string.
+ */
+function requireTransactionId(data: unknown, operation: string): string {
+  const id =
+    data && typeof data === "object"
+      ? (data as Record<string, unknown>).transactionId ??
+        (data as Record<string, unknown>).id
+      : undefined;
+  if (typeof id !== "string" || id.length === 0) {
+    throw new MissingTransactionIdError(operation);
+  }
+  return id;
 }
 
 export function normaliseTransaction(raw: unknown): Transaction {
@@ -307,5 +333,122 @@ function getFallbackTransactions(
     total: fallbackList.length,
     totalPages: Math.ceil(fallbackList.length / limit),
     page,
+    nextCursor: null,
   };
+}
+
+export interface CreateWithdrawalParams {
+  amount: number;
+  currency: string;
+  destination: string;
+  memo?: string;
+/**
+ * Fetch a single transaction by ID.
+ *
+ * Returns the transaction if found, or `null` if the server returns 404.
+ * Throws for other errors.
+ */
+export async function fetchTransaction(
+  id: string,
+): Promise<Transaction | null> {
+  try {
+    const data = await apiRequest<unknown>(
+      `/api/transactions/${encodeURIComponent(id)}`,
+    );
+    if (!data) return null;
+    return normaliseTransaction(data);
+  } catch (err) {
+    // 404 / 403 — not found or forbidden. Match on the HTTP status, not the
+    // message: the backend's JSON `message` replaces the default text.
+    if (
+      err instanceof ApiError &&
+      err.status !== null &&
+      [403, 404].includes(err.status)
+    ) {
+      return null;
+    }
+    // Dev fallback: only when the backend is unreachable. HTTP errors such as
+    // 401 or 500 must surface instead of rendering a mock transaction.
+    if (
+      process.env.NODE_ENV !== "production" &&
+      err instanceof ApiError &&
+      err.isNetworkError
+    ) {
+      const { transactions } = getFallbackTransactions(10);
+      return transactions.find((tx) => tx.id === id) ?? null;
+    }
+    throw err;
+  }
+}
+
+export interface CreateDepositParams {
+  amount: number;
+  currency: string;
+  source?: string;
+  memo?: string;
+}
+
+export interface CreateSwapParams {
+  fromCurrency: string;
+  toCurrency: string;
+  amount: number;
+}
+
+export async function createWithdrawal(
+  params: CreateWithdrawalParams,
+): Promise<{ transactionId: string }> {
+  const idempotencyKey = generateIdempotencyKey();
+  const data = await apiRequest<unknown>("/api/transactions/withdraw", {
+    method: "POST",
+    // Pass a plain object: apiRequest serialises the body itself. Passing a
+    // JSON string here would double-encode and send a string literal.
+    body: {
+      amount: params.amount,
+      currency: params.currency,
+      destination: params.destination,
+      memo: params.memo,
+    },
+    headers: idempotencyHeader(idempotencyKey),
+  });
+
+  return { transactionId: requireTransactionId(data, "createWithdrawal") };
+}
+
+export async function createDeposit(
+  params: CreateDepositParams,
+): Promise<{ transactionId: string }> {
+  const idempotencyKey = generateIdempotencyKey();
+  const data = await apiRequest<unknown>("/api/transactions/deposit", {
+    method: "POST",
+    // Pass a plain object: apiRequest serialises the body itself. Passing a
+    // JSON string here would double-encode and send a string literal.
+    body: {
+      amount: params.amount,
+      currency: params.currency,
+      source: params.source,
+      memo: params.memo,
+    },
+    headers: idempotencyHeader(idempotencyKey),
+  });
+
+  return { transactionId: requireTransactionId(data, "createDeposit") };
+}
+
+export async function createSwap(
+  params: CreateSwapParams,
+): Promise<{ transactionId: string }> {
+  const idempotencyKey = generateIdempotencyKey();
+  // NOTE: pass a plain object, not JSON.stringify — apiRequest serialises the
+  // body itself, so stringifying here would double-encode the payload.
+  const data = await apiRequest<unknown>("/api/transactions/swap", {
+    method: "POST",
+    body: {
+      fromCurrency: params.fromCurrency,
+      toCurrency: params.toCurrency,
+      amount: params.amount,
+    },
+    headers: idempotencyHeader(idempotencyKey),
+  });
+
+  return { transactionId: requireTransactionId(data, "createSwap") };
 }

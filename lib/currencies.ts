@@ -90,3 +90,18 @@ export function formatCode(code: string): string {
 export const WITHDRAWAL_SUCCESS_CURRENCIES: Currency[] = Object.values(
   currencies,
 );
+export function formatMoney(
+  amount: number | string,
+  code: string,
+  options: { locale?: string } = {}
+): string {
+  const currency = getCurrency(code);
+  const numeric = typeof amount === "string" ? parseFloat(amount) : amount;
+  const value = Number.isFinite(numeric) ? numeric : 0;
+  const decimals = currency ? currency.decimals : 2;
+  const formatted = value.toLocaleString(options.locale ?? "en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: decimals,
+  });
+  return currency ? `${currency.symbol}${formatted}` : `${formatted} ${code.toUpperCase()}`;
+}

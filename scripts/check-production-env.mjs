@@ -19,6 +19,7 @@ export const FORBIDDEN_ENV_KEYS = [
   "DEV_TOKEN",
   "TEST_ACCESS_TOKEN",
   "NEXT_PUBLIC_API_MOCKING",
+  "E2E_MOCK",
 ];
 
 /**
@@ -69,6 +70,12 @@ export function evaluateProductionEnv(env) {
   } else if (!apiUrl.startsWith("https://")) {
     errors.push(
       "NEXT_PUBLIC_API_URL must use https:// in production (got a non-https value).",
+    );
+  }
+
+  if (!env.AUTH_API_URL) {
+    errors.push(
+      "AUTH_API_URL must be set in production. Without it, the login route cannot reach the real auth backend.",
     );
   }
 

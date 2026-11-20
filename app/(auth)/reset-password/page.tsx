@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function ResetPasswordForm() {
@@ -16,6 +17,12 @@ function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!code) {
+      setError("Invalid or expired code");
+      return;
+    }
+
     setPending(true);
 
     if (newPassword !== confirmPassword) {
@@ -49,6 +56,23 @@ function ResetPasswordForm() {
       setPending(false);
     }
   };
+
+  if (!code) {
+    return (
+      <div className="max-w-md p-6">
+        <h2>Reset Password</h2>
+        <p className="mt-4 text-sm text-gray-700">
+          This password reset link is invalid or has expired.
+        </p>
+        <Link
+          href="/forgot-password"
+          className="mt-4 inline-block rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+        >
+          Request a new link
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md p-6">

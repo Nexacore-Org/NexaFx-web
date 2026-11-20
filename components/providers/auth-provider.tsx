@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   User,
   SessionStatus,
@@ -23,6 +24,8 @@ type AuthContextValue = {
   sessionExpired: boolean;
   logout: () => void;
   dismissSessionExpired: () => void;
+  refresh: () => Promise<void>;
+  setUser: (user: User | null) => void;
   isAdmin: (user: User) => boolean;
   displayName: (user: User) => string;
 };
@@ -38,6 +41,7 @@ export function useAuth(): AuthContextValue {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [status, setStatus] = useState<SessionStatus>("loading");
   const [sessionExpired, setSessionExpired] = useState(false);
@@ -46,7 +50,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setStatus("unauthenticated");
     setSessionExpired(false);
-  }, []);
+    queryClient.clear();
+    void fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {
+      // Best-effort: local state is already cleared.
+    });
+  }, [queryClient]);
 
   const dismissSessionExpired = useCallback(() => {
     setSessionExpired(false);
@@ -59,6 +70,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     if (!res.ok) {
       throw new Error("Session refresh failed");
+    }
+  }, []);
+
+  // Re-fetch the current session so in-memory user state (topbar name/avatar)
+  // reflects server-side changes such as a profile update.
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/profile", {
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data?.user ?? null);
+        setStatus(data?.user ? "authenticated" : "unauthenticated");
+      } else {
+        setUser(null);
+        setStatus("unauthenticated");
+      }
+    } catch {
+      setUser(null);
+      setStatus("unauthenticated");
     }
   }, []);
 
@@ -115,10 +147,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       sessionExpired,
       logout,
       dismissSessionExpired,
+      refresh,
+      setUser,
       isAdmin: checkIsAdmin,
       displayName,
     }),
-    [user, status, sessionExpired, logout, dismissSessionExpired],
+    [user, status, sessionExpired, logout, dismissSessionExpired, refresh],
   );
 
   return (
