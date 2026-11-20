@@ -20,9 +20,9 @@ Instead, provide a **clear explanation of your approach**, which includes:
 
 ---
 
-How to Contribute🤝
+## How to Contribute
 
-## Pull Request Template
+### Pull Request Template
 
 To ensure consistency and improve the review process, we've implemented a PR template. When creating a pull request, please:
 
@@ -37,14 +37,6 @@ To ensure consistency and improve the review process, we've implemented a PR tem
 5. Link to any related issues using keywords like "Closes #123" or "Fixes #123"
 
 The template location is at [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md) and provides a structured format to help maintainers understand and review your contribution more efficiently.
-
----
-
-## Steps to apply
-
-Apply for an Issue
-
-- Look for an open issue and comment expressing your interest in working on it.
 
 ---
 
@@ -86,7 +78,9 @@ Run the same checks CI runs:
 npm run verify
 ```
 
-This runs lint, type-check and the production build. A PR is reviewed only when CI is green.
+`verify` runs `npm run lint`, `npm run type-check`, `npm run check:nav` and `npm run build`. CI additionally runs `npm run format:check`, `npm run smoke`, `npm test`, `npm run check:bundle` and `npm run e2e`; run those too before opening a PR.
+
+A PR is reviewed only when CI is green.
 
 To check formatting only, run:
 

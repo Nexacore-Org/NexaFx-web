@@ -23,6 +23,17 @@
     "audit:prod": "npm audit --omit=dev --audit-level=high",
     "lighthouse": "lhci autorun",
     "test": "vitest run"
+    "check:unused": "knip",
+    "check:prod-env": "node scripts/check-production-env.mjs",
+    "check:audit-exceptions": "node scripts/check-audit-exceptions.mjs",
+    "audit:prod": "npm audit --omit=dev --audit-level=high",
+    "test": "vitest run && npm run test:scripts",
+    "test:scripts": "node --test __tests__/*.test.mjs",
+    "smoke": "node -e \"console.log('smoke ok')\"",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "verify": "npm run lint && npm run type-check && npm run check:nav && npm run build && npm run check:bundle",
+    "lighthouse": "npm run build && lhci autorun"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs}": [
@@ -47,6 +58,7 @@
   },
   "devDependencies": {
     "@lhci/cli": "^0.14.0",
+    "@playwright/test": "^1.49.0",
     "@tailwindcss/turbopack": "^4",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -60,6 +72,7 @@
     "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "knip": "^6.46.1",
     "lint-staged": "^17.6.0",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",

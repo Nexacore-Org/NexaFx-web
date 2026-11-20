@@ -6,22 +6,28 @@ import { useRouter } from "next/navigation";
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPending(true);
+    setError(null);
     try {
-      await fetch("/api/auth/forgot-password", {
+      const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
         credentials: "include",
       });
+      if (!res.ok) {
+        throw new Error("Request failed");
+      }
       // Always show the same success message regardless of whether the account exists
       router.push("/login?notice=reset-email-sent");
     } catch {
-      // Handle error silently - show generic message
+      // Generic, non-enumerating error message
+      setError("Something went wrong. Please try again.");
     } finally {
       setPending(false);
     }
@@ -29,7 +35,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="max-w-md p-6">
-      <h2>Forgot Password</h2>
+      <h1>Forgot Password</h1>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <div>
           <label className="mb-2 block text-sm font-medium" htmlFor="email">
@@ -46,6 +52,11 @@ export default function ForgotPasswordPage() {
             placeholder="enter your email"
           />
         </div>
+        {error && (
+          <p role="alert" className="text-sm text-red-600">
+            {error}
+          </p>
+        )}
         <button
           type="submit"
           disabled={pending}

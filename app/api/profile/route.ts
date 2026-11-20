@@ -11,7 +11,7 @@ export async function PATCH(request: Request) {
     body = (await request.json()) as ProfileUpdate;
   } catch {
     return NextResponse.json(
-      { error: "Invalid request body" },
+      { code: "INVALID_BODY", message: "Invalid request body" },
       { status: 400 },
     );
   }
@@ -22,7 +22,7 @@ export async function PATCH(request: Request) {
     body.firstName !== null
   ) {
     return NextResponse.json(
-      { error: "firstName must be a string" },
+      { code: "INVALID_FIRST_NAME", message: "firstName must be a string" },
       { status: 422 },
     );
   }
@@ -32,7 +32,7 @@ export async function PATCH(request: Request) {
     body.lastName !== null
   ) {
     return NextResponse.json(
-      { error: "lastName must be a string" },
+      { code: "INVALID_LAST_NAME", message: "lastName must be a string" },
       { status: 422 },
     );
   }

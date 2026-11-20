@@ -75,11 +75,11 @@ export async function fetchSessions(): Promise<UserSession[]> {
 }
 
 export async function revokeSession(sessionId: string): Promise<void> {
-  await apiRequest(`/api/auth/sessions/${encodeURIComponent(sessionId)}`, {
+  await apiRequest<void>(`/api/auth/sessions/${encodeURIComponent(sessionId)}`, {
     method: "DELETE",
   });
 }
 
 export async function revokeOtherSessions(): Promise<void> {
-  await apiRequest("/api/auth/sessions", { method: "DELETE" });
+  await apiRequest<void>("/api/auth/sessions", { method: "DELETE" });
 }

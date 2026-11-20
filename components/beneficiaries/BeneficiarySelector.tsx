@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Search, ChevronDown, X, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -32,26 +33,16 @@ export function BeneficiarySelector({
 }: BeneficiarySelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const list = await getBeneficiaries();
-      setBeneficiaries(list);
-    } catch {
-      setError("Unable to load saved recipients");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) load();
-  }, [isOpen, load]);
+  const {
+    data: beneficiaries = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["beneficiaries"],
+    queryFn: getBeneficiaries,
+    enabled: BENEFICIARIES_ENABLED && isOpen,
+  });
 
   if (!BENEFICIARIES_ENABLED) return null;
 
@@ -142,9 +133,9 @@ export function BeneficiarySelector({
             <div className="p-4 text-center text-sm text-muted-foreground">
               Loading…
             </div>
-          ) : error ? (
+          ) : isError ? (
             <div className="p-4 text-center text-sm text-destructive">
-              {error}
+              Unable to load saved recipients
             </div>
           ) : filtered.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">

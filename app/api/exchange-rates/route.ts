@@ -16,7 +16,11 @@ interface RateQuote {
   rate: number;
   change24h: number;
   currency: string;
+  source?: "backend" | "fallback";
 }
+
+const CACHE_TTL_MS = 30_000;
+let cached: { at: number; body: { quotes: RateQuote[]; updatedAt: string } } | null = null;
 
 async function fetchFromBackend(pairs: string[]): Promise<RateQuote[] | null> {
   const endpoint = process.env.EXCHANGE_RATES_API_URL;
@@ -40,21 +44,36 @@ async function fetchFromBackend(pairs: string[]): Promise<RateQuote[] | null> {
 }
 
 export async function GET(request: Request) {
+  if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+    return NextResponse.json(cached.body);
+  }
+
   const { searchParams } = new URL(request.url);
   const requested = searchParams.get("pairs");
   const pairs = (requested ? requested.split(",") : DEFAULT_PAIRS)
     .map((pair) => pair.trim().toUpperCase())
     .filter(Boolean);
+  if (
+    pairs.length > 20 ||
+    pairs.some((pair) => !/^[A-Z]{2,5}\/[A-Z]{2,5}$/.test(pair))
+  ) {
+    return NextResponse.json({ error: "Invalid pairs" }, { status: 400 });
+  }
 
   const backendQuotes = await fetchFromBackend(pairs);
 
   const quotes: RateQuote[] =
     backendQuotes ??
-    pairs.map((pair) => {
-      const fallback = FALLBACK[pair] ?? { rate: 1, change24h: 0 };
-      const currency = pair.split("/")[1] ?? "";
-      return { pair, currency, ...fallback };
-    });
+    pairs
+      .filter((pair) => pair in FALLBACK)
+      .map((pair) => ({
+        pair,
+        currency: pair.split("/")[1] ?? "",
+        ...FALLBACK[pair],
+        source: "fallback" as const,
+      }));
 
-  return NextResponse.json({ quotes, updatedAt: new Date().toISOString() });
+  const body = { quotes, updatedAt: new Date().toISOString() };
+  cached = { at: Date.now(), body };
+  return NextResponse.json(body);
 }
