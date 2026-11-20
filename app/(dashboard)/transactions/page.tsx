@@ -128,11 +128,16 @@ function TransactionsInner() {
     search: effectiveFilters.search || undefined,
     dateFrom: effectiveFilters.dateFrom || undefined,
     dateTo: effectiveFilters.dateTo || undefined,
+    sort: urlSort.field,
+    dir: urlSort.dir,
   });
 
-  // Client-side sort on the current page (server sorting used when available)
+  // The API sorts the full result set. Only the local development fallback
+  // (which cannot sort across pages) needs a client-side pass.
   const sorted = data?.transactions
-    ? sortTransactions(data.transactions, urlSort)
+    ? data.isFallback
+      ? sortTransactions(data.transactions, urlSort)
+      : data.transactions
     : [];
 
   const totalPages = data?.totalPages ?? 1;

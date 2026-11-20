@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useId } from "react";
 import { formatMoney } from "@/lib/money";
 import { CurrencyIcon } from "@/components/shared/currency-icon";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -78,6 +79,64 @@ function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
         </>
       )}
     </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Mobile sort controls
+// ---------------------------------------------------------------------------
+
+const SORT_FIELDS: Array<{ value: SortField; label: string }> = [
+  { value: "date", label: "Date" },
+  { value: "amount", label: "Amount" },
+  { value: "status", label: "Status" },
+];
+
+function MobileSortControls({
+  sort,
+  onSort,
+}: {
+  sort: TransactionSortState;
+  onSort?: (sort: TransactionSortState) => void;
+}) {
+  const selectId = useId();
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 sm:hidden">
+      <label
+        htmlFor={selectId}
+        className="text-xs font-medium text-zinc-500 dark:text-zinc-400"
+      >
+        Sort by
+      </label>
+      <select
+        id={selectId}
+        value={sort.field}
+        disabled={!onSort}
+        onChange={(event) =>
+          onSort?.({ field: event.target.value as SortField, dir: sort.dir })
+        }
+        className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-800 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+      >
+        {SORT_FIELDS.map(({ value, label }) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        disabled={!onSort}
+        aria-label={sort.dir === "asc" ? "Sort descending" : "Sort ascending"}
+        onClick={() =>
+          onSort?.({ field: sort.field, dir: sort.dir === "asc" ? "desc" : "asc" })
+        }
+        className="inline-flex items-center gap-1 rounded-lg border border-zinc-300 px-2 py-1.5 text-sm text-zinc-700 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200"
+      >
+        <SortIcon active dir={sort.dir} />
+        {sort.dir === "asc" ? "Asc" : "Desc"}
+      </button>
+    </div>
   );
 }
 
@@ -480,14 +539,17 @@ export function TransactionTable({
       </div>
 
       {/* Mobile cards */}
-      <div
-        className="space-y-3 sm:hidden"
-        role="feed"
-        aria-label="Transactions list"
-      >
-        {transactions.map((tx) => (
-          <TransactionCard key={tx.id} tx={tx} />
-        ))}
+      <div className="sm:hidden">
+        <MobileSortControls sort={sort} onSort={onSort} />
+        <div
+          className="mt-3 space-y-3"
+          role="feed"
+          aria-label="Transactions list"
+        >
+          {transactions.map((tx) => (
+            <TransactionCard key={tx.id} tx={tx} />
+          ))}
+        </div>
       </div>
     </>
   );

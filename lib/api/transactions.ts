@@ -1,5 +1,6 @@
 import { ApiError, apiRequest } from "../api-client";
 import { generateIdempotencyKey, idempotencyHeader } from "../idempotency";
+import type { SortDirection, SortField } from "../transaction-sort";
 
 /** Resolve API paths against the configured backend base (#1168). */
 function apiUrl(path: string): string {
@@ -52,6 +53,10 @@ export interface TransactionsQuery {
   search?: string;
   dateFrom?: string;
   dateTo?: string;
+  /** Server-side sort field; omitted when the caller uses the default. */
+  sort?: SortField;
+  /** Server-side sort direction; omitted when the caller uses the default. */
+  dir?: SortDirection;
 }
 
 export interface TransactionsResponse {
@@ -62,6 +67,8 @@ export interface TransactionsResponse {
   totalPages?: number;
   /** Current page (0-based). */
   page?: number;
+  /** True for the local development fallback, which needs client-side sorting. */
+  isFallback?: boolean;
 }
 
 /**
@@ -88,6 +95,7 @@ export function isFinalTransactionStatus(status: TransactionStatus): boolean {
   return status === "completed" || status === "failed";
 }
 
+/**
  * Thrown when a money-moving request succeeds but the backend response does not
  * include a transaction id. Callers should treat this as a failed operation.
  */
@@ -199,6 +207,8 @@ export async function fetchTransactions(
     if (query.dateFrom) queryParams.dateFrom = query.dateFrom;
     if (query.dateTo) queryParams.dateTo = query.dateTo;
     if (query.page !== undefined) queryParams.page = query.page;
+    if (query.sort) queryParams.sort = query.sort;
+    if (query.dir) queryParams.dir = query.dir;
 
     const data = await apiRequest<unknown>(apiUrl("/transactions"), {
       query: queryParams,
@@ -239,30 +249,6 @@ export async function fetchTransactions(
     // If backend is unreachable, gracefully return mock recent transactions for development if empty
     if (process.env.NODE_ENV !== "production") {
       return getFallbackTransactions(query.limit ?? 5, query.page ?? 0);
-    }
-    throw err;
-  }
-}
-
-/**
- * Fetches a single transaction by id. Returns `null` when the backend has no
- * record for the given id so callers can render a safe fallback.
- */
-export async function fetchTransaction(id: string): Promise<Transaction | null> {
-  try {
-    const data = await apiRequest<unknown>(
-      apiUrl(`/transactions/${encodeURIComponent(id)}`),
-    );
-    if (!data || typeof data !== "object") return null;
-    const res = data as Record<string, unknown>;
-    const raw = res.transaction ?? data;
-    return normaliseTransaction(raw);
-  } catch (err) {
-    if (process.env.NODE_ENV !== "production") {
-      const fallback = getFallbackTransactions(50, 0).transactions.find(
-        (tx) => tx.id === id,
-      );
-      if (fallback) return fallback;
     }
     throw err;
   }
@@ -346,7 +332,7 @@ function getFallbackTransactions(
     total: fallbackList.length,
     totalPages: Math.ceil(fallbackList.length / limit),
     page,
-    nextCursor: null,
+    isFallback: true,
   };
 }
 
@@ -355,6 +341,8 @@ export interface CreateWithdrawalParams {
   currency: string;
   destination: string;
   memo?: string;
+}
+
 /**
  * Fetch a single transaction by ID.
  *
