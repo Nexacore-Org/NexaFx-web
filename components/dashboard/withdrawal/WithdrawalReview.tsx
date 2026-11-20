@@ -21,7 +21,7 @@ const currencies = [
 ];
 
 export function WithdrawalReview() {
-    const { currency, amount, walletAddress, step, setStep, setTransactionResult, close, reset } = useWithdrawalStore();
+    const { currency, amount, walletAddress, memo, step, setStep, setTransactionResult, close, reset } = useWithdrawalStore();
     const [showConfirmation, setShowConfirmation] = useState(false);
     const { remainingDaily, remainingMonthly, isLoading: limitsLoading } = useWithdrawalLimits(currency);
 
@@ -48,6 +48,7 @@ export function WithdrawalReview() {
                 currency,
                 amount: parseFloat(amount),
                 destinationAddress: walletAddress,
+                ...(memo ? { memo } : {}),
             });
             setTransactionResult(response.transactionId, 'success');
             setStep('success');
@@ -122,6 +123,14 @@ export function WithdrawalReview() {
                             {truncateAddress(walletAddress)}
                         </span>
                     </div>
+                    {memo && (
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Memo</span>
+                            <span className="text-sm font-medium text-foreground font-mono break-all text-right">
+                                {memo}
+                            </span>
+                        </div>
+                    )}
                     <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Network</span>
                         <span className="text-sm font-medium text-foreground">
@@ -176,31 +185,19 @@ export function WithdrawalReview() {
                     onClick={handleConfirmClick}
                     disabled={isProcessingStep}
                     className={cn(
-                        "w-full py-3.5 rounded-xl font-semibold",
-                        "bg-primary text-primary-foreground",
-                        "hover:bg-primary/90 active:scale-[0.98]",
-                        "transition-all duration-200",
-                        "flex items-center justify-center gap-2",
-                        isProcessingStep && "opacity-80 cursor-not-allowed"
-                    )}
-                >
-                    Confirm Withdrawal
-                </button>
-                <button
-                    onClick={() => setStep('form')}
-                    disabled={isProcessingStep}
-                    className={cn(
-                        "w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors",
+                        "w-full py-3 rounded-xl font-semibold transition-colors",
+                        "bg-primary text-primary-foreground hover:bg-primary/90",
                         isProcessingStep && "opacity-50 cursor-not-allowed"
                     )}
                 >
-                    Go Back
+                    {isProcessingStep ? 'Processing...' : 'Confirm Withdrawal'}
                 </button>
                 <button
                     onClick={handleCancel}
                     disabled={isProcessingStep}
                     className={cn(
-                        "w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors",
+                        "w-full py-3 rounded-xl font-semibold transition-colors",
+                        "bg-muted text-foreground hover:bg-muted/80",
                         isProcessingStep && "opacity-50 cursor-not-allowed"
                     )}
                 >
