@@ -14,5 +14,41 @@
     "description": "Choisissez la langue utilisée sur le site. Cela modifie les textes affichés ainsi que le format des nombres et des dates.",
     "label": "Langue du site",
     "saved": "Langue mise à jour."
+  },
+  "settings": {
+    "title": "Paramètres",
+    "nav": {
+      "profile": {
+        "label": "Profil",
+        "description": "Votre nom et vos coordonnées."
+      },
+      "security": {
+        "label": "Sécurité",
+        "description": "Mot de passe, authentification à deux facteurs et sessions actives."
+      },
+      "notifications": {
+        "label": "Notifications",
+        "description": "Choisissez les notifications que vous recevez."
+      },
+      "preferences": {
+        "label": "Préférences",
+        "description": "Choisissez la langue utilisée sur le site."
+      },
+      "account": {
+        "label": "Compte",
+        "description": "Fermez votre compte NexaFx."
+      }
+    },
+    "error": {
+      "heading": "Cette section n'a pas pu être chargée",
+      "body": "Une erreur s'est produite lors du chargement de vos paramètres. Votre compte n'est pas affecté.",
+      "reference": "Référence :",
+      "retry": "Réessayer"
+    },
+    "loading": "Chargement des paramètres",
+    "justNow": "à l'instant",
+    "unknownDevice": "Appareil inconnu",
+    "unknownTime": "Heure inconnue",
+    "unknownDate": "Date inconnue"
   }
 }
