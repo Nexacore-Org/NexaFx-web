@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { setSessionCookie } from "@/app/api/auth/lib/session";
 
 /**
- * Login handler. In CI / Playwright (`E2E_MOCK=1` or missing upstream),
- * accepts demo credentials without calling production.
+ * Login handler. The mock path only runs in E2E/test mode (`E2E_MOCK=1` or
+ * `NODE_ENV=test`); any other environment requires `AUTH_API_URL`.
  */
 export async function POST(request: Request) {
   let body: { email?: string; password?: string };
@@ -20,13 +20,19 @@ export async function POST(request: Request) {
   const password = body.password ?? "";
 
   const useMock =
-    process.env.E2E_MOCK === "1" ||
-    process.env.NODE_ENV === "test" ||
-    !process.env.AUTH_API_URL;
+    process.env.E2E_MOCK === "1" || process.env.NODE_ENV === "test";
+
+  if (!useMock && !process.env.AUTH_API_URL) {
+    return NextResponse.json(
+      { error: "Authentication service is not configured" },
+      { status: 503 },
+    );
+  }
 
   if (useMock) {
     if (!email || !password) {
       return NextResponse.json(
+        { error: "Invalid credentials" },
         { code: "INVALID_CREDENTIALS", message: "Invalid credentials" },
         { status: 401 },
       );
@@ -34,6 +40,7 @@ export async function POST(request: Request) {
     // Wrong-password path for E2E: password "wrong" always fails generically
     if (password === "wrong") {
       return NextResponse.json(
+        { error: "Invalid credentials" },
         { code: "INVALID_CREDENTIALS", message: "Invalid credentials" },
         { status: 401 },
       );
@@ -57,15 +64,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const res = await fetch(
-    `${process.env.AUTH_API_URL}/auth/login`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-      credentials: "include",
-    },
-  );
+  const res = await fetch(`${process.env.AUTH_API_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+    credentials: "include",
+  });
 
   if (res.ok) {
     const data = await res.json();
