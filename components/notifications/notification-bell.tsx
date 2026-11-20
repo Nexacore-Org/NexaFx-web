@@ -8,18 +8,29 @@ export function NotificationBell() {
   const { unreadCount } = useNotifications();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
+
+  // Focus must return to the trigger whenever the panel closes, otherwise
+  // keyboard users are dropped on <body> and have to tab through the page
+  // again. Every close path funnels through this handler.
+  const closePanel = () => {
+    setOpen(false);
+    // Defer one tick: on an outside click the browser would otherwise move
+    // focus to the clicked element after this mousedown handler runs.
+    window.setTimeout(() => triggerRef.current?.focus(), 0);
+  };
 
   useEffect(() => {
     if (!open) return;
 
     const handlePointerDown = (event: MouseEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) {
-        setOpen(false);
+        closePanel();
       }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") closePanel();
     };
 
     document.addEventListener("mousedown", handlePointerDown);
@@ -28,6 +39,8 @@ export function NotificationBell() {
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
+    // The close handler is intentionally recreated each render; the listeners
+    // only need re-binding when `open` changes.
   }, [open]);
 
   const label =
@@ -38,6 +51,7 @@ export function NotificationBell() {
   return (
     <div ref={containerRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-haspopup="dialog"
@@ -72,7 +86,7 @@ export function NotificationBell() {
 
       {open && (
         <div id={panelId}>
-          <NotificationsPanel onClose={() => setOpen(false)} />
+          <NotificationsPanel onClose={closePanel} />
         </div>
       )}
     </div>
