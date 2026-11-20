@@ -39,6 +39,8 @@ export default function DataExport() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const close = () => {
     setOpen(false);
@@ -53,10 +55,11 @@ export default function DataExport() {
         const latest = await getDataExportStatus();
         if (mounted) {
           setExportInfo(latest);
+          setLoadError(null);
         }
       } catch {
         if (mounted) {
-          setError("Failed to load export status");
+          setLoadError("Failed to load export status");
         }
       }
     }
@@ -64,10 +67,12 @@ export default function DataExport() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [reloadKey]);
 
   const pollingRequestId =
-    exportInfo?.status === "preparing" ? exportInfo.requestId : null;
+    exportInfo?.status === "requested" || exportInfo?.status === "preparing"
+      ? exportInfo.requestId
+      : null;
 
   // Poll while an export is being prepared. State is only updated from the
   // async callback, never synchronously inside the effect body.
@@ -88,7 +93,7 @@ export default function DataExport() {
 
   const isPending =
     exportInfo?.status === "requested" || exportInfo?.status === "preparing";
-  const isPolling = exportInfo?.status === "preparing";
+  const isPolling = isPending;
   const canDownload =
     exportInfo?.status === "ready" && Boolean(exportInfo.downloadUrl);
 
@@ -123,6 +128,15 @@ export default function DataExport() {
           Request export
         </button>
       </div>
+
+      {loadError && (
+        <div role="alert" className="flex items-center gap-3 text-sm text-red-600">
+          <span>{loadError}</span>
+          <button type="button" onClick={() => setReloadKey((k) => k + 1)} className="rounded border px-3 py-1">
+            Retry
+          </button>
+        </div>
+      )}
 
       <Dialog
         open={open}

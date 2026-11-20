@@ -168,6 +168,11 @@ export default function NotificationPreferences() {
                 {NOTIFICATION_CHANNELS.map((channel) => {
                   const checked = values?.[category.id][channel] ?? false;
                   const id = `${category.id}-${channel}`;
+                  // Only the switch being saved is busy; disabling would drop focus.
+                  const saving =
+                    toggle.isPending &&
+                    toggle.variables?.category === category.id &&
+                    toggle.variables?.channel === channel;
 
                   return (
                     <td key={channel} className="py-3 text-center align-top">
@@ -177,14 +182,16 @@ export default function NotificationPreferences() {
                           role="switch"
                           id={id}
                           checked={checked}
-                          disabled={category.locked || toggle.isPending}
-                          onChange={(event) =>
+                          disabled={category.locked}
+                          aria-busy={saving || undefined}
+                          onChange={(event) => {
+                            if (saving) return;
                             toggle.mutate({
                               category: category.id,
                               channel,
                               enabled: event.target.checked,
-                            })
-                          }
+                            });
+                          }}
                           aria-describedby={
                             category.locked ? `${id}-locked` : undefined
                           }
