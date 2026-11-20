@@ -1,4 +1,5 @@
 import type { AdminAuditLogEntry } from "@/lib/api/admin";
+import AdminDate from "./admin-date";
 
 export default function AuditLogTable({ entries }: { entries: AdminAuditLogEntry[] }) {
   return (
@@ -24,7 +25,7 @@ export default function AuditLogTable({ entries }: { entries: AdminAuditLogEntry
             entries.map((e) => (
               <tr key={e.id} className="border-b align-top">
                 <td className="py-2 whitespace-nowrap">
-                  {e.createdAt ? new Date(e.createdAt).toLocaleString() : "-"}
+                  <AdminDate value={e.createdAt} withTime />
                 </td>
                 <td className="py-2">{e.actorEmail || "-"}</td>
                 <td className="py-2">{e.action}</td>

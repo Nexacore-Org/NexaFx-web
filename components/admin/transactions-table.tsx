@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import AdminDate from "./admin-date";
 
 import type { AdminTransaction } from "@/lib/api/admin";
 
@@ -97,9 +98,7 @@ export default function TransactionsTable({
                 </td>
                 <td className="py-2">{tx.status}</td>
                 <td className="py-2">
-                  {tx.createdAt
-                    ? new Date(tx.createdAt).toLocaleDateString()
-                    : "-"}
+                  <AdminDate value={tx.createdAt} />
                 </td>
               </tr>
             ))
