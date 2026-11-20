@@ -1,6 +1,12 @@
 import { ApiError, apiRequest } from "../api-client";
 import { generateIdempotencyKey, idempotencyHeader } from "../idempotency";
 
+/** Resolve API paths against the configured backend base (#1168). */
+function apiUrl(path: string): string {
+  const base = (process.env.NEXT_PUBLIC_API_URL ?? "/api").replace(/\/$/, "");
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 /**
  * NOTE: The backend transactions contract is NOT confirmed. The app has no reachable
  * backend, so the shapes below are documented assumptions kept in this module.
@@ -149,7 +155,7 @@ export function normaliseTransaction(raw: unknown): Transaction {
     rawStatus,
   )
     ? (rawStatus as TransactionStatus)
-    : "completed";
+    : "pending";
 
   const destAmt =
     d.destinationAmount !== undefined ? num(d.destinationAmount) : undefined;
@@ -159,7 +165,7 @@ export function normaliseTransaction(raw: unknown): Transaction {
       : undefined;
 
   return {
-    id: str(d.id, Math.random().toString(36).substring(2, 9)),
+    id: str(d.id),
     type,
     status,
     sourceAmount: num(d.sourceAmount ?? d.amount),
@@ -168,7 +174,7 @@ export function normaliseTransaction(raw: unknown): Transaction {
     destinationCurrency: destCurr ? destCurr.toUpperCase() : undefined,
     rate: d.rate !== undefined ? num(d.rate) : undefined,
     fee: d.fee !== undefined ? num(d.fee) : undefined,
-    createdAt: str(d.createdAt ?? d.timestamp, new Date().toISOString()),
+    createdAt: str(d.createdAt ?? d.timestamp),
     updatedAt: typeof d.updatedAt === "string" ? d.updatedAt : undefined,
     counterparty:
       typeof d.counterparty === "string" ? d.counterparty : undefined,
@@ -194,7 +200,7 @@ export async function fetchTransactions(
     if (query.dateTo) queryParams.dateTo = query.dateTo;
     if (query.page !== undefined) queryParams.page = query.page;
 
-    const data = await apiRequest<unknown>("/api/transactions", {
+    const data = await apiRequest<unknown>(apiUrl("/transactions"), {
       query: queryParams,
     });
 
@@ -213,7 +219,14 @@ export async function fetchTransactions(
     const limit = query.limit ?? 10;
 
     return {
-      transactions: rawList.map(normaliseTransaction),
+      transactions: rawList
+        .filter(
+          (item) =>
+            item &&
+            typeof item === "object" &&
+            typeof (item as Record<string, unknown>).id === "string",
+        )
+        .map(normaliseTransaction),
       nextCursor: typeof res.nextCursor === "string" ? res.nextCursor : null,
       total,
       totalPages:
@@ -238,7 +251,7 @@ export async function fetchTransactions(
 export async function fetchTransaction(id: string): Promise<Transaction | null> {
   try {
     const data = await apiRequest<unknown>(
-      `/api/transactions/${encodeURIComponent(id)}`,
+      apiUrl(`/transactions/${encodeURIComponent(id)}`),
     );
     if (!data || typeof data !== "object") return null;
     const res = data as Record<string, unknown>;
@@ -353,7 +366,7 @@ export async function fetchTransaction(
 ): Promise<Transaction | null> {
   try {
     const data = await apiRequest<unknown>(
-      `/api/transactions/${encodeURIComponent(id)}`,
+      apiUrl(`/transactions/${encodeURIComponent(id)}`),
     );
     if (!data) return null;
     return normaliseTransaction(data);
@@ -398,7 +411,7 @@ export async function createWithdrawal(
   params: CreateWithdrawalParams,
 ): Promise<{ transactionId: string }> {
   const idempotencyKey = generateIdempotencyKey();
-  const data = await apiRequest<unknown>("/api/transactions/withdraw", {
+  const data = await apiRequest<unknown>(apiUrl("/transactions/withdraw"), {
     method: "POST",
     // Pass a plain object: apiRequest serialises the body itself. Passing a
     // JSON string here would double-encode and send a string literal.
@@ -418,7 +431,7 @@ export async function createDeposit(
   params: CreateDepositParams,
 ): Promise<{ transactionId: string }> {
   const idempotencyKey = generateIdempotencyKey();
-  const data = await apiRequest<unknown>("/api/transactions/deposit", {
+  const data = await apiRequest<unknown>(apiUrl("/transactions/deposit"), {
     method: "POST",
     // Pass a plain object: apiRequest serialises the body itself. Passing a
     // JSON string here would double-encode and send a string literal.
@@ -440,7 +453,7 @@ export async function createSwap(
   const idempotencyKey = generateIdempotencyKey();
   // NOTE: pass a plain object, not JSON.stringify — apiRequest serialises the
   // body itself, so stringifying here would double-encode the payload.
-  const data = await apiRequest<unknown>("/api/transactions/swap", {
+  const data = await apiRequest<unknown>(apiUrl("/transactions/swap"), {
     method: "POST",
     body: {
       fromCurrency: params.fromCurrency,
