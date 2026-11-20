@@ -7,6 +7,8 @@
  */
 
 export interface SettingsSection {
+  /** Key under `settings.nav` in messages/*.json. */
+  key: string;
   href: string;
   label: string;
   description: string;
@@ -14,26 +16,31 @@ export interface SettingsSection {
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [
   {
+    key: "profile",
     href: "/settings/profile",
     label: "Profile",
     description: "Your name and contact details.",
   },
   {
+    key: "security",
     href: "/settings/security",
     label: "Security",
     description: "Password, two-factor authentication and active sessions.",
   },
   {
+    key: "notifications",
     href: "/settings/notifications",
     label: "Notifications",
     description: "Choose which notifications you receive.",
   },
   {
+    key: "preferences",
     href: "/settings/preferences",
     label: "Preferences",
-    description: "Language, currency and display options.",
+    description: "Choose the language used across the site.",
   },
   {
+    key: "account",
     href: "/settings/account",
     label: "Account",
     description: "Close your NexaFx account.",

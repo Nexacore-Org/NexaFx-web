@@ -38,16 +38,11 @@ export interface ActivityPage {
   cursor: string | null;
 }
 
-const DAY = new Intl.DateTimeFormat("en", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-});
-
-export function formatDay(iso: string): string {
+/** Day heading in the active locale (#1236). */
+export function formatDay(iso: string, locale = "en", unknown = "Unknown date"): string {
   const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? "Unknown date" : DAY.format(date);
+  if (Number.isNaN(date.getTime())) return unknown;
+  return new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(date);
 }
 
 export function dayKey(iso: string): string {
@@ -102,6 +97,8 @@ export const EVENT_FILTERS: {
   { value: "two_factor_enabled", label: "2FA enabled" },
   { value: "two_factor_disabled", label: "2FA disabled" },
   { value: "session_revoked", label: "Sessions revoked" },
+  { value: "logout", label: "Sign-outs" },
+  { value: "account_updated", label: "Account updates" },
 ];
 
 export function describeEvent(event: ActivityEvent): string {

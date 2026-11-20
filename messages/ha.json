@@ -14,5 +14,41 @@
     "description": "Zaɓi harshen da ake amfani da shi a ko'ina. Wannan yana shafi rubutun da kuma tsarin adireshin lambobi da kwanaki.",
     "label": "Harshen gidan",
     "saved": "An sabunta harshen."
+  },
+  "settings": {
+    "title": "Saituna",
+    "nav": {
+      "profile": {
+        "label": "Bayanan martaba",
+        "description": "Sunanka da bayanan tuntuɓa."
+      },
+      "security": {
+        "label": "Tsaro",
+        "description": "Kalmar sirri, tabbatarwa mai matakai biyu da zaman da ke aiki."
+      },
+      "notifications": {
+        "label": "Sanarwa",
+        "description": "Zaɓi sanarwar da kake karɓa."
+      },
+      "preferences": {
+        "label": "Zaɓuɓɓuka",
+        "description": "Zaɓi harshen da ake amfani da shi a shafin."
+      },
+      "account": {
+        "label": "Asusu",
+        "description": "Rufe asusunka na NexaFx."
+      }
+    },
+    "error": {
+      "heading": "Ba a iya loda wannan sashe ba",
+      "body": "An sami matsala wajen loda saitunanka. Asusunka bai shafu ba.",
+      "reference": "Lamba:",
+      "retry": "Sake gwadawa"
+    },
+    "loading": "Ana loda saituna",
+    "justNow": "yanzu",
+    "unknownDevice": "Na'ura da ba a sani ba",
+    "unknownTime": "Lokaci da ba a sani ba",
+    "unknownDate": "Kwanan wata da ba a sani ba"
   }
 }

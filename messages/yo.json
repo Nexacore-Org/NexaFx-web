@@ -14,5 +14,41 @@
     "description": "Yan èdè tí a ń lò lórí gbogbo ojú-ìwé. Èyí yí ipa lórí ọ̀rọ̀ tí a ń hàn àti ọ̀nọ́ àti ọjọ́.",
     "label": "Èdè ojú-ìwé",
     "saved": "A ti ṣe àtúnṣe èdè náà."
+  },
+  "settings": {
+    "title": "Ètò",
+    "nav": {
+      "profile": {
+        "label": "Profaili",
+        "description": "Orúkọ rẹ àti àwọn alaye ìbánisọ̀rọ̀."
+      },
+      "security": {
+        "label": "Ààbò",
+        "description": "Ọ̀rọ̀ aṣínà, ìjẹ́rìísí ìgbésẹ̀ méjì àti àwọn ìgbà tí ń ṣiṣẹ́."
+      },
+      "notifications": {
+        "label": "Ìfitónilétí",
+        "description": "Yan àwọn ìfitónilétí tí o fẹ́ gbà."
+      },
+      "preferences": {
+        "label": "Àwọn àyànfẹ́",
+        "description": "Yan èdè tí a ń lò lórí ojú-òpó náà."
+      },
+      "account": {
+        "label": "Àkọọ́lẹ̀",
+        "description": "Pa àkọọ́lẹ̀ NexaFx rẹ."
+      }
+    },
+    "error": {
+      "heading": "A kò lè gbé abala yìí wọlé",
+      "body": "Nǹkan kan ṣẹlẹ̀ nígbà tí a ń gbé ètò rẹ wọlé. Àkọọ́lẹ̀ rẹ kò ní ìṣòro.",
+      "reference": "Ìtọ́kasí:",
+      "retry": "Gbìyànjú lẹ́ẹ̀kan sí i"
+    },
+    "loading": "Ń gbé ètò wọlé",
+    "justNow": "nísinsìnyí",
+    "unknownDevice": "Ẹ̀rọ àìmọ̀",
+    "unknownTime": "Àkókò àìmọ̀",
+    "unknownDate": "Ọjọ́ àìmọ̀"
   }
 }

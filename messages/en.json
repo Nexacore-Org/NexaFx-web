@@ -14,5 +14,41 @@
     "description": "Choose the language used across the site. This affects visible text and how numbers and dates are formatted.",
     "label": "Site language",
     "saved": "Language updated."
+  },
+  "settings": {
+    "title": "Settings",
+    "nav": {
+      "profile": {
+        "label": "Profile",
+        "description": "Your name and contact details."
+      },
+      "security": {
+        "label": "Security",
+        "description": "Password, two-factor authentication and active sessions."
+      },
+      "notifications": {
+        "label": "Notifications",
+        "description": "Choose which notifications you receive."
+      },
+      "preferences": {
+        "label": "Preferences",
+        "description": "Choose the language used across the site."
+      },
+      "account": {
+        "label": "Account",
+        "description": "Close your NexaFx account."
+      }
+    },
+    "error": {
+      "heading": "This section could not be loaded",
+      "body": "Something went wrong while loading your settings. Your account is unaffected.",
+      "reference": "Reference:",
+      "retry": "Try again"
+    },
+    "loading": "Loading settings",
+    "justNow": "just now",
+    "unknownDevice": "Unknown device",
+    "unknownTime": "Unknown time",
+    "unknownDate": "Unknown date"
   }
 }

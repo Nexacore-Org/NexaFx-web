@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 import { notify } from "../../lib/notify";
 import {
   SESSIONS_SUPPORTED,
@@ -13,11 +14,6 @@ import {
 import { Skeleton } from "../ui/skeleton";
 import ConfirmDialog from "../ui/confirm-dialog";
 
-const RELATIVE = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-const ABSOLUTE = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
 
 const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ["year", 31536000],
@@ -27,14 +23,20 @@ const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ["minute", 60],
 ];
 
-export function formatRelative(iso: string, now: number = Date.now()): string {
+export function formatRelative(
+  iso: string,
+  now: number = Date.now(),
+  locale = "en",
+  justNow = "just now",
+): string {
+  const RELATIVE = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   const then = new Date(iso).getTime();
   if (Number.isNaN(then)) return "unknown";
 
   const deltaSeconds = Math.round((then - now) / 1000);
   const abs = Math.abs(deltaSeconds);
 
-  if (abs < 45) return "just now";
+  if (abs < 45) return justNow;
 
   for (const [unit, seconds] of UNITS) {
     if (abs >= seconds) {
@@ -45,16 +47,15 @@ export function formatRelative(iso: string, now: number = Date.now()): string {
   return RELATIVE.format(Math.round(deltaSeconds / 60), "minute");
 }
 
-function formatAbsolute(iso: string): string {
+function formatAbsolute(iso: string, locale: string, unknown: string): string {
   const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? "Unknown time" : ABSOLUTE.format(date);
+  return Number.isNaN(date.getTime())
+    ? unknown
+    : new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
-function describe(session: UserSession): string {
-  return (
-    [session.device, session.browser].filter(Boolean).join(" on ") ||
-    "Unknown device"
-  );
+function describe(session: UserSession, unknown: string): string {
+  return [session.device, session.browser].filter(Boolean).join(" on ") || unknown;
 }
 
 /**
@@ -69,6 +70,8 @@ export default function ActiveSessions() {
   const queryKey = ["sessions"] as const;
   const [pendingRevoke, setPendingRevoke] = useState<string | null>(null);
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
+  const locale = useLocale();
+  const t = useTranslations("settings");
 
   const sessions = useQuery({
     queryKey,
@@ -175,7 +178,7 @@ export default function ActiveSessions() {
           >
             <div className="min-w-0">
               <p className="flex items-center gap-2 font-medium">
-                {describe(session)}
+                {describe(session, t("unknownDevice"))}
                 {session.current && (
                   <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-normal text-green-800 dark:bg-green-900 dark:text-green-200">
                     This device
@@ -187,9 +190,9 @@ export default function ActiveSessions() {
                 {" · "}
                 <time
                   dateTime={session.lastActiveAt}
-                  title={formatAbsolute(session.lastActiveAt)}
+                  title={formatAbsolute(session.lastActiveAt, locale, t("unknownTime"))}
                 >
-                  Active {formatRelative(session.lastActiveAt)}
+                  Active {formatRelative(session.lastActiveAt, Date.now(), locale, t("justNow"))}
                 </time>
               </p>
             </div>

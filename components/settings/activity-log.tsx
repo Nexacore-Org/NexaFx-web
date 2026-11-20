@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import {
   EVENT_FILTERS,
   describeEvent,
@@ -13,18 +14,11 @@ import {
 } from "../../lib/api/activity";
 import { Skeleton } from "../ui/skeleton";
 
-const TIME = new Intl.DateTimeFormat("en", {
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
-function formatTime(iso: string): string {
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? "" : TIME.format(date);
-}
-
 function EventRow({ event }: { event: ActivityEvent }) {
   const notable = isNotable(event);
+  const format = useFormatter();
+  const date = new Date(event.occurredAt);
+  const time = Number.isNaN(date.getTime()) ? "" : format.dateTime(date, { hour: "2-digit", minute: "2-digit" });
 
   return (
     <li className="flex items-start gap-3 py-3">
@@ -59,7 +53,7 @@ function EventRow({ event }: { event: ActivityEvent }) {
         dateTime={event.occurredAt}
         className="shrink-0 text-xs text-zinc-500"
       >
-        {formatTime(event.occurredAt)}
+        {time}
       </time>
     </li>
   );
@@ -71,6 +65,8 @@ function EventRow({ event }: { event: ActivityEvent }) {
  */
 export default function ActivityLog() {
   const [filter, setFilter] = useState<string>("all");
+  const locale = useLocale();
+  const t = useTranslations("settings");
 
   const {
     data,
@@ -86,6 +82,8 @@ export default function ActivityLog() {
       fetchActivity({ cursor: pageParam, type: filter }),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.cursor ?? undefined,
+    // Keep showing the previous list (and the mounted filter) while a new filter loads.
+    placeholderData: keepPreviousData,
   });
 
   if (isPending) {
@@ -153,7 +151,7 @@ export default function ActivityLog() {
         groups.map(([key, dayEvents]) => (
           <section key={key} className="mb-6">
             <h3 className="sticky top-0 bg-white py-1 text-sm font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
-              {formatDay(dayEvents[0].occurredAt)}
+              {formatDay(dayEvents[0].occurredAt, locale, t("unknownDate"))}
             </h3>
             <ul
               role="list"

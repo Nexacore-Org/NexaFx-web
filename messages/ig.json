@@ -14,5 +14,41 @@
     "description": "Họrọ ọụọọ a ga-eji na saịtị ahụ. Nke a ga-emetụta edemede na ọtụtụ nọmba na ụbọchị.",
     "label": "Ọụọọ saịtị",
     "saved": "Emelitela ọụọọ ahụ."
+  },
+  "settings": {
+    "title": "Ntọala",
+    "nav": {
+      "profile": {
+        "label": "Profaịlụ",
+        "description": "Aha gị na nkọwa kọntaktị gị."
+      },
+      "security": {
+        "label": "Nchekwa",
+        "description": "Okwuntughe, nkwenye nzọụkwụ abụọ na nnọkọ ndị na-arụ ọrụ."
+      },
+      "notifications": {
+        "label": "Ọkwa",
+        "description": "Họrọ ọkwa ị na-anata."
+      },
+      "preferences": {
+        "label": "Mmasị",
+        "description": "Họrọ asụsụ eji na saịtị ahụ."
+      },
+      "account": {
+        "label": "Akaụntụ",
+        "description": "Mechie akaụntụ NexaFx gị."
+      }
+    },
+    "error": {
+      "heading": "Enweghị ike ibunye ngalaba a",
+      "body": "Ihe mehiere mgbe a na-ebunye ntọala gị. Akaụntụ gị adịghị emetụta.",
+      "reference": "Ntụaka:",
+      "retry": "Nwaa ọzọ"
+    },
+    "loading": "Na-ebunye ntọala",
+    "justNow": "ugbu a",
+    "unknownDevice": "Ngwaọrụ amaghị",
+    "unknownTime": "Oge amaghị",
+    "unknownDate": "Ụbọchị amaghị"
   }
 }
