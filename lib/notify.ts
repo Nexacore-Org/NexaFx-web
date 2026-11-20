@@ -1,17 +1,67 @@
-let toastId = 0;
+export type ToastType = "success" | "error" | "info";
 
-const toastTimeouts = new Map<number, NodeJS.Timeout>();
+export interface ToastMessage {
+  id: number;
+  type: ToastType;
+  message: string;
+}
+
+export const NOTIFY_SHOW_EVENT = "notify:show";
+export const NOTIFY_DISMISS_EVENT = "notify:dismiss";
+
+let toastId = 0;
+const toastTimeouts = new Map<number, ReturnType<typeof setTimeout>>();
+
+/** Dismiss a toast by id, cancelling its pending auto-dismiss timer. */
+export function dismissToast(id: number): void {
+  const timer = toastTimeouts.get(id);
+  if (timer !== undefined) clearTimeout(timer);
+  toastTimeouts.delete(id);
+
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent(NOTIFY_DISMISS_EVENT, { detail: { id } }),
+  );
+}
+
+/**
+ * Publish a toast and return its id (or `null` when called during SSR).
+ * `timeout: 0` keeps the toast until it is dismissed explicitly — used by the
+ * loading state of `notify.promise`.
+ */
+function show(
+  type: ToastType,
+  message: string,
+  overrideTimeout?: number,
+): number | null {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return null;
+  }
+
+  const id = ++toastId;
+  const detail: ToastMessage = { id, type, message };
+  window.dispatchEvent(new CustomEvent(NOTIFY_SHOW_EVENT, { detail }));
+
+  const timeout = overrideTimeout ?? 5000;
+  if (timeout > 0) {
+    toastTimeouts.set(
+      id,
+      setTimeout(() => dismissToast(id), timeout),
+    );
+  }
+
+  return id;
+}
 
 export const notify = {
-  success: (message: string, options?: { timeout?: number }) => {
-    show("success", message, options?.timeout);
-  },
-  error: (message: string, options?: { timeout?: number }) => {
-    show("error", message, options?.timeout);
-  },
-  info: (message: string, options?: { timeout?: number }) => {
-    show("info", message, options?.timeout);
-  },
+  success: (message: string, options?: { timeout?: number }) =>
+    show("success", message, options?.timeout),
+  error: (message: string, options?: { timeout?: number }) =>
+    show("error", message, options?.timeout),
+  info: (message: string, options?: { timeout?: number }) =>
+    show("info", message, options?.timeout),
+
+  /** Show a persistent loading toast, then replace it with the result. */
   promise: <T>(
     promise: Promise<T>,
     {
@@ -23,58 +73,18 @@ export const notify = {
       success: (data: T) => string;
       error: (err: unknown) => string;
     },
-  ) => {
-    notify.info(loading);
-    promise
-      .then((data) => {
-        const toastId = Date.now();
-        notify.success(success(data));
-        toastTimeouts.delete(toastId);
-      })
-      .catch((err) => {
-        const toastId = Date.now();
-        notify.error(error(err));
-        toastTimeouts.delete(toastId);
-      });
+  ): Promise<number | null> => {
+    const loadingId = show("info", loading, 0);
+
+    return promise.then(
+      (data) => {
+        if (loadingId !== null) dismissToast(loadingId);
+        return show("success", success(data));
+      },
+      (err: unknown) => {
+        if (loadingId !== null) dismissToast(loadingId);
+        return show("error", error(err));
+      },
+    );
   },
 };
-
-function show(
-  type: "success" | "error" | "info",
-  message: string,
-  overrideTimeout?: number,
-) {
-  const id = ++toastId;
-  const timeout = overrideTimeout || 5000;
-  const isAssertive = type === "error";
-
-  // Create toast element
-  const toast = document.createElement("div");
-  toast.id = `toast-${id}`;
-  toast.setAttribute("role", "alert");
-  toast.setAttribute("aria-live", isAssertive ? "assertive" : "polite");
-  toast.style.cssText = `
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    background: white;
-    padding: 16px 24px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 9999;
-    color: ${isAssertive ? "#ef4444" : "#1f2937"};
-    animation: slide-in 0.3s ease-out;
-  `;
-  toast.textContent = message;
-  document.body.appendChild(toast);
-
-  // Auto-remove
-  const timer = setTimeout(() => {
-    if (toast.parentNode) {
-      toast.parentNode.removeChild(toast);
-    }
-    toastTimeouts.delete(id);
-  }, timeout);
-
-  toastTimeouts.set(id, timer);
-}
