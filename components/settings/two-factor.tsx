@@ -41,6 +41,7 @@ export default function TwoFactorSettings() {
   const [otpauthUri, setOtpauthUri] = useState<string | null>(null);
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
   const [codesSaved, setCodesSaved] = useState(false);
+  const [setupStep, setSetupStep] = useState(0);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [disableOpen, setDisableOpen] = useState(false);
   const [disableCode, setDisableCode] = useState("");
@@ -66,6 +67,7 @@ export default function TwoFactorSettings() {
     mutationFn: confirmTwoFactorSetup,
     onSuccess: (data) => {
       setBackupCodes(data.codes);
+      setSetupStep(2);
       void queryClient.invalidateQueries({
         queryKey: ["two-factor", "status"],
       });
@@ -110,6 +112,7 @@ export default function TwoFactorSettings() {
     setOtpauthUri(null);
     setBackupCodes(null);
     setCodesSaved(false);
+    setSetupStep(0);
     setSetupError(null);
     confirmSetup.reset();
   };
@@ -119,6 +122,21 @@ export default function TwoFactorSettings() {
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         Two-factor authentication is not available on this deployment.
       </p>
+    );
+  }
+
+  if (status.isPending) {
+    return <div role="status" aria-busy="true" aria-label="Loading two-factor status" className="h-12 animate-pulse rounded bg-zinc-100 dark:bg-zinc-800" />;
+  }
+
+  if (status.isError) {
+    return (
+      <div role="alert" className="text-sm">
+        <p>We could not load your two-factor status.</p>
+        <button type="button" onClick={() => status.refetch()} className="mt-2 rounded border px-3 py-1">
+          Retry
+        </button>
+      </div>
     );
   }
 
@@ -163,12 +181,11 @@ export default function TwoFactorSettings() {
         title="Set up two-factor authentication"
         busy={confirmSetup.isPending}
         onClose={closeSetup}
+        currentStepIndex={setupStep}
+        onStepChange={setSetupStep}
+        canAdvance={setupStep === 0 || (setupStep === 1 && !!backupCodes) || (setupStep === 2 && codesSaved)}
         finishLabel="I've saved my backup codes"
-        onFinish={
-          backupCodes
-            ? () => (codesSaved ? closeSetup() : undefined)
-            : undefined
-        }
+        onFinish={backupCodes ? closeSetup : undefined}
         steps={[
           {
             id: "scan",
@@ -220,6 +237,7 @@ export default function TwoFactorSettings() {
         tone="danger"
         confirmLabel="Turn off"
         busy={removeTwoFactor.isPending}
+        confirmDisabled={disableCode.length !== 6 && !disablePassword}
         onCancel={closeDisable}
         onConfirm={() =>
           removeTwoFactor.mutate({
