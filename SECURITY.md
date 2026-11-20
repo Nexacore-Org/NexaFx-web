@@ -25,8 +25,13 @@ When a finding is reported:
 The `Dependency Audit` workflow (`.github/workflows/audit.yml`) runs:
 
 ```sh
-npm audit --omit=dev --audit-level=high
+npm audit --omit=dev --json > audit.json
+node scripts/check-audit-exceptions.mjs --audit audit.json
 ```
+
+The script subtracts advisories listed in `audit-exceptions.md` with an
+unexpired `expires` date and fails on anything left at high or critical.
+Run the same check locally with `npm run audit:prod`.
 
 on every pull request, on pushes to `main`/`v2`, and on a weekly schedule. It is
 intentionally separate from the secret-scan workflow.
