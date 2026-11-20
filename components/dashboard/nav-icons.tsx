@@ -53,6 +53,35 @@ const icons: Record<NavIconKey, (props: IconProps) => React.ReactElement> = {
       <path d="M13.7 21a2 2 0 0 1-3.4 0" />
     </Svg>
   ),
+  beneficiaries: (props) => (
+    <Svg {...props}>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3 20a6 6 0 0 1 12 0" />
+      <path d="M16 5.5a3 3 0 0 1 0 5" />
+      <path d="M18 14a6 6 0 0 1 3 6" />
+    </Svg>
+  ),
+  alerts: (props) => (
+    <Svg {...props}>
+      <path d="M12 3 2 20h20L12 3Z" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+    </Svg>
+  ),
+  schedules: (props) => (
+    <Svg {...props}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M8 3v4M16 3v4M3 10h18" />
+    </Svg>
+  ),
+  kyc: (props) => (
+    <Svg {...props}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <circle cx="9" cy="11" r="2" />
+      <path d="M6 16a3 3 0 0 1 6 0" />
+      <path d="M14 10h4M14 14h3" />
+    </Svg>
+  ),
   settings: (props) => (
     <Svg {...props}>
       <circle cx="12" cy="12" r="3" />

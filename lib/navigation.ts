@@ -1,4 +1,6 @@
 import { DEVELOPER_ENABLED } from "@/lib/api/api-keys";
+import { BENEFICIARIES_ENABLED } from "@/lib/api/beneficiaries";
+import { SCHEDULES_ENABLED } from "@/lib/api/schedules";
 
 export type NavIconKey =
   | "dashboard"
@@ -6,6 +8,10 @@ export type NavIconKey =
   | "withdraw"
   | "transactions"
   | "notifications"
+  | "beneficiaries"
+  | "alerts"
+  | "schedules"
+  | "kyc"
   | "settings"
   | "developer";
 
@@ -51,6 +57,32 @@ const allNavItems: NavItem[] = [
     href: "/notifications",
     label: "Notifications",
     title: "Notifications",
+  },
+  {
+    key: "beneficiaries",
+    href: "/beneficiaries",
+    label: "Beneficiaries",
+    title: "Beneficiaries",
+    enabled: BENEFICIARIES_ENABLED,
+  },
+  {
+    key: "alerts",
+    href: "/alerts",
+    label: "Alerts",
+    title: "Alerts",
+  },
+  {
+    key: "schedules",
+    href: "/schedules",
+    label: "Schedules",
+    title: "Schedules",
+    enabled: SCHEDULES_ENABLED,
+  },
+  {
+    key: "kyc",
+    href: "/kyc",
+    label: "KYC",
+    title: "KYC",
   },
   {
     key: "developer",
