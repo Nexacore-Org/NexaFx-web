@@ -34,9 +34,14 @@ export default function AuditLogTable({ entries }: { entries: AdminAuditLogEntry
                 </td>
                 <td className="py-2">
                   {e.metadata ? (
-                    <pre className="max-w-xs truncate text-xs">
-                      {JSON.stringify(e.metadata)}
-                    </pre>
+                    <details className="max-w-md text-xs">
+                      <summary className="cursor-pointer truncate">
+                        {JSON.stringify(e.metadata)}
+                      </summary>
+                      <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all">
+                        {JSON.stringify(e.metadata, null, 2)}
+                      </pre>
+                    </details>
                   ) : (
                     "-"
                   )}
