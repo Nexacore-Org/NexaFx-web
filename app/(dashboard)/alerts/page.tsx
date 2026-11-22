@@ -11,6 +11,7 @@ import {
   deleteAlert,
   listAlerts,
 } from "@/lib/api/alerts";
+import { useQuery } from "@tanstack/react-query";
 
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState<RateAlert[]>([]);
@@ -38,10 +39,15 @@ export default function AlertsPage() {
     }
   }, []);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
+const {
+  data: alerts = [],
+  isLoading: isLoadingAlerts,
+  isError: isAlertsError,
+  refetch: refetchAlerts,
+} = useQuery({
+  queryKey: ["alerts"],
+  queryFn: fetchAlerts,
+});
   const atLimit = alerts.length >= maxAlerts;
 
   async function handleCreate(input: CreateAlertInput) {
